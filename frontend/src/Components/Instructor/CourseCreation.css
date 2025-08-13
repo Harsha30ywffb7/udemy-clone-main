@@ -1,0 +1,436 @@
+.course-creation {
+  min-height: 100vh;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.creation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e4e8eb;
+  background-color: #fff;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.udemy-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.udemylogo {
+  height: 32px;
+  width: auto;
+}
+
+.step-indicator {
+  color: #2d2f31;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.exit-button {
+  background: none;
+  border: none;
+  color:  rgba(109, 40, 210, 1);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.exit-button:hover {
+  background-color: #f7f9fa;
+}
+
+/* Progress Bar */
+.progress-bar {
+  height: 8px;
+  background-color: #e4e8eb;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color:  rgba(109, 40, 210, 1);
+  transition: width 0.3s ease;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 24px;
+  min-height: 400px;
+}
+
+.content-wrapper {
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+}
+
+.step-title {
+  font-family: "SuisseWorks", Georgia, "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2d2f31;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+  text-align: center;
+ 
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step-subtitle {
+  font-size: 0.8rem;
+  color:000000;
+  margin: 0 0 48px 0;
+  line-height: 1.4;
+  text-align: center;
+  font-weight: 400;
+}
+
+/* Step 1 - Course Type Options */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 48px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.option-card {
+  border: 1px solid #d1d7dc;
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #fff;
+  text-align: left;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.option-card:hover {
+  border-color:  rgba(109, 40, 210, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.option-card.selected {
+  border-color:  rgba(109, 40, 210, 1);
+  background-color: #f7f9fa;
+  box-shadow: 0 2px 8px rgba(86, 36, 208, 0.15);
+}
+
+.option-icon {
+  font-size: 32px;
+  text-align: center;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.option-title {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d2f31;
+  margin: 0 0 8px 0;
+}
+
+.option-description {
+  font-size: 0.8rem;
+  text-align: center;
+  color: 1px solid oklch(86.72% 0.0192 282.72deg);
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Step 2 - Title Input */
+.input-container {
+  margin-top: 48px;
+  position: relative;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.title-input {
+  width: 100%;
+  padding: 8px 8px;
+  border: 1px solid #d1d7dc;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #000000;
+  background-color: #fff;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.title-input:focus {
+  outline-offset: 1px;
+  border-color:  rgba(109, 40, 210, 1);
+  box-shadow: 0 0 0 2px rgba(86, 36, 208, 0.2);
+}
+
+.title-input::placeholder {
+  color: #6a6f73;
+}
+
+.char-count {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6a6f73;
+  font-size: 14px;
+  background-color: #fff;
+  padding: 0 4px;
+}
+
+/* Step 3 - Category Select */
+.select-container {
+  margin-top: 48px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.category-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d7dc;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #000;
+  background-color: #fff;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a6f73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 48px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.category-select:focus {
+  outline: none;
+  border-color:  rgba(109, 40, 210, 1);
+  box-shadow: 0 0 0 2px rgba(86, 36, 208, 0.2);
+}
+
+.category-select option {
+  padding: 8px 16px;
+}
+
+/* Step 4 - Time Commitment Options */
+.options-list {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid #d1d7dc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #fff;
+  text-align: left;
+}
+
+.option-item:hover {
+  border-color:  rgba(109, 40, 210, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.option-item.selected {
+
+  border-color: rgba(109, 40, 210, 1);
+  background-color: #f7f9fa;
+  box-shadow: 0 2px 8px rgba(86, 36, 208, 0.15);
+}
+
+.radio-button {
+  width: 15px;
+  height: 15px;
+  border: 2px solid #d1d7dc;
+  border-radius: 50%;
+  margin-right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.option-item.selected .radio-button {
+  border-color: rgba(109, 40, 210, 1);
+}
+
+.radio-inner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.option-item.selected .radio-inner {
+  background-color: rgba(109, 40, 210, 1);
+}
+
+.option-text {
+    color: #000;
+      font-size: 14px;
+      font-weight: 700;
+}
+
+/* Footer Navigation */
+.footer-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px;
+  border-top: 1px solid #e4e8eb;
+  background-color: #fff;
+}
+
+.nav-button {
+  padding:12px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 80px;
+  font-family: inherit;
+}
+
+.nav-button.previous {
+  background-color: #fff;
+  color: rgba(109, 40, 210, 1);
+  border: 2px solid rgba(109, 40, 210, 1);
+}
+
+.nav-button.previous:hover:not(:disabled) {
+  background-color: #f7f9fa;
+}
+
+.nav-button.previous:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #fff;
+  color: #d1d7dc;
+  border-color: #d1d7dc;
+}
+
+.nav-button.continue {
+  background-color: rgba(109, 40, 210, 1);
+  color: #fff;
+}
+
+.nav-button.continue:hover:not(:disabled) {
+  background-color: rgba(109, 40, 210, 1);
+}
+
+.nav-button.continue:disabled {
+  background-color: #d1d7dc;
+  color: #6a6f73;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .step-title {
+    font-size: 24px;
+    line-height: 1.4;
+  }
+
+  .step-subtitle {
+      text-align: center;
+    color:000000;
+    font-size: 0.8rem;
+  }
+
+  .main-content {
+    padding: 32px 16px;
+  }
+
+  .creation-header {
+    padding: 16px 16px;
+  }
+
+  .footer-navigation {
+    padding: 16px 16px;
+  }
+
+  .content-wrapper {
+    max-width: 100%;
+  }
+
+  .input-container,
+  .select-container,
+  .options-list,
+  .options-grid {
+    max-width: 100%;
+  }
+
+  .option-card {
+    padding: 20px;
+    min-height: 120px;
+  }
+
+  .option-item {
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-title {
+    font-size: 24px;
+  }
+
+  .header-left {
+    gap: 16px;
+  }
+
+  .nav-button {
+    min-width: 100px;
+    padding: 10px 20px;
+  }
+}
