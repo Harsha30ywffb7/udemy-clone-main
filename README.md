@@ -79,9 +79,7 @@ npm start
 
 - User authentication (login/signup)
 - Course browsing and search
-- Shopping cart functionality
 - Wishlist management
-- Payment integration
 - Responsive design with Material-UI
 
 ## Tech Stack
@@ -109,9 +107,7 @@ The backend provides RESTful API endpoints for:
 
 - User authentication
 - Course management
-- Cart operations
 - Wishlist operations
-- Payment processing
 
 ## Development Notes
 

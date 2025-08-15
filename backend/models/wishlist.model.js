@@ -2,46 +2,53 @@ const mongoose = require("mongoose");
 
 const wishlistSchema = new mongoose.Schema(
   {
+    // User who owns the wishlist
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
-    courseId: {
+
+    // Wishlisted courses
+    courses: [
+      {
+        courseId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+          required: true,
+        },
+        addedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        // Course snapshot for display
+        courseSnapshot: {
+          title: { type: String },
+          subtitle: { type: String },
+          thumbnailUrl: { type: String },
+          price: { type: Number },
+          originalPrice: { type: Number },
+          instructorName: { type: String },
+          averageRating: { type: Number },
+          totalStudents: { type: Number },
+        },
+      },
+    ],
+
+    // Wishlist metadata
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
+    name: {
       type: String,
-      required: true,
+      default: "My Wishlist",
+      maxlength: 100,
     },
-    courseTitle: {
+    description: {
       type: String,
-      required: true,
-    },
-    courseImage: {
-      type: String,
-      default: null,
-    },
-    instructor: {
-      type: String,
-      default: "",
-    },
-    rating: {
-      type: Number,
-      default: 0,
-    },
-    totalStudents: {
-      type: Number,
-      default: 0,
-    },
-    category: {
-      type: String,
-      default: "",
-    },
-    level: {
-      type: String,
-      default: "All Levels",
-    },
-    addedAt: {
-      type: Date,
-      default: Date.now,
+      maxlength: 500,
     },
   },
   {
@@ -49,10 +56,39 @@ const wishlistSchema = new mongoose.Schema(
   }
 );
 
-// Compound index to prevent duplicate wishlist items
-wishlistSchema.index({ userId: 1, courseId: 1 }, { unique: true });
+// Virtual for wishlist summary
+wishlistSchema.virtual("wishlistSummary").get(function () {
+  return {
+    courseCount: this.courses.length,
+    totalValue: this.courses.reduce(
+      (sum, item) => sum + (item.courseSnapshot.price || 0),
+      0
+    ),
+    lastAdded:
+      this.courses.length > 0
+        ? this.courses[this.courses.length - 1].addedAt
+        : null,
+  };
+});
 
-// Index for better query performance
-wishlistSchema.index({ userId: 1 });
+// Virtual for formatted total value
+wishlistSchema.virtual("formattedTotalValue").get(function () {
+  const totalValue = this.courses.reduce(
+    (sum, item) => sum + (item.courseSnapshot.price || 0),
+    0
+  );
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(totalValue);
+});
+
+// Indexes for better query performance
+wishlistSchema.index({ "courses.courseId": 1 });
+wishlistSchema.index({ isPublic: 1 });
+
+// Ensure virtuals are serialized
+wishlistSchema.set("toJSON", { virtuals: true });
+wishlistSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Wishlist", wishlistSchema);

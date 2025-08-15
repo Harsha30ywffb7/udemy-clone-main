@@ -2,10 +2,18 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    fullName: {
-      type: String,
-      required: true,
-      trim: true,
+    // Basic user information
+    name: {
+      first: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      last: {
+        type: String,
+        required: true,
+        trim: true,
+      },
     },
     email: {
       type: String,
@@ -14,78 +22,129 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-    password: {
+    passwordHash: {
       type: String,
       required: true,
-      minlength: 6,
     },
-    userType: {
+    role: {
       type: String,
-      enum: ["instructor", "student"],
+      enum: ["student", "instructor", "admin"],
       default: "student",
     },
-    profileImage: {
+
+    // Profile information
+    bio: {
+      type: String,
+      maxlength: 5000,
+      default: "",
+    },
+    avatarUrl: {
       type: String,
       default: null,
     },
-    bio: {
-      type: String,
-      maxlength: 500,
-      default: "",
+
+    // Rich user profile (general fields, not only instructors)
+    userProfile: {
+      headline: { type: String, maxlength: 200, default: "" },
+      biography: {
+        content: { type: String, default: "" }, // markdown or html
+        format: {
+          type: String,
+          enum: ["markdown", "html", "plain"],
+          default: "markdown",
+        },
+      },
+      language: { type: String, default: "English (US)" },
     },
-    // For instructors
-    instructorProfile: {
-      expertise: [String],
-      experience: {
-        type: Number,
-        default: 0,
-      },
-      totalStudents: {
-        type: Number,
-        default: 0,
-      },
-      rating: {
-        type: Number,
-        default: 0,
-      },
-      totalCourses: {
-        type: Number,
-        default: 0,
-      },
-      onboardingAnswers: {
-        type: Object,
-        default: {},
-      },
+
+    // Social links
+    socialLinks: {
+      website: { type: String, default: null },
+      twitter: { type: String, default: null },
+      linkedin: { type: String, default: null },
+      youtube: { type: String, default: null },
+      github: { type: String, default: null },
+      facebook: { type: String, default: null },
+      instagram: { type: String, default: null },
+      tiktok: { type: String, default: null },
+      x: { type: String, default: null },
     },
-    isOnboarded: {
+
+    // Privacy settings
+    privacySettings: {
+      showProfileToLoggedIn: { type: Boolean, default: true },
+      showCoursesOnProfile: { type: Boolean, default: true },
+    },
+    isOnBoarded: {
       type: Boolean,
       default: false,
     },
-    // For students
-    studentProfile: {
-      enrolledCourses: [
-        {
-          courseId: String,
-          enrolledAt: {
-            type: Date,
-            default: Date.now,
-          },
-          progress: {
-            type: Number,
-            default: 0,
-          },
-        },
-      ],
-      completedCourses: [String],
-      learningGoals: [String],
+
+    // Instructor-specific profile
+    instructorProfile: {
+      headline: { type: String, maxlength: 200, default: "" },
+      expertise: [{ type: String }],
+      payoutEmail: { type: String, default: null },
+      totalStudents: { type: Number, default: 0 },
+      totalCourses: { type: Number, default: 0 },
+      averageRating: { type: Number, default: 0 },
+      totalReviews: { type: Number, default: 0 },
+      totalEarnings: { type: Number, default: 0 },
+      isVerified: { type: Boolean, default: false },
+      verificationDate: { type: Date, default: null },
     },
+
+    // Student-specific data
+    enrolledCourses: [
+      {
+        courseId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+        },
+        progress: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: 0,
+        },
+        lastAccessed: {
+          type: Date,
+          default: Date.now,
+        },
+        completedAt: { type: Date, default: null },
+        certificateUrl: { type: String, default: null },
+      },
+    ],
+
+    // Account status
     isActive: {
       type: Boolean,
       default: true,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: { type: String, default: null },
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
+
+    // Preferences
+    preferences: {
+      language: { type: String, default: "en" },
+      timezone: { type: String, default: "UTC" },
+      emailNotifications: { type: Boolean, default: true },
+      pushNotifications: { type: Boolean, default: true },
+    },
+
+    // Analytics
     lastLogin: {
       type: Date,
       default: Date.now,
+    },
+    loginCount: {
+      type: Number,
+      default: 0,
     },
   },
   {
@@ -93,8 +152,27 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ userType: 1 });
+// Virtual for full name
+userSchema.virtual("fullName").get(function () {
+  return `${this.name.first} ${this.name.last}`;
+});
+
+// Virtual for instructor display name
+userSchema.virtual("instructorDisplayName").get(function () {
+  if (this.role === "instructor") {
+    return this.instructorProfile.headline || this.fullName;
+  }
+  return this.fullName;
+});
+
+// Indexes for better query performance
+userSchema.index({ role: 1 });
+userSchema.index({ "instructorProfile.isVerified": 1 });
+userSchema.index({ "enrolledCourses.courseId": 1 });
+userSchema.index({ "name.first": "text", "name.last": "text", email: "text" });
+
+// Ensure virtuals are serialized
+userSchema.set("toJSON", { virtuals: true });
+userSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("User", userSchema);
