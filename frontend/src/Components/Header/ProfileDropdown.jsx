@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutUser } from "../../Redux/login/action";
-import "./ProfileDropdown.css";
 
 const ProfileDropdown = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,49 +13,26 @@ const ProfileDropdown = ({ user }) => {
     {
       listName: "list1",
       topics: [
-        { url: "#", topic: "My learning" },
-        { url: "#", topic: "My cart" },
-        { url: "#", topic: "Wishlist" },
-        ...(user?.userType === "instructor"
-          ? [{ url: "/", topic: "Student Mode" }]
-          : []),
-        { url: "/teach", topic: "Teach on Udemy" },
+        { url: "/my-learning", topic: "My learning" },
+        { url: "/wishlist", topic: "Wishlist" },
       ],
     },
     {
       listName: "list2",
       topics: [
-        { url: "#", topic: "Notifications" },
-        { url: "#", topic: "Messages" },
+        { url: "/public", topic: "Public profile" },
+        { url: "/public/edit", topic: "Edit profile" },
       ],
     },
     {
       listName: "list3",
-      topics: [
-        { url: "#", topic: "Account settings" },
-        { url: "#", topic: "Subscriptions" },
-        { url: "#", topic: "Purchase history" },
-      ],
-    },
-    {
-      listName: "list4",
-      topics: [{ url: "#", topic: "Language" }],
-    },
-    {
-      listName: "list5",
-      topics: [
-        { url: "#", topic: "Public profile" },
-        { url: "#", topic: "Edit profile" },
-      ],
-    },
-    {
-      listName: "list6",
-      topics: [
-        { url: "#", topic: "Help and Support" },
-        { url: "/logout", topic: "Logout" },
-      ],
+      topics: [{ url: "/logout", topic: "Logout" }],
     },
   ];
+
+  if (user.userType === "student") {
+    profileData[0].topics.push({ url: "/teach", topic: "Teach on Udemy" });
+  }
 
   const getAvatarText = (fullName) => {
     if (!fullName) return "U";
@@ -109,42 +85,53 @@ const ProfileDropdown = ({ user }) => {
   const avatarText = getAvatarText(fullName);
 
   return (
-    <div className="profile-dropdown" ref={dropdownRef}>
+    <div className="relative inline-block" ref={dropdownRef}>
       <div
-        className={`profile-icon ${isOpen ? "dropdown-open" : ""}`}
+        className="w-8 h-8 bg-gray-800 text-white rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-all duration-200 z-[999999]"
         onClick={handleProfileClick}
       >
         {avatarText}
       </div>
 
       {isOpen && (
-        <div className="dropdown-menu">
+        <div className="absolute top-full right-0 w-[270px] bg-white border border-gray-200 rounded shadow-lg z-[999999] mt-2 text-gray-800 font-normal text-sm leading-tight">
           {/* Profile Section */}
-          <div className="profile-section">
-            <div className="user-avatar">
-              <div className="avatar-large">{avatarText}</div>
+          <div className="flex border-b border-gray-300 p-4 cursor-pointer transition-colors duration-300 hover:bg-purple-50">
+            <div className="w-[30%] flex items-center">
+              <div className="w-16 h-16 bg-gray-800 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                {avatarText}
+              </div>
             </div>
-            <div className="user-details">
-              <p className="user-name">{fullName}</p>
-              <p className="user-email">{email}</p>
+            <div className="w-[70%] leading-tight pl-3">
+              <p className="text-gray-800 font-bold text-base m-0">
+                {fullName}
+              </p>
+              <p className="text-xs text-gray-500 mt-1 m-0 overflow-hidden text-ellipsis whitespace-nowrap font-normal">
+                {email}
+              </p>
             </div>
           </div>
 
           {/* Menu Items */}
-          <div className="menu-items">
+          <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-500">
             {profileData.map((list, index) => (
-              <div key={list.listName} className="menu-list">
+              <div
+                key={list.listName}
+                className="border-b border-gray-300 py-2"
+              >
                 {list.topics.map((item, subIndex) => (
                   <div
                     key={subIndex}
-                    className="menu-item"
+                    className="flex justify-between items-center px-4 py-2 cursor-pointer transition-all duration-300 hover:bg-purple-50 hover:text-purple-600"
                     onClick={() => handleItemClick(item.url, item.topic)}
                   >
-                    <div className="menu-text">{item.topic}</div>
+                    <div className="text-gray-700 text-sm font-normal hover:text-purple-600">
+                      {item.topic}
+                    </div>
                     {item.topic === "Language" && (
-                      <div className="language-indicator">
+                      <div className="flex items-center gap-1 text-gray-800 text-sm">
                         <span>English</span>
-                        <span className="globe-icon">🌐</span>
+                        <span className="text-sm">🌐</span>
                       </div>
                     )}
                   </div>
@@ -154,15 +141,19 @@ const ProfileDropdown = ({ user }) => {
           </div>
 
           {/* Business Section */}
-          <div className="business-section">
-            <div className="business-content">
+          <div className="border-t border-gray-300">
+            <div className="flex justify-between items-center p-4 cursor-pointer transition-colors duration-300 hover:bg-purple-50 group">
               <div>
-                <p className="business-title">Udemy Business</p>
-                <p className="business-subtitle">
+                <p className="text-gray-800 m-0 font-bold text-base group-hover:text-purple-600">
+                  Udemy Business
+                </p>
+                <p className="text-gray-500 mt-1 m-0 text-sm font-normal">
                   Bring learning to your company
                 </p>
               </div>
-              <span className="export-icon">↗</span>
+              <span className="text-lg text-gray-800 group-hover:text-purple-600">
+                ↗
+              </span>
             </div>
           </div>
         </div>
