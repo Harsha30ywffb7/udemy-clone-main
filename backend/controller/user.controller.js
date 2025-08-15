@@ -10,49 +10,101 @@ const router = express.Router();
 // Register new user (student or instructor)
 router.post("/register", async (req, res) => {
   try {
-    const fullName = req.body.fullName || req.body.name; // accept both keys
-    const { email, password, userType = "student" } = req.body;
+    const { fullName, name, email, password, userType = "student" } = req.body;
 
-    if (!fullName || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "fullName, email and password are required" });
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Handle name field - support both fullName and name object
+    let firstName = "";
+    let lastName = "";
+
+    if (name && name.first && name.last) {
+      // New format: { name: { first: "John", last: "Doe" } }
+      firstName = name.first.trim();
+      lastName = name.last.trim();
+    } else if (fullName) {
+      // Legacy format: { fullName: "John Doe" }
+      const nameParts = fullName.trim().split(" ");
+      firstName = nameParts[0] || "";
+      lastName = nameParts.slice(1).join(" ") || "";
+    } else {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Name is required. Please provide either 'name' object with 'first' and 'last' properties, or 'fullName' string",
+      });
+    }
+
+    // Validate name fields
+    if (!firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        message: "Both first name and last name are required",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "User already exists with this email" });
+      return res.status(400).json({
+        success: false,
+        message: "An account with this email already exists",
+      });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user based on type
+    // Create user data with new schema structure
     const userData = {
-      fullName,
-      email,
-      password: hashedPassword,
-      userType,
+      name: {
+        first: firstName,
+        last: lastName,
+      },
+      email: email.toLowerCase(),
+      passwordHash,
+      role: userType,
     };
 
-    // Add type-specific initial data
+    // Add role-specific initial data
     if (userType === "instructor") {
       userData.instructorProfile = {
+        headline: "",
         expertise: [],
-        experience: 0,
+        payoutEmail: null,
         totalStudents: 0,
-        rating: 0,
         totalCourses: 0,
+        averageRating: 0,
+        totalReviews: 0,
+        totalEarnings: 0,
+        isVerified: false,
+        verificationDate: null,
       };
     } else {
-      userData.studentProfile = {
-        enrolledCourses: [],
-        completedCourses: [],
-        learningGoals: [],
-      };
+      userData.enrolledCourses = [];
     }
 
     const user = new User(userData);
@@ -60,90 +112,143 @@ router.post("/register", async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, userType: user.userType },
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Return user data without password
+    // Return user data without sensitive information
     const userResponse = {
       _id: user._id,
-      fullName: user.fullName,
+      name: user.name,
+      fullName: user.fullName, // Virtual field
       email: user.email,
-      userType: user.userType,
-      profileImage: user.profileImage,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
       bio: user.bio,
       instructorProfile: user.instructorProfile,
-      studentProfile: user.studentProfile,
-      token,
+      isEmailVerified: user.isEmailVerified,
+      createdAt: user.createdAt,
     };
 
     res.status(201).json({
+      success: true,
       message: "User registered successfully",
-      token, // top-level token for compatibility
-      user: userResponse,
+      data: {
+        token,
+        user: userResponse,
+      },
     });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ message: "Internal server error" });
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "An account with this email already exists",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
   }
 });
 
 // Login user
 router.post("/login", async (req, res) => {
-  console.log("reached the login page");
   try {
     const { email, password } = req.body;
 
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
     // Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
     // Check if user is active
     if (!user.isActive) {
-      return res.status(400).json({ message: "Account is deactivated" });
+      return res.status(400).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact support.",
+      });
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     if (!isValidPassword) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
     }
 
     // Update last login
     user.lastLogin = new Date();
+    user.loginCount += 1;
     await user.save();
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, userType: user.userType },
+      { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Return user data without password
+    // Return user data without sensitive information
     const userResponse = {
       _id: user._id,
-      fullName: user.fullName,
+      name: user.name,
+      fullName: user.fullName, // Virtual field
       email: user.email,
-      userType: user.userType,
-      profileImage: user.profileImage,
+      role: user.role,
+      avatarUrl: user.avatarUrl,
       bio: user.bio,
       instructorProfile: user.instructorProfile,
-      studentProfile: user.studentProfile,
-      token,
+      isEmailVerified: user.isEmailVerified,
+      lastLogin: user.lastLogin,
+      createdAt: user.createdAt,
     };
 
     res.json({
+      success: true,
       message: "Login successful",
-      token, // top-level token for compatibility
-      user: userResponse,
+      data: {
+        token,
+        user: userResponse,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
   }
 });
 
@@ -246,15 +351,15 @@ router.put("/onboard", authenticate, async (req, res) => {
     const { onboardingAnswers } = req.body;
 
     // Check if user is an instructor
-    if (req.user.userType !== "instructor") {
-      return res
-        .status(403)
-        .json({ message: "Only instructors can complete onboarding" });
-    }
+    // if (req.user.userType !== "instructor") {
+    //   return res
+    //     .status(403)
+    //     .json({ message: "Only instructors can complete onboarding" });
+    // }
 
     // Update user with onboarding data
     const updateData = {
-      isOnboarded: true,
+      isOnBoarded: true,
       "instructorProfile.onboardingAnswers": onboardingAnswers,
     };
 
