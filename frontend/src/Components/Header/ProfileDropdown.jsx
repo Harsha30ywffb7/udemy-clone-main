@@ -20,8 +20,8 @@ const ProfileDropdown = ({ user }) => {
     {
       listName: "list2",
       topics: [
-        { url: "/public", topic: "Public profile" },
-        { url: "/public/edit", topic: "Edit profile" },
+        { url: "/profile", topic: "Public profile" },
+        { url: "/profile/edit", topic: "Edit profile" },
       ],
     },
     {
