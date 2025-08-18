@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./CourseSidebar.css";
 
 const CourseSidebar = ({ courseId, courseTitle }) => {
   const navigate = useNavigate();
@@ -97,41 +96,67 @@ const CourseSidebar = ({ courseId, courseTitle }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "current":
-        return <div className="status-icon current"></div>;
+        return (
+          <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-blue-600 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-white"></div>
+          </div>
+        );
       case "complete":
-        return <div className="status-icon complete">✓</div>;
+        return (
+          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold">
+            ✓
+          </div>
+        );
       case "incomplete":
-        return <div className="status-icon incomplete"></div>;
+        return (
+          <div className="w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
+        );
       default:
-        return <div className="status-icon incomplete"></div>;
+        return (
+          <div className="w-4 h-4 rounded-full border-2 border-gray-300 bg-white"></div>
+        );
     }
   };
 
   return (
-    <div className="course-sidebar">
+    <div className="w-80 bg-white border-r border-gray-200 h-screen overflow-y-auto p-4">
       {sidebarData.map((section, sectionIndex) => (
-        <div key={sectionIndex} className="sidebar-section">
-          <h3 className="section-title">{section.title}</h3>
-          <div className="section-items">
+        <div key={sectionIndex} className="mb-8">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+            {section.title}
+          </h3>
+          <div className="space-y-2">
             {section.items.map((item, itemIndex) => (
               <div
                 key={itemIndex}
-                className={`sidebar-item ${
-                  location.pathname === item.route ? "active" : ""
+                className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors duration-200 hover:bg-gray-50 ${
+                  location.pathname === item.route
+                    ? "bg-purple-50 border-l-4 border-purple-500"
+                    : "border-l-4 border-transparent"
                 }`}
                 onClick={() => handleItemClick(item.route)}
               >
-                <div className="item-content">
+                <div className="flex items-center space-x-3 w-full">
                   {getStatusIcon(item.status)}
-                  <span className="item-title">{item.title}</span>
+                  <span
+                    className={`text-sm font-medium ${
+                      location.pathname === item.route
+                        ? "text-purple-700"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {item.title}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       ))}
-      <div className="sidebar-footer">
-        <button className="submit-review-btn">Submit for Review</button>
+      <div className="mt-8 pt-4 border-t border-gray-200">
+        <button className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors duration-200">
+          Submit for Review
+        </button>
       </div>
     </div>
   );

@@ -9,18 +9,23 @@ const ProfileDropdown = ({ user }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const isInstructor = user?.role === "instructor";
+
   const profileData = [
     {
       listName: "list1",
       topics: [
         { url: "/my-learning", topic: "My learning" },
         { url: "/wishlist", topic: "Wishlist" },
+        ...(isInstructor
+          ? [{ url: "/instructor/courses", topic: "Instructor Dashboard" }]
+          : []),
       ],
     },
     {
       listName: "list2",
       topics: [
-        { url: "/profile", topic: "Public profile" },
+        { url: "/profile", topic: "profile" },
         { url: "/profile/edit", topic: "Edit profile" },
       ],
     },
@@ -29,10 +34,6 @@ const ProfileDropdown = ({ user }) => {
       topics: [{ url: "/logout", topic: "Logout" }],
     },
   ];
-
-  if (user.userType === "student") {
-    profileData[0].topics.push({ url: "/teach", topic: "Teach on Udemy" });
-  }
 
   const getAvatarText = (fullName) => {
     if (!fullName) return "U";
@@ -43,11 +44,15 @@ const ProfileDropdown = ({ user }) => {
   };
 
   const handleLogout = () => {
+    console.log("ProfileDropdown: Starting logout process");
+
     // Dispatch logout action to clear Redux state and localStorage
     dispatch(logoutUser());
 
-    // Navigate to home page
-    navigate("/");
+    // Navigate to home page after a brief delay to ensure state is cleared
+    setTimeout(() => {
+      navigate("/");
+    }, 100);
   };
 
   const handleClickOutside = (event) => {
@@ -66,10 +71,6 @@ const ProfileDropdown = ({ user }) => {
   const handleItemClick = (url, topic) => {
     if (topic === "Logout") {
       handleLogout();
-    } else if (topic === "Student Mode") {
-      // Set student mode flag and navigate to home page
-      sessionStorage.setItem("studentMode", "true");
-      navigate("/");
     } else if (url !== "#") {
       navigate(url);
     }
@@ -81,7 +82,7 @@ const ProfileDropdown = ({ user }) => {
   };
 
   const fullName = user?.fullName || "User";
-  const email = user?.email || "user@example.com";
+  const email = user?.email || "";
   const avatarText = getAvatarText(fullName);
 
   return (
@@ -128,12 +129,6 @@ const ProfileDropdown = ({ user }) => {
                     <div className="text-gray-700 text-sm font-normal hover:text-purple-600">
                       {item.topic}
                     </div>
-                    {item.topic === "Language" && (
-                      <div className="flex items-center gap-1 text-gray-800 text-sm">
-                        <span>English</span>
-                        <span className="text-sm">🌐</span>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

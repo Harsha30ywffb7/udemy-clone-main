@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import "../Login_Signup/login.css";
 
 // Onboarding Steps (can be extended)
 const QUESTIONS = [
