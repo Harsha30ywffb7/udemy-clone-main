@@ -1,108 +1,175 @@
-import "./login.css";
 import React, { useState, useEffect } from "react";
-import { ColorButton } from "../ProdCard/popperprodcard";
 import { useDispatch, useSelector } from "react-redux";
-import { authFunction } from "../../Redux/login/action";
-import { Navigate, useNavigate } from "react-router-dom";
-import Alert from "@mui/material/Alert";
+import { authFunction, clearError } from "../../Redux/login/action";
 import CircularProgress from "@mui/material/CircularProgress";
+import { Link } from "react-router-dom";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
 
 const Login = () => {
-  const [userdata, setUser] = useState({ email: "", password: "" });
-  const { user, loading, error } = useSelector((store) => store.auth);
+  const [userdata, setUserdata] = useState({ email: "", password: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const { loading, error } = useSelector((store) => store.auth);
 
-  // Check if user is already logged in
+  // Clear errors when component mounts or when navigating from signup
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/");
-    }
-  }, [navigate]);
+    dispatch(clearError());
+  }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUser({ ...userdata, [name]: value });
+    setUserdata({ ...userdata, [name]: value });
+
+    // Clear field-specific errors when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors({ ...fieldErrors, [name]: "" });
+    }
   };
 
-  if (user.token != undefined) {
-    console.log(user._id);
-    return <Navigate to={"/"} />;
-  }
+  const validateForm = () => {
+    const errors = {};
+
+    if (!userdata.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userdata.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (!userdata.password) {
+      errors.password = "Password is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleLogin = () => {
+    if (validateForm()) {
+      const URL = "/api/users/login";
+      dispatch(authFunction(userdata, URL));
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
+  const handleCloseError = () => {
+    dispatch(clearError());
+  };
 
   return (
-    <div>
-      <div className="loginDiv">
-        <h4>Log In to Your Udemy Account!</h4>
-        <hr className="hr_line_login"></hr>
-
-        {/* <div className="img_tag">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link to="/" className="flex justify-center">
           <img
-            src="	https://img-c.udemycdn.com/user/50x50/anonymous_3.png"
-            alt=""
+            className="h-12 w-auto"
+            src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
+            alt="Udemy"
           />
-          <p>Welcome back, {"Yashas"}</p>{" "}
-        </div> */}
+        </Link>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Log in to your Udemy account
+        </h2>
+      </div>
 
-        <div className="login_inputDiv">
-          {error ? (
-            <Alert className="alert" severity="error">
-              <p>There was a problem logging in.</p>
-              <p>Check your email and password or create an account.</p>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {/* Error Message */}
+          {error && (
+            <Alert
+              severity="error"
+              className="mb-4"
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={handleCloseError}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              <AlertTitle>Login Failed</AlertTitle>
+              {error}
             </Alert>
-          ) : (
-            <></>
           )}
-          <input
-            onChange={handleChange}
-            name="email"
-            type="email"
-            placeholder="email"
-            className="login_pw"
-          ></input>
-          <input
-            onChange={handleChange}
-            name="password"
-            type="password"
-            placeholder="Password"
-            className="login_pw"
-          ></input>
 
-          {/* <button id="login_input">Log in</button> */}
-          <ColorButton
-            onClick={() => {
-              const URL = "/api/users/login";
-              dispatch(authFunction(userdata, URL));
-            }}
-            id="login_input"
+          {/* Email Input */}
+          <div className="mb-3">
+            <input
+              onChange={handleChange}
+              onKeyPress={handleKeyPress}
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={userdata.email}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                fieldErrors.email ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {fieldErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+            )}
+          </div>
+
+          {/* Password Input */}
+          <div className="mb-6">
+            <input
+              onChange={handleChange}
+              onKeyPress={handleKeyPress}
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={userdata.password}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                fieldErrors.password ? "border-red-500" : "border-gray-300"
+              }`}
+            />
+            {fieldErrors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {fieldErrors.password}
+              </p>
+            )}
+          </div>
+
+          {/* Login Button */}
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
           >
             {loading ? (
-              <CircularProgress style={{ color: "white" }} />
+              <CircularProgress size={24} style={{ color: "white" }} />
             ) : (
               "Log in"
             )}
-          </ColorButton>
-        </div>
+          </button>
 
-        <div className="forgot_pws">
-          <span className="forgot_pw">or </span>
-          <a href="#">Forgot Password</a>
-          <div className="diff_acct">
-            <a href="#">Log in</a>to a <a href="#">different account</a>
-          </div>{" "}
-        </div>
-
-        <div className="login_org">
-          <p>
-            Don't have an account?{" "}
-            <span>
-              <a href="#">Sign up</a>
-            </span>
-          </p>
-          <a href="#" className="login_org1">
-            Log in with your organization
-          </a>
+          {/* Sign up */}
+          <div className="mt-8 text-center text-sm">
+            <p className="text-gray-700">
+              Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-purple-600 hover:underline font-medium"
+              >
+                Sign up
+              </Link>
+            </p>
+            <Link
+              to="#"
+              className="text-purple-600 hover:underline font-medium block mt-2"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
       </div>
     </div>
