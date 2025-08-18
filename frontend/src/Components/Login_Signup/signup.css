@@ -1,0 +1,222 @@
+/* Signup Component Styles */
+.loginDiv {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+}
+
+.loginDiv h4 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1c1d1f;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.hr_line_login {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 20px 0;
+}
+
+.login_inputDiv {
+  margin-bottom: 30px;
+}
+
+.alert {
+  margin-bottom: 20px !important;
+}
+
+.login_pw {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid #d1d7dc;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  background-color: #fff;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.login_pw:focus {
+  outline: none;
+  border-color: #5624d0;
+  box-shadow: 0 0 0 2px rgba(86, 36, 208, 0.2);
+}
+
+.login_pw::placeholder {
+  color: #6a6f73;
+}
+
+.checkboxDiv {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 8px;
+}
+
+.signup_checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checkboxDiv label {
+  font-size: 14px;
+  color: #1c1d1f;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+
+#signup_input {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  text-transform: none !important;
+  margin-bottom: 16px !important;
+}
+
+.login_inputDiv h6 {
+  font-size: 12px;
+  color: #6a6f73;
+  text-align: center;
+  margin: 16px 0;
+  line-height: 1.4;
+}
+
+.login_inputDiv h6 a {
+  color: #5624d0;
+  text-decoration: underline;
+}
+
+.login_inputDiv h6 a:hover {
+  color: #401b9c;
+}
+
+.forgot_pws {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.forgot_pw {
+  color: #6a6f73;
+  font-size: 14px;
+}
+
+.forgot_pws a {
+  color: #5624d0;
+  text-decoration: underline;
+  font-size: 14px;
+}
+
+.forgot_pws a:hover {
+  color: #401b9c;
+}
+
+.diff_acct {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6a6f73;
+}
+
+.diff_acct a {
+  color: #5624d0;
+  text-decoration: underline;
+}
+
+.diff_acct a:hover {
+  color: #401b9c;
+}
+
+.login_org {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.login_org p {
+  font-size: 14px;
+  color: #1c1d1f;
+  margin-bottom: 12px;
+}
+
+.login_org p span a {
+  color: #5624d0;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.login_org p span a:hover {
+  color: #401b9c;
+}
+
+.login_org1 {
+  color: #5624d0;
+  text-decoration: underline;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login_org1:hover {
+  color: #401b9c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .loginDiv {
+    margin: 20px;
+    padding: 30px 20px;
+  }
+  
+  .loginDiv h4 {
+    font-size: 20px;
+  }
+  
+  .login_pw {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  #signup_input {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Loading state */
+.login_pw:disabled {
+  background-color: #f7f9fa;
+  color: #6a6f73;
+  cursor: not-allowed;
+}
+
+/* Error state */
+.login_pw.error {
+  border-color: #d32f2f;
+  background-color: #fef7f7;
+}
+
+.login_pw.error:focus {
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.2);
+}
+
+/* Success state */
+.login_pw.success {
+  border-color: #2e7d32;
+  background-color: #f7fdf7;
+}
+
+.login_pw.success:focus {
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+} 

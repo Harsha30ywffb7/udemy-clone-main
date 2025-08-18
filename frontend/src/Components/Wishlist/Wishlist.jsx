@@ -1,65 +1,70 @@
-import React from "react";
-import "./wishlist.css";
-import { Header } from "../Header/Header";
-import { ProdCard } from "../ProdCard/ProdCard";
-import "../ProdCard/prod.css";
-
-import PropTypes from "prop-types";
-import { useTheme } from "@mui/material/styles";
-import AppBar from "@mui/material/AppBar";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Typography from "@mui/material/Typography";
+import React, { useState } from "react";
+import CourseCard from "../ProdCard/CourseCard";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 
-import IconButton from "@mui/material/IconButton";
-
 const Wishlist = () => {
+  const [activeTab, setActiveTab] = useState("allcourses");
+
+  const tabs = [
+    { id: "allcourses", label: "All courses" },
+    { id: "mylists", label: "My Lists" },
+    { id: "wishlist", label: "Wishlist" },
+    { id: "archived", label: "Archived" },
+    { id: "learningtools", label: "Learning tools" },
+  ];
+
   return (
-    <div>
-      <div className="wishlistDiv">
-        <div class="tab">
-          <h1>My learning</h1>
-          <div className="tabs_header">
-            <button class="tablinks" onclick="openCity(event, 'allcources')">
-              All cources
+    <div className="w-full">
+      {/* Header Tabs */}
+      <div className="overflow-hidden border border-gray-300 bg-black text-gray-300 h-[150px]">
+        <h1 className="ml-[340px] mt-[50px] text-white text-2xl font-semibold">
+          My learning
+        </h1>
+        <div className="ml-[300px] flex space-x-4 mt-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-lg transition duration-300 ${
+                activeTab === tab.id
+                  ? "border-b-4 border-gray-300"
+                  : "hover:border-b-4 hover:border-gray-300"
+              }`}
+            >
+              {tab.label}
             </button>
-            <button class="tablinks" onclick="openCity(event, 'mylists')">
-              My Lists
-            </button>
-            <button class="tablinks" onclick="openCity(event, 'wishlist')">
-              Wishlist
-            </button>
-            <button class="tablinks" onclick="openCity(event, 'archived')">
-              Archieved
-            </button>
-            <button class="tablinks" onclick="openCity(event, 'learningtools')">
-              Learning tools
-            </button>
-          </div>
-        </div>
-
-        <div id="allcources" class="tabcontent">
-          <h3>London</h3>
-          <p>London is the capital city of England.</p>
-        </div>
-
-        <div id="mylists" class="tabcontent"></div>
-
-        <div id="wishlist" class="tabcontent"></div>
-
-        <div id="archived" class="tabcontent">
-          <h3>Tokyo</h3>
-          <p>Tokyo is the capital of Japan.</p>
-        </div>
-
-        <div id="learningtools" class="tabcontent">
-          <h3>Tokyo</h3>
-          <p>Tokyo is the capital of Japan.</p>
+          ))}
         </div>
       </div>
 
+      {/* Tab Content */}
+      <div className="border border-gray-300 border-t-0 p-4">
+        {activeTab === "allcourses" && (
+          <div>
+            <h3 className="text-xl font-semibold">London</h3>
+            <p className="text-gray-600">
+              London is the capital city of England.
+            </p>
+          </div>
+        )}
+        {activeTab === "mylists" && <div>No lists yet.</div>}
+        {activeTab === "wishlist" && <Wishcard />}
+        {activeTab === "archived" && (
+          <div>
+            <h3 className="text-xl font-semibold">Tokyo</h3>
+            <p className="text-gray-600">Tokyo is the capital of Japan.</p>
+          </div>
+        )}
+        {activeTab === "learningtools" && (
+          <div>
+            <h3 className="text-xl font-semibold">Learning Tools</h3>
+            <p className="text-gray-600">Explore your learning tools here.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Search Bar */}
       <Box
         component="form"
         sx={{
@@ -70,12 +75,10 @@ const Wishlist = () => {
       >
         <TextField
           id="outlined-basic"
-          label="Search my cources"
+          label="Search my courses"
           variant="outlined"
         />
       </Box>
-
-      <Wishcard />
     </div>
   );
 };
@@ -84,15 +87,13 @@ export default Wishlist;
 
 const Wishcard = () => {
   return (
-    <div style={{ marginTop: "1.5rem" }} className="tec-cont">
-      <div>
-        <div className="prod-cont">
-          <ProdCard />
-          <ProdCard />
-          <ProdCard />
-          <ProdCard />
-          <ProdCard />
-        </div>
+    <div className="mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <CourseCard />
+        <CourseCard />
+        <CourseCard />
+        <CourseCard />
+        <CourseCard />
       </div>
     </div>
   );

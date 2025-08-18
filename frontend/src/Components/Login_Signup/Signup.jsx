@@ -90,11 +90,8 @@ const Signup = () => {
             </label>
           </div>
 
-          {/* <button id="signup_input">
-          </button> */}
           <ColorButton
             onClick={() => {
-              // const URL = "https://udemy-vr4p.onrender.com/signup";
               const URL = "http://localhost:5000/api/users/register";
               dispatch(authFunction(userdata, URL));
             }}

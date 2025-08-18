@@ -2,16 +2,16 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
-// Create axios instance with base configuration
-const apiClient = axios.create({
+// Create axios instance with default config
+const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Add request interceptor to include auth token
-apiClient.interceptors.request.use(
+// Add token to requests if available
+api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -24,21 +24,12 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("Wishlist API Error:", error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
-
-// Wishlist API Service
+// Wishlist Service
 export const wishlistService = {
   // Get user's wishlist
   getWishlist: async () => {
     try {
-      const response = await apiClient.get("/wishlist");
+      const response = await api.get("/wishlist");
       return response.data;
     } catch (error) {
       console.error("Error fetching wishlist:", error);
@@ -49,7 +40,7 @@ export const wishlistService = {
   // Add course to wishlist
   addToWishlist: async (courseId) => {
     try {
-      const response = await apiClient.post("/wishlist", { courseId });
+      const response = await api.post("/wishlist", { courseId });
       return response.data;
     } catch (error) {
       console.error("Error adding to wishlist:", error);
@@ -60,7 +51,7 @@ export const wishlistService = {
   // Remove course from wishlist
   removeFromWishlist: async (courseId) => {
     try {
-      const response = await apiClient.delete(`/wishlist/${courseId}`);
+      const response = await api.delete(`/wishlist/${courseId}`);
       return response.data;
     } catch (error) {
       console.error("Error removing from wishlist:", error);
@@ -68,10 +59,21 @@ export const wishlistService = {
     }
   },
 
-  // Toggle course in wishlist
+  // Check if course is in wishlist
+  isInWishlist: async (courseId) => {
+    try {
+      const response = await api.get(`/wishlist/check/${courseId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error checking wishlist status:", error);
+      throw error;
+    }
+  },
+
+  // Toggle wishlist status
   toggleWishlist: async (courseId) => {
     try {
-      const response = await apiClient.post("/wishlist/toggle", { courseId });
+      const response = await api.post(`/wishlist/toggle`, { courseId });
       return response.data;
     } catch (error) {
       console.error("Error toggling wishlist:", error);
@@ -79,13 +81,24 @@ export const wishlistService = {
     }
   },
 
-  // Check if course is in wishlist
-  checkWishlist: async (courseId) => {
+  // Get wishlist count
+  getWishlistCount: async () => {
     try {
-      const response = await apiClient.get(`/wishlist/check/${courseId}`);
+      const response = await api.get("/wishlist/count");
       return response.data;
     } catch (error) {
-      console.error("Error checking wishlist:", error);
+      console.error("Error fetching wishlist count:", error);
+      throw error;
+    }
+  },
+
+  // Move wishlist items to cart
+  moveToCart: async (courseIds) => {
+    try {
+      const response = await api.post("/wishlist/move-to-cart", { courseIds });
+      return response.data;
+    } catch (error) {
+      console.error("Error moving to cart:", error);
       throw error;
     }
   },
@@ -93,7 +106,7 @@ export const wishlistService = {
   // Clear entire wishlist
   clearWishlist: async () => {
     try {
-      const response = await apiClient.delete("/wishlist");
+      const response = await api.delete("/wishlist/clear");
       return response.data;
     } catch (error) {
       console.error("Error clearing wishlist:", error);
@@ -102,5 +115,4 @@ export const wishlistService = {
   },
 };
 
-// Export default for convenience
 export default wishlistService;

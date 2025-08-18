@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const Course = require("../models/course.model");
 const Instructor = require("../models/instructor.model");
-const Review = require("../models/review.model");
 const Category = require("../models/category.model");
 const { authenticate } = require("../middlewares/authenticate");
 
@@ -997,8 +996,14 @@ router.get("/:id/pricing", async (req, res) => {
 // Get instructor's courses
 router.get("/instructor/my-courses", authenticate, async (req, res) => {
   try {
-    // Allow all authenticated users to access their courses
-    // Removed instructor-only restriction
+    console.log(req.user.role);
+    // Only instructors can access their courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can access this endpoint",
+      });
+    }
 
     // Fetch real courses from database for the authenticated user
     console.log(req.user.userId);
@@ -1039,8 +1044,13 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
 // Get instructor's courses (alternative endpoint for frontend compatibility)
 router.get("/instructor", authenticate, async (req, res) => {
   try {
-    // Allow all authenticated users to access their courses
-    // Removed instructor-only restriction
+    // Only instructors can access their courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can access this endpoint",
+      });
+    }
 
     // Fetch real courses from database for the authenticated user
     const courses = await Course.find({
@@ -1220,8 +1230,13 @@ router.post("/", authenticate, async (req, res) => {
       thumbnail,
     } = req.body;
 
-    // Allow all authenticated users to create courses
-    // Removed instructor-only restriction
+    // Only instructors can create courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can create courses",
+      });
+    }
 
     // Simulate course creation
     const newCourse = {
@@ -1260,8 +1275,13 @@ router.put("/:id", authenticate, async (req, res) => {
   try {
     const courseId = req.params.id;
 
-    // Allow all authenticated users to update courses
-    // Removed instructor-only restriction
+    // Only instructors can update courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can update courses",
+      });
+    }
 
     // Simulate course update
     const updatedCourse = {
@@ -1289,8 +1309,13 @@ router.delete("/:id", authenticate, async (req, res) => {
   try {
     const courseId = req.params.id;
 
-    // Allow all authenticated users to delete courses
-    // Removed instructor-only restriction
+    // Only instructors can delete courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can delete courses",
+      });
+    }
 
     // Simulate course deletion
     res.json({
@@ -1351,51 +1376,5 @@ router.delete("/:id", authenticate, async (req, res) => {
 //     });
 //   }
 // });
-
-// Get instructor's courses (alternative endpoint for frontend compatibility)
-router.get("/instructor", authenticate, async (req, res) => {
-  try {
-    // Allow all authenticated users to access their courses
-    // Removed instructor-only restriction
-
-    // Simulate instructor courses
-    const instructorCourses = [
-      {
-        id: "course_1",
-        title: "The Complete Full-Stack Web Development Bootcamp",
-        status: "published",
-        totalStudents: 1486975,
-        rating: 4.7,
-        totalRatings: 448887,
-        price: 479,
-        thumbnail:
-          "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-        createdAt: "2023-01-15",
-      },
-      {
-        id: "course_2",
-        title: "Python for Beginners",
-        status: "draft",
-        totalStudents: 0,
-        rating: 0,
-        totalRatings: 0,
-        price: 299,
-        thumbnail: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
-        createdAt: "2025-01-20",
-      },
-    ];
-
-    res.json({
-      success: true,
-      courses: instructorCourses,
-    });
-  } catch (error) {
-    console.error("Get instructor courses error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
 
 module.exports = router;

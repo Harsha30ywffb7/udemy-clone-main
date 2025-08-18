@@ -1,492 +1,254 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const Course = require("../models/course.model");
+const bcrypt = require("bcryptjs");
 const User = require("../models/user.model");
+const Course = require("../models/course.model");
+const Instructor = require("../models/instructor.model");
 const Category = require("../models/category.model");
-const Wishlist = require("../models/wishlist.model");
+require("dotenv").config();
 
-// Mock data from frontend
-const mockCourses = [
-  {
-    title: "Complete Linux Training Course to Get Your Dream IT Job 2022",
-    subtitle: "Master Linux system administration and command line",
-    description:
-      "Learn Linux from scratch and become a Linux system administrator. This comprehensive course covers everything you need to know about Linux.",
-    category: "IT & Software",
-    subcategory: "Operating Systems",
-    language: "English",
-    level: "Beginner",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course0.jpg",
-    instructor: "Imran Afzal",
-    rateScore: 4.6,
-    reviewerNum: "128,636",
-    mark: "Bestseller",
-  },
-  {
-    title: "The Complete JavaScript Course 2022: From Zero to Expert",
-    subtitle:
-      "The modern JavaScript course for everyone! Master JavaScript with projects, challenges and theory.",
-    description:
-      "Learn modern JavaScript from scratch! This is the most complete JavaScript course on Udemy. It's an all-in-one package that will take you from the very fundamentals of JavaScript, all the way to building modern and complex applications.",
-    category: "Development",
-    subcategory: "Web Development",
-    language: "English",
-    level: "Intermediate",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course1.jpg",
-    instructor: "Jonas Schemedtmann",
-    rateScore: 4.7,
-    reviewerNum: "128,636",
-    mark: "Bestseller",
-  },
-  {
-    title: "Microsoft Excel - Excel from Beginner to Advanced",
-    subtitle:
-      "Excel with this A-Z Microsoft Excel Course. Microsoft Excel 2010, 2013, 2016, Excel 2019 and Office 365",
-    description:
-      "Learn Microsoft Excel from Beginner Level to Advanced Level. This Excel course is for anyone who wants to be more efficient and productive with Microsoft Excel.",
-    category: "Business",
-    subcategory: "Productivity",
-    language: "English",
-    level: "Advanced",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course2.jpg",
-    instructor: "Kyle Pew, Office Newb",
-    rateScore: 4.0,
-    reviewerNum: "285,191",
-  },
-  {
-    title: "The Complete Digital Marketing Course - 12 Courses in 1",
-    subtitle:
-      "Digital Marketing Course 2022: SEO, YouTube, Email, Facebook, Analytics, AdWords, AdSense, ClickFunnels",
-    description:
-      "Learn Digital Marketing Strategy, Social Media Marketing, SEO, YouTube, Email, Facebook Marketing, Analytics & More!",
-    category: "Marketing",
-    subcategory: "Digital Marketing",
-    language: "English",
-    level: "Intermediate",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course3.jpg",
-    instructor: "Rob Percival, Daraph Walsh, Codestars by Rob Percival",
-    rateScore: 4.5,
-    reviewerNum: "154,729",
-    mark: "Bestseller",
-  },
-  {
-    title: "Learn Ethical Hacking From Scratch",
-    subtitle:
-      "Become an ethical hacker that can hack computer systems like black hat hackers and secure them like security experts.",
-    description:
-      "This course is highly practical but it won't neglect the theory; we'll start with the basics of ethical hacking, break down the different penetration testing phases, and then dive into hacking systems step by step.",
-    category: "IT & Software",
-    subcategory: "Network & Security",
-    language: "English",
-    level: "Beginner",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course4.jpg",
-    instructor: "Zaid Sabih, z Security",
-    rateScore: 4.6,
-    reviewerNum: "102,409",
-    mark: "Bestseller",
-  },
-  {
-    title: "The Ultimate MySQL Bootcamp: Go from SQL Beginner to Expert",
-    subtitle:
-      "Become a MySQL expert with this comprehensive course. Learn to create databases, write complex queries, and optimize performance.",
-    description:
-      "A comprehensive MySQL course! This course will teach you everything you need to know about MySQL and SQL. We'll start with the basics and work our way up to more advanced topics like triggers, views, and stored procedures.",
-    category: "Development",
-    subcategory: "Database Design & Development",
-    language: "English",
-    level: "Advanced",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/course5.jpg",
-    instructor: "Colt Steele, lan Schoononver",
-    rateScore: 4.6,
-    reviewerNum: "64,376",
-    mark: "Bestseller",
-  },
-  {
-    title: "Learning Python for Data Analysis and Visualization",
-    subtitle:
-      "Learn Python for data analysis and visualization with Pandas, Matplotlib, Seaborn, and more",
-    description:
-      "Learn Python for data analysis and visualization. This course will teach you how to use Python libraries like Pandas, Matplotlib, and Seaborn for data analysis and visualization.",
-    category: "Development",
-    subcategory: "Programming Languages",
-    language: "English",
-    level: "Beginner",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/python1.jpg",
-    instructor: "Jose Portilla",
-    rateScore: 4.7,
-    reviewerNum: "12,345",
-  },
-  {
-    title: "Python for Beginners - Learn Programming from scratch",
-    subtitle:
-      "Learn Python programming from scratch with hands-on exercises and projects",
-    description:
-      "This Python course is designed for beginners who want to learn Python programming from scratch. You'll learn Python syntax, data structures, functions, and more.",
-    category: "Development",
-    subcategory: "Programming Languages",
-    language: "English",
-    level: "Beginner",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/python2.jpg",
-    instructor: "Edwin Diaz, Coding Faculty Solutions",
-    rateScore: 4.6,
-    reviewerNum: "122,345",
-  },
-  {
-    title: "Javascript for Beginners",
-    subtitle:
-      "Learn JavaScript programming from the ground up with practical examples",
-    description:
-      "Learn JavaScript from scratch! This course covers all the fundamentals of JavaScript programming with hands-on examples and projects.",
-    category: "Development",
-    subcategory: "Web Development",
-    language: "English",
-    level: "Beginner",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/js1.jpg",
-    instructor: "Framework Tech Media",
-    rateScore: 4.7,
-    reviewerNum: "12,345",
-  },
-  {
-    title: "Ultimate AWS Certified Solutions Architect Associate 2022",
-    subtitle:
-      "Pass the AWS Certified Solutions Architect Associate Certification SAA-C02. Complete Amazon Web Services Cloud tutorial!",
-    description:
-      "Welcome to the most comprehensive and up-to-date course to pass the AWS Certified Solutions Architect Associate exam. This course is perfectly aligned with the latest exam.",
-    category: "IT & Software",
-    subcategory: "Cloud Computing",
-    language: "English",
-    level: "Intermediate",
-    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/aws1.jpg",
-    instructor: "Stephane Maarek",
-    rateScore: 3.5,
-    reviewerNum: "261",
-  },
-];
-
-const mockCategories = [
-  { title: "Development", slug: "development", level: 1 },
-  { title: "Business", slug: "business", level: 1 },
-  { title: "IT & Software", slug: "it-software", level: 1 },
-  { title: "Marketing", slug: "marketing", level: 1 },
-  { title: "Design", slug: "design", level: 1 },
-  { title: "Photography", slug: "photography", level: 1 },
-  { title: "Music", slug: "music", level: 1 },
-  { title: "Health & Fitness", slug: "health-fitness", level: 1 },
-  { title: "Teaching & Academics", slug: "teaching-academics", level: 1 },
-  { title: "Lifestyle", slug: "lifestyle", level: 1 },
-];
-
-const mockUsers = [
-  {
-    name: { first: "Imran", last: "Afzal" },
-    email: "imran.afzal@example.com",
-    role: "instructor",
-    bio: "Linux and DevOps expert with over 10 years of experience",
-  },
-  {
-    name: { first: "Jonas", last: "Schemedtmann" },
-    email: "jonas.schemedtmann@example.com",
-    role: "instructor",
-    bio: "Full-stack web developer and instructor",
-  },
-  {
-    name: { first: "Kyle", last: "Pew" },
-    email: "kyle.pew@example.com",
-    role: "instructor",
-    bio: "Microsoft Office expert and trainer",
-  },
-  {
-    name: { first: "Rob", last: "Percival" },
-    email: "rob.percival@example.com",
-    role: "instructor",
-    bio: "Digital marketing expert and entrepreneur",
-  },
-  {
-    name: { first: "Zaid", last: "Sabih" },
-    email: "zaid.sabih@example.com",
-    role: "instructor",
-    bio: "Ethical hacking and cybersecurity expert",
-  },
-  {
-    name: { first: "Colt", last: "Steele" },
-    email: "colt.steele@example.com",
-    role: "instructor",
-    bio: "Full-stack developer and coding bootcamp instructor",
-  },
-  {
-    name: { first: "Jose", last: "Portilla" },
-    email: "jose.portilla@example.com",
-    role: "instructor",
-    bio: "Data scientist and Python expert",
-  },
-  {
-    name: { first: "Edwin", last: "Diaz" },
-    email: "edwin.diaz@example.com",
-    role: "instructor",
-    bio: "Web developer and programming instructor",
-  },
-  {
-    name: { first: "Stephane", last: "Maarek" },
-    email: "stephane.maarek@example.com",
-    role: "instructor",
-    bio: "AWS certified solutions architect and cloud expert",
-  },
-  {
-    name: { first: "John", last: "Doe" },
-    email: "john.doe@example.com",
-    role: "student",
-    bio: "Aspiring web developer",
-  },
-  {
-    name: { first: "Jane", last: "Smith" },
-    email: "jane.smith@example.com",
-    role: "student",
-    bio: "Data science enthusiast",
-  },
-];
-
-async function connectDB() {
+// Connect to MongoDB
+const connectDB = async () => {
   try {
-    require("dotenv").config();
     await mongoose.connect(
-      process.env.MONGO_URL || "mongodb://localhost:27017/udemy-clone"
+      process.env.MONGODB_URI || "mongodb://localhost:27017/udemy-clone"
     );
-    console.log("Connected to MongoDB");
+    console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
     process.exit(1);
   }
-}
+};
 
-async function clearDatabase() {
+// Sample data
+const sampleUsers = [
+  {
+    name: "John Student",
+    email: "student@example.com",
+    password: "password123",
+    userType: "student",
+    isOnboarded: true,
+  },
+  {
+    name: "Dr. Angela Yu",
+    email: "angela@example.com",
+    password: "password123",
+    userType: "instructor",
+    isOnboarded: true,
+  },
+  {
+    name: "Jane Instructor",
+    email: "jane@example.com",
+    password: "password123",
+    userType: "instructor",
+    isOnboarded: true,
+  },
+];
+
+const sampleCategories = [
+  {
+    name: "Development",
+    description: "Software development courses",
+    subcategories: ["Web Development", "Mobile Development", "Data Science"],
+  },
+  {
+    name: "Business",
+    description: "Business and entrepreneurship courses",
+    subcategories: ["Marketing", "Finance", "Management"],
+  },
+  {
+    name: "Design",
+    description: "Design and creative courses",
+    subcategories: ["Graphic Design", "UI/UX", "3D Animation"],
+  },
+];
+
+const sampleInstructors = [
+  {
+    name: "Dr. Angela Yu",
+    email: "angela@example.com",
+    bio: "Lead instructor at London App Brewery with over 10 years of experience in web development.",
+    expertise: ["Web Development", "Python", "JavaScript", "React"],
+    rating: 4.8,
+    totalStudents: 1500000,
+    totalCourses: 7,
+    profileImage: "/images/instructors/angela.jpg",
+  },
+  {
+    name: "Jane Instructor",
+    email: "jane@example.com",
+    bio: "Senior software engineer and passionate educator specializing in full-stack development.",
+    expertise: ["Node.js", "MongoDB", "Express", "React"],
+    rating: 4.7,
+    totalStudents: 85000,
+    totalCourses: 3,
+    profileImage: "/images/instructors/jane.jpg",
+  },
+];
+
+const sampleCourses = [
+  {
+    title: "The Complete Full-Stack Web Development Bootcamp",
+    subtitle:
+      "Become a Full-Stack Web Developer with just ONE course. HTML, CSS, Javascript, Node, React, PostgreSQL, Web3 and DApps.",
+    description:
+      "Welcome to the Complete Web Development Bootcamp, the only course you need to learn to code and become a full-stack web developer.",
+    category: "Development",
+    subcategory: "Web Development",
+    price: 479,
+    originalPrice: 3109,
+    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
+    status: "published",
+    level: "All Levels",
+    language: "English",
+    duration: 3840, // 64 hours in minutes
+    enrollmentCount: 1486975,
+    viewCount: 2500000,
+    rating: 4.7,
+    totalRatings: 448887,
+    requirements: [
+      "No programming experience needed - I'll teach you everything you need to know",
+      "A computer with access to the internet",
+      "No paid software required",
+    ],
+    whatYouWillLearn: [
+      "Build 16 web development projects for your portfolio",
+      "After the course you will be able to build ANY website you want",
+      "Work as a freelance web developer",
+      "Master backend development with Node",
+      "Learn the latest technologies, including Javascript, React, Node and even Web3 development",
+    ],
+  },
+  {
+    title: "Complete Python Bootcamp: From Zero to Hero in Python",
+    subtitle:
+      "Learn Python like a Professional! Start from the basics and go all the way to creating your own applications and games!",
+    description:
+      "This is the most comprehensive, yet straight-forward, course for the Python programming language on Udemy!",
+    category: "Development",
+    subcategory: "Programming Languages",
+    price: 499,
+    originalPrice: 2199,
+    thumbnailUrl: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
+    status: "published",
+    level: "All Levels",
+    language: "English",
+    duration: 1320, // 22 hours in minutes
+    enrollmentCount: 1200000,
+    viewCount: 1800000,
+    rating: 4.6,
+    totalRatings: 425000,
+    requirements: [
+      "Access to a computer with an internet connection",
+      "No prior programming experience required",
+    ],
+    whatYouWillLearn: [
+      "Learn to use Python professionally, learning both Python 2 and Python 3!",
+      "Create games with Python, like Tic Tac Toe and Blackjack!",
+      "Learn advanced Python features, like the collections module and how to work with timestamps!",
+      "Learn to use Object Oriented Programming with classes!",
+    ],
+  },
+  {
+    title: "React - The Complete Guide",
+    subtitle:
+      "Dive in and learn React.js from scratch! Learn Reactjs, Hooks, Redux, React Routing, Animations, Next.js and way more!",
+    description:
+      "Master React from the ground up and build amazing React apps!",
+    category: "Development",
+    subcategory: "Web Development",
+    price: 599,
+    originalPrice: 2599,
+    thumbnailUrl:
+      "https://img-c.udemycdn.com/course/750x422/1362070_b9a1_2.jpg",
+    status: "published",
+    level: "All Levels",
+    language: "English",
+    duration: 2880, // 48 hours in minutes
+    enrollmentCount: 890000,
+    viewCount: 1400000,
+    rating: 4.8,
+    totalRatings: 178000,
+    requirements: [
+      "JavaScript knowledge is required",
+      "ES6+ JavaScript features are recommended but not a must-have",
+      "NO React knowledge is required",
+    ],
+    whatYouWillLearn: [
+      "Build powerful, fast, user-friendly and reactive web apps",
+      "Provide amazing user experiences by leveraging the power of JavaScript with ease",
+      "Apply for high-paid jobs or work as a freelancer in one the most-demanded sectors you can find in web dev right now",
+      "Learn all about React Hooks and React Components",
+    ],
+  },
+];
+
+// Seed function
+const seedData = async () => {
   try {
-    await Course.deleteMany({});
+    // Clear existing data
+    console.log("Clearing existing data...");
     await User.deleteMany({});
+    await Course.deleteMany({});
+    await Instructor.deleteMany({});
     await Category.deleteMany({});
-    await Wishlist.deleteMany({});
-    console.log("Database cleared");
-  } catch (error) {
-    console.error("Error clearing database:", error);
-  }
-}
 
-async function seedCategories() {
-  try {
-    const categories = await Category.insertMany(mockCategories);
-    console.log("Categories seeded:", categories.length);
-    return categories;
-  } catch (error) {
-    console.error("Error seeding categories:", error);
-    return [];
-  }
-}
-
-async function seedUsers() {
-  try {
-    const usersWithHashedPasswords = await Promise.all(
-      mockUsers.map(async (user) => ({
-        ...user,
-        passwordHash: await bcrypt.hash("password123", 10),
-        isEmailVerified: true,
-        isActive: true,
-      }))
+    // Create users with hashed passwords
+    console.log("Creating users...");
+    const hashedUsers = await Promise.all(
+      sampleUsers.map(async (user) => {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(user.password, salt);
+        return { ...user, password: hashedPassword };
+      })
     );
+    const createdUsers = await User.insertMany(hashedUsers);
+    console.log(`Created ${createdUsers.length} users`);
 
-    const users = await User.insertMany(usersWithHashedPasswords);
-    console.log("Users seeded:", users.length);
-    return users;
+    // Create categories
+    console.log("Creating categories...");
+    const createdCategories = await Category.insertMany(sampleCategories);
+    console.log(`Created ${createdCategories.length} categories`);
+
+    // Create instructors
+    console.log("Creating instructors...");
+    const instructorsWithIds = sampleInstructors.map((instructor, index) => ({
+      ...instructor,
+      userId: createdUsers.find((user) => user.email === instructor.email)._id,
+    }));
+    const createdInstructors = await Instructor.insertMany(instructorsWithIds);
+    console.log(`Created ${createdInstructors.length} instructors`);
+
+    // Create courses
+    console.log("Creating courses...");
+    const coursesWithInstructors = sampleCourses.map((course, index) => ({
+      ...course,
+      instructorId: createdUsers.find((user) => user.userType === "instructor")
+        ._id,
+    }));
+    const createdCourses = await Course.insertMany(coursesWithInstructors);
+    console.log(`Created ${createdCourses.length} courses`);
+
+    console.log("Seed data created successfully!");
+    console.log("\nSample login credentials:");
+    console.log("Student: student@example.com / password123");
+    console.log("Instructor: angela@example.com / password123");
+    console.log("Instructor: jane@example.com / password123");
   } catch (error) {
-    console.error("Error seeding users:", error);
-    return [];
+    console.error("Error seeding data:", error);
+  } finally {
+    mongoose.connection.close();
   }
-}
+};
 
-async function seedCourses(users) {
-  try {
-    const instructors = users.filter((user) => user.role === "instructor");
-
-    const coursesWithInstructors = mockCourses.map((course, index) => {
-      const instructor = instructors[index % instructors.length];
-
-      return {
-        title: course.title,
-        subtitle: course.subtitle,
-        description: course.description,
-        category: course.category,
-        subcategory: course.subcategory,
-        language: course.language,
-        level: course.level,
-        thumbnailUrl: course.thumbnailUrl,
-        isFree: true,
-        instructorId: instructor._id,
-        learningObjectives: [
-          "Master the fundamentals",
-          "Build real-world projects",
-          "Understand best practices",
-          "Prepare for career opportunities",
-        ],
-        requirements: [
-          "Basic computer skills",
-          "Internet connection",
-          "Willingness to learn",
-        ],
-        targetAudience: [
-          "Beginners",
-          "Students",
-          "Professionals looking to upskill",
-        ],
-        sections: [
-          {
-            title: "Introduction",
-            lectures: [
-              {
-                title: "Welcome to the course",
-                type: "video",
-                duration: 300,
-                isPreview: true,
-              },
-              {
-                title: "Course overview",
-                type: "video",
-                duration: 600,
-                isPreview: false,
-              },
-            ],
-          },
-          {
-            title: "Getting Started",
-            lectures: [
-              {
-                title: "Setting up your environment",
-                type: "video",
-                duration: 900,
-                isPreview: false,
-              },
-              {
-                title: "Your first project",
-                type: "video",
-                duration: 1200,
-                isPreview: false,
-              },
-            ],
-          },
-        ],
-        status: "published",
-        averageRating: course.rateScore,
-        totalRatings: parseInt(course.reviewerNum?.replace(/,/g, "") || "0"),
-        enrollmentCount: Math.floor(Math.random() * 10000) + 1000,
-        viewCount: Math.floor(Math.random() * 50000) + 5000,
-        totalDuration: 3600 + Math.floor(Math.random() * 36000), // 1-11 hours
-        totalLectures: 10 + Math.floor(Math.random() * 40), // 10-50 lectures
-        isFeatured: course.mark === "Bestseller",
-        tags: ["popular", "trending"],
-      };
-    });
-
-    const courses = await Course.insertMany(coursesWithInstructors);
-    console.log("Courses seeded:", courses.length);
-    return courses;
-  } catch (error) {
-    console.error("Error seeding courses:", error);
-    return [];
-  }
-}
-
-async function seedWishlists(users, courses) {
-  try {
-    const students = users.filter((user) => user.role === "student");
-    const wishlists = [];
-
-    for (const student of students) {
-      // Add 2-5 random courses to each student's wishlist
-      const numberOfCourses = Math.floor(Math.random() * 4) + 2;
-      const randomCourses = courses
-        .sort(() => 0.5 - Math.random())
-        .slice(0, numberOfCourses);
-
-      const wishlistCourses = randomCourses.map((course) => ({
-        courseId: course._id,
-        addedAt: new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-        ), // Random date within last 30 days
-        courseSnapshot: {
-          title: course.title,
-          subtitle: course.subtitle,
-          thumbnailUrl: course.thumbnailUrl,
-          price: 0,
-          originalPrice: 0,
-          instructorName: "Instructor Name", // Will be populated later with real instructor name
-          averageRating: course.averageRating,
-          totalStudents: course.enrollmentCount,
-        },
-      }));
-
-      wishlists.push({
-        userId: student._id,
-        courses: wishlistCourses,
-        name: "My Wishlist",
-        isPublic: false,
-      });
-    }
-
-    const createdWishlists = await Wishlist.insertMany(wishlists);
-    console.log("Wishlists seeded:", createdWishlists.length);
-    return createdWishlists;
-  } catch (error) {
-    console.error("Error seeding wishlists:", error);
-    return [];
-  }
-}
-
-async function updateCourseInstructorNames(courses, users) {
-  try {
-    for (const course of courses) {
-      const instructor = users.find((user) =>
-        user._id.equals(course.instructorId)
-      );
-      if (instructor) {
-        // Update any wishlists that contain this course
-        await Wishlist.updateMany(
-          { "courses.courseId": course._id },
-          {
-            $set: {
-              "courses.$.courseSnapshot.instructorName": `${instructor.name.first} ${instructor.name.last}`,
-            },
-          }
-        );
-      }
-    }
-    console.log("Updated instructor names in wishlists");
-  } catch (error) {
-    console.error("Error updating instructor names:", error);
-  }
-}
-
-async function seedDatabase() {
-  console.log("Starting database seeding...");
-
+// Run the seed function
+const runSeed = async () => {
   await connectDB();
-  await clearDatabase();
+  await seedData();
+};
 
-  const categories = await seedCategories();
-  const users = await seedUsers();
-  const courses = await seedCourses(users);
-  const wishlists = await seedWishlists(users, courses);
-
-  await updateCourseInstructorNames(courses, users);
-
-  console.log("Database seeding completed!");
-  console.log(`Created ${categories.length} categories`);
-  console.log(`Created ${users.length} users`);
-  console.log(`Created ${courses.length} courses`);
-  console.log(`Created ${wishlists.length} wishlists`);
-
-  await mongoose.connection.close();
-}
-
-// Run the seeding script
+// Check if script is being run directly
 if (require.main === module) {
-  seedDatabase().catch(console.error);
+  runSeed();
 }
 
-module.exports = { seedDatabase };
+module.exports = { seedData, connectDB };

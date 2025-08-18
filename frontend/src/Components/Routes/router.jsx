@@ -1,12 +1,10 @@
 import { Route, Routes, Navigate } from "react-router-dom";
-import { Bottombar } from "../Bottom/Bottombar";
-import { CartPage } from "../Cart/Cart";
 import { Header } from "../Header/Header";
 import { Landigpage } from "../LandingPage/Landin";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
 import Payment from "../Payment/Payment";
-import { Product } from "../Product/Product";
+import CoursePage from "../Course/CoursePage";
 import Wishlist from "../Wishlist/Wishlist";
 import Instructor from "../Login_Signup/Instructor";
 import InstructorOnboarding from "../Instructor/InstructorOnboarding";
@@ -101,9 +99,7 @@ export const AllRoutes = () => {
       <Header />
       <Routes>
         <Route path="/" element={<Landigpage />}></Route>
-        <Route path="/courses/:id" element={<Product />}></Route>
-
-        <Route path="/cart" element={<CartPage />}></Route>
+        <Route path="/courses/:id" element={<CoursePage />}></Route>
         <Route path="/wishlist" element={<Wishlist />}></Route>
         <Route path="/payment" element={<Payment />}></Route>
         <Route path="/signup" element={<Signup />}></Route>
@@ -131,7 +127,6 @@ export const AllRoutes = () => {
           element={<CourseEditPage />}
         />
       </Routes>
-      {/* <Bottombar /> */}
     </>
   );
 };
