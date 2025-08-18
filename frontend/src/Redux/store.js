@@ -1,11 +1,9 @@
 import { applyMiddleware, combineReducers, createStore } from "redux";
-import { cartReducer } from "./cart/reducer";
 import { authReducer } from "./login/reducer";
 import { wishlistReducer } from "./wishlist/reducer";
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  cart: cartReducer,
   wishlist: wishlistReducer,
 });
 

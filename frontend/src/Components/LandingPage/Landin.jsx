@@ -1,4 +1,3 @@
-import "../Header/header.css";
 import banner from "../../assets/middle.jpg";
 import StudentContainer from "./StudentContainer";
 import { styled } from "@mui/material/styles";
@@ -77,18 +76,26 @@ const LandingPage = () => {
         {isLoggedIn ? (
           <HeroCarousel />
         ) : (
-          <div className="midbanner">
-            <div className="bannercard">
+          <div className="relative">
+            {/* Banner Card - positioned absolutely over the image */}
+            <div className="absolute left-40 top-32 max-w-md bg-white shadow-lg p-6 z-10 rounded-lg">
               <div>
-                <h1>Dream big</h1>
-                <p>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                  Dream big
+                </h1>
+                <p className="text-base text-gray-700 font-normal leading-relaxed">
                   Learn the skills to reach your goals with courses taught by
                   real-world experts.
                 </p>
               </div>
             </div>
-            <div className="bannerdiv">
-              <img src={banner} alt="some" />
+            {/* Banner Image */}
+            <div className="flex justify-center">
+              <img
+                src={banner}
+                alt="Learning banner"
+                className="w-full max-w-[1340px] h-[400px] object-cover mx-auto"
+              />
             </div>
           </div>
         )}
@@ -101,13 +108,11 @@ const LandingPage = () => {
         </>
       ) : (
         <>
+          <Advertisement />
+          <FeaturedTopics />
+          <TopCategories />
           <CourseSuggestions />
           <StudentContainer />
-
-          <TopCategories />
-
-          <FeaturedTopics />
-          <Advertisement />
         </>
       )}
     </>
@@ -116,32 +121,23 @@ const LandingPage = () => {
 
 const SkeltonLoading = () => {
   return (
-    <>
-      <div className="skelton">
-        <Skeleton className="line" variant="text" animation="wave" />
-        <div className="midskel">
-          <Skeleton
-            className="rectangel"
-            variant="rectangular"
-            width={50}
-            height={50}
-          />
-          <div>
-            <Part />
-          </div>
-        </div>
+    <div className="w-full max-w-[1340px] mx-auto px-6 py-8">
+      <div className="mb-8">
+        <Skeleton variant="text" width="40%" height={40} />
+        <Skeleton variant="text" width="60%" height={20} />
       </div>
-    </>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="space-y-4">
+            <Skeleton variant="rectangular" width="100%" height={200} />
+            <Skeleton variant="text" width="80%" height={20} />
+            <Skeleton variant="text" width="60%" height={16} />
+            <Skeleton variant="text" width="40%" height={16} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
-const Part = () => {
-  return (
-    <>
-      <Skeleton className="line" variant="text" animation="wave" />
-      <Skeleton className="line" variant="text" animation="wave" />
-      <Skeleton className="line" variant="text" animation="wave" />
-      <Skeleton className="line" variant="text" animation="wave" />
-    </>
-  );
-};
+export default LandingPage;

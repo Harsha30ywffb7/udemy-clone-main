@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageIcon from "@mui/icons-material/Language";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import Badge from "@mui/material/Badge";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -46,7 +45,6 @@ export const Header = () => {
             alt="Udemy Logo"
           />
         </Link>
-
         {!isInstructorPage && (
           <nav>
             <button className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100">
@@ -54,7 +52,6 @@ export const Header = () => {
             </button>
           </nav>
         )}
-
         {!isInstructorPage && (
           <div className="flex items-center flex-4 max-w-[800px] min-w-[400px] mx-4 border border-gray-900 rounded-full px-3 bg-white h-12">
             <button className="bg-transparent text-gray-900 border-none text-xs mr-2">
@@ -103,16 +100,6 @@ export const Header = () => {
               <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100">
                 <Badge color="secondary" badgeContent={wishlist?.length || 0}>
                   <FavoriteBorderOutlinedIcon />
-                </Badge>
-              </button>
-            </Link>
-          )}
-
-          {isLoggedIn && (
-            <Link to="#">
-              <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100">
-                <Badge color="secondary" badgeContent={0}>
-                  <NotificationsNoneOutlinedIcon />
                 </Badge>
               </button>
             </Link>

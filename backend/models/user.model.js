@@ -87,8 +87,6 @@ const userSchema = new mongoose.Schema(
       payoutEmail: { type: String, default: null },
       totalStudents: { type: Number, default: 0 },
       totalCourses: { type: Number, default: 0 },
-      averageRating: { type: Number, default: 0 },
-      totalReviews: { type: Number, default: 0 },
       totalEarnings: { type: Number, default: 0 },
       isVerified: { type: Boolean, default: false },
       verificationDate: { type: Date, default: null },
@@ -133,8 +131,6 @@ const userSchema = new mongoose.Schema(
     preferences: {
       language: { type: String, default: "en" },
       timezone: { type: String, default: "UTC" },
-      emailNotifications: { type: Boolean, default: true },
-      pushNotifications: { type: Boolean, default: true },
     },
 
     // Analytics

@@ -235,43 +235,8 @@ const courseSchema = new mongoose.Schema(
       },
     ],
 
-    // Reviews and ratings
-    reviews: [
-      {
-        studentId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-        rating: {
-          type: Number,
-          required: true,
-          min: 1,
-          max: 5,
-        },
-        comment: {
-          type: String,
-          maxlength: 2000,
-        },
-        helpfulCount: { type: Number, default: 0 },
-        notHelpfulCount: { type: Number, default: 0 },
-        isApproved: { type: Boolean, default: true },
-        createdAt: { type: Date, default: Date.now },
-      },
-    ],
-
     // Course statistics
-    averageRating: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 5,
-    },
     totalStudents: {
-      type: Number,
-      default: 0,
-    },
-    totalReviews: {
       type: Number,
       default: 0,
     },
@@ -384,7 +349,6 @@ courseSchema.virtual("formattedDuration").get(function () {
 courseSchema.index({ instructorId: 1, status: 1 });
 courseSchema.index({ category: 1, status: 1 });
 courseSchema.index({ status: 1, isActive: 1 });
-courseSchema.index({ averageRating: -1 });
 courseSchema.index({ totalStudents: -1 });
 courseSchema.index({ createdAt: -1 });
 courseSchema.index({ title: "text", subtitle: "text", description: "text" });

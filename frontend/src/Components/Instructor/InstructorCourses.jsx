@@ -6,13 +6,10 @@ import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import DescriptionIcon from "@mui/icons-material/Description";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import Badge from "@mui/material/Badge";
 import ProfileDropdown from "../Header/ProfileDropdown";
 import DraftCourses from "./DraftCourses";
 import { fetchUserData } from "../../Redux/login/action";
 import axios from "axios";
-import "./InstructorCourses.css";
 
 const InstructorCourses = () => {
   const [showStudentTooltip, setShowStudentTooltip] = useState(false);
@@ -29,343 +26,259 @@ const InstructorCourses = () => {
     email: "user@example.com",
   };
 
-  // Check token and user state on every render
+  const avatarText = userData.fullName
+    ? userData.fullName.charAt(0).toUpperCase()
+    : "U";
+
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    // If token exists but no user data, fetch user data
-    if (token && !user.user) {
+    if (token && !user?.user) {
       dispatch(fetchUserData(token));
     }
-  }, [dispatch, user.user]);
-
-  // Fetch instructor courses
-  useEffect(() => {
-    const fetchCourses = async () => {
-      if (!user.user?._id) return;
-
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get("/api/courses/instructor", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCourses(response.data.courses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, [user.user?._id]);
-
-  const resources = [
-    {
-      id: "test-video",
-      title: "Test Video",
-      description: "Send us a sample video and get expert feedback.",
-      icon: "/images/instructorCourse/relevance-1.webp",
-    },
-    {
-      id: "community",
-      title: "Instructor Community",
-      description:
-        "Connect with experienced instructors. Ask questions, browse discussions, and more.",
-      icon: "/images/instructorCourse/communication.webp",
-    },
-    {
-      id: "teaching-center",
-      title: "Teaching Center",
-      description: "Learn about best practices for teaching on Udemy.",
-      icon: "/images/instructorCourse/instructor.webp",
-    },
-    {
-      id: "marketplace-insights",
-      title: "Marketplace Insights",
-      description:
-        "Validate your course topic by exploring our marketplace supply and demand.",
-      icon: "/images/instructorCourse/impact-measurement.webp",
-    },
-    {
-      id: "help-support",
-      title: "Help and Support",
-      description: "Browse our Help Center or contact our support team.",
-      icon: "/images/instructorCourse/soft-skills.webp",
-    },
-  ];
+  }, [dispatch, user]);
 
   const sidebarItems = [
-    { id: "courses", icon: <PlayArrowIcon />, label: "Courses" },
-    { id: "curriculum", icon: <DescriptionIcon />, label: "Curriculum" },
-    { id: "performance", icon: <BarChartIcon />, label: "Performance" },
-    { id: "tools", icon: <BuildOutlinedIcon />, label: "Tools" },
-    { id: "resources", icon: <HelpOutlineIcon />, label: "Resources" },
+    {
+      icon: <BuildOutlinedIcon />,
+      label: "Courses",
+      active: true,
+      onClick: () => navigate("/instructor/courses"),
+    },
+    {
+      icon: <PlayArrowIcon />,
+      label: "Performance",
+      active: false,
+      onClick: () => {},
+    },
+    {
+      icon: <DescriptionIcon />,
+      label: "Tools",
+      active: false,
+      onClick: () => {},
+    },
+    {
+      icon: <BarChartIcon />,
+      label: "Resources",
+      active: false,
+      onClick: () => {},
+    },
   ];
 
   return (
-    <div className="instructor-dashboard">
-      {/* Left Sidebar */}
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar */}
       <div
-        className={`sidebar ${sidebarExpanded ? "expanded" : ""}`}
+        className={`${
+          sidebarExpanded ? "w-50" : "w-18"
+        } bg-gray-900 flex flex-col items-center py-4 transition-all duration-300 overflow-hidden fixed h-screen z-50 ${
+          sidebarExpanded ? "items-start px-3" : ""
+        }`}
         onMouseEnter={() => setSidebarExpanded(true)}
         onMouseLeave={() => setSidebarExpanded(false)}
       >
-        <div className="sidebar-header">
-          <div className="udemy-logo">U</div>
-        </div>
-        <nav className="sidebar-nav">
-          {sidebarItems.map((item) => (
-            <div
-              key={item.id}
-              className={`nav-item ${item.id === "courses" ? "active" : ""}`}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {sidebarExpanded && (
-                <span className="nav-label">{item.label}</span>
-              )}
+        {/* Sidebar Header */}
+        <div
+          className={`mb-6 flex w-full ${
+            sidebarExpanded ? "justify-start" : "justify-center"
+          }`}
+        >
+          <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+            U
+          </div>
+          {sidebarExpanded && (
+            <div className="ml-3 flex flex-col">
+              <span className="text-white text-sm font-medium">Udemy</span>
             </div>
+          )}
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 w-full">
+          {sidebarItems.map((item, index) => (
+            <button
+              key={index}
+              onClick={item.onClick}
+              className={`w-full flex items-center p-3 mb-2 rounded-lg transition-colors duration-200 ${
+                item.active
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              } ${sidebarExpanded ? "justify-start" : "justify-center"}`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              {sidebarExpanded && (
+                <span className="ml-3 text-sm">{item.label}</span>
+              )}
+            </button>
           ))}
         </nav>
+
+        {/* Help Button */}
+        <button
+          className={`w-full flex items-center p-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors duration-200 ${
+            sidebarExpanded ? "justify-start" : "justify-center"
+          }`}
+        >
+          <HelpOutlineIcon />
+          {sidebarExpanded && <span className="ml-3 text-sm">Help</span>}
+        </button>
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
+      <div
+        className={`flex-1 ${
+          sidebarExpanded ? "ml-50" : "ml-18"
+        } transition-all duration-300`}
+      >
         {/* Top Header */}
-        <header className="dashboard-header">
-          <div className="header-left">
-            <h1>Instructor Courses</h1>
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-xl font-semibold text-gray-900">Instructor</h1>
           </div>
-          <div className="header-right">
-            <div
-              className="student-button-container"
-              onMouseEnter={() => setShowStudentTooltip(true)}
-              onMouseLeave={() => setShowStudentTooltip(false)}
-            >
-              <button className="student-button" onClick={() => navigate("/")}>
+
+          <div className="flex items-center space-x-4">
+            {/* Student Mode Button */}
+            <div className="relative">
+              <button
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
+                onClick={() => navigate("/")}
+                onMouseEnter={() => setShowStudentTooltip(true)}
+                onMouseLeave={() => setShowStudentTooltip(false)}
+              >
                 Student
               </button>
               {showStudentTooltip && (
-                <div className="tooltip">
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-3 py-2 rounded text-xs whitespace-nowrap z-50 mt-2">
                   Switch to the student view here - get back to the courses
                   you're taking.
                 </div>
               )}
             </div>
-            <div className="header-icons">
-              <button className="notification-btn">
-                <Badge color="secondary" badgeContent={0}>
-                  <NotificationsNoneOutlinedIcon />
-                </Badge>
-              </button>
+
+            {/* Profile Dropdown */}
+            <div className="flex items-center">
               <ProfileDropdown user={userData} />
             </div>
           </div>
         </header>
 
-        {/* Content Area */}
-        <div className="content">
-          {courses.length === 0 ? (
-            /* Show Create Course section only when no courses exist */
-            <>
-              {/* Jump Into Course Creation */}
-              <div className="jump-into-creation">
-                <div className="jump-content">
-                  <h2>Jump Into Course Creation</h2>
-                  <button
-                    className="create-course-btn"
-                    onClick={() => navigate("/course/create")}
-                  >
-                    Create Your Course
-                  </button>
+        {/* Dashboard Content */}
+        <main className="p-6">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Welcome back, {userData.fullName}!
+                  </h2>
+                  <p className="text-gray-600">
+                    Ready to create your next course?
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/course/create")}
+                  className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                >
+                  Create New Course
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <PlayArrowIcon className="text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Courses
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {courses.length}
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {/* Resources Section */}
-              <div className="resources-section">
-                <p className="resources-intro">
-                  Based on your experience, we think these resources will be
-                  helpful.
-                </p>
-
-                <div className="resource-cards">
-                  <div className="resource-card">
-                    <div className="card-image">
-                      <img
-                        src="/images/instructorOnboard/engaging-course-1.webp"
-                        alt="Create an Engaging Course"
-                      />
-                    </div>
-                    <div className="card-content">
-                      <h3>Create an Engaging Course</h3>
-                      <p>
-                        Whether you've been teaching for years or are teaching
-                        for the first time, you can make an engaging course.
-                        We've compiled resources and best practices to help you
-                        get to the next level, no matter where you're starting.
-                      </p>
-                      <a href="#" className="get-started-link">
-                        Get Started
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="merge-cards">
-                    <div className="resource-card">
-                      <div className="card-image">
-                        <img
-                          src="/images/instructorOnboard/video-creation.webp"
-                          alt="Get Started with Video"
-                        />
-                      </div>
-                      <div className="card-content">
-                        <h3>Get Started with Video</h3>
-                        <p>
-                          Quality video lectures can set your course apart. Use
-                          our resources to learn the basics.
-                        </p>
-                        <a href="#" className="get-started-link">
-                          Get Started
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="resource-card">
-                      <div className="card-image">
-                        <img
-                          src="/images/instructorOnboard/build-audience.webp"
-                          alt="Build Your Audience"
-                        />
-                      </div>
-                      <div className="card-content">
-                        <h3>Build Your Audience</h3>
-                        <p>
-                          Set your course up for success by building your
-                          audience.
-                        </p>
-                        <a href="#" className="get-started-link">
-                          Get Started
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="challenge-card">
-                    <div className="card-image">
-                      <img
-                        src="/images/instructorOnboard/engaging-course-1.webp"
-                        alt="New Instructor Challenge"
-                      />
-                    </div>
-                    <div className="card-content">
-                      <h3>Join the New Instructor Challenge!</h3>
-                      <p>
-                        Get exclusive tips and resources designed to help you
-                        launch your first course faster! Eligible instructors
-                        who publish their first course on time will receive a
-                        special bonus to celebrate. Start today!
-                      </p>
-                      <a href="#" className="get-started-link">
-                        Get Started
-                      </a>
-                    </div>
-                  </div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <BarChartIcon className="text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Students
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0</p>
                 </div>
               </div>
-            </>
-          ) : (
-            /* Show Courses UI when courses exist */
-            <>
-              {/* Courses Header */}
-              <div className="courses-header">
-                <div className="courses-title">
-                  <h1>Courses</h1>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <DescriptionIcon className="text-purple-600" />
                 </div>
-                <div className="courses-actions">
-                  <div className="search-filter-bar">
-                    <div className="search-container">
-                      <input
-                        type="text"
-                        placeholder="Search your courses"
-                        className="search-input"
-                      />
-                      <button className="search-btn">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                        >
-                          <path
-                            d="M15.5 15.5L11.5 11.5M13.1667 7.33333C13.1667 10.555 10.555 13.1667 7.33333 13.1667C4.11167 13.1667 1.5 10.555 1.5 7.33333C1.5 4.11167 4.11167 1.5 7.33333 1.5C10.555 1.5 13.1667 4.11167 13.1667 7.33333Z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="filter-container">
-                      <button className="filter-btn">
-                        <span>Newest</span>
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                        >
-                          <path
-                            d="M3 4.5L6 7.5L9 4.5"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    className="new-course-btn"
-                    onClick={() => navigate("/course/create")}
-                  >
-                    New course
-                  </button>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Reviews
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">0</p>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Promotional Banner */}
-              <div className="promotional-banner">
-                <div className="banner-content">
-                  <div className="banner-tag">New</div>
-                  <div className="banner-text">
-                    We upgraded practice tests so you can upgrade yours. With
-                    our creation improvements, new question types, and
-                    generative AI features, maximize your practice test's
-                    certification prep potential.
-                  </div>
-                  <div className="banner-actions">
-                    <button className="learn-more-btn">Learn more</button>
-                    <button className="dismiss-btn">Dismiss</button>
-                  </div>
+          {/* Courses Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="border-b border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Your Courses
+              </h3>
+            </div>
+            <div className="p-6">
+              <DraftCourses />
+            </div>
+          </div>
+
+          {/* Tips Section */}
+          <div className="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Tips to get started
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white text-sm font-bold">1</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">
+                    Plan your course
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Define learning objectives and structure your content
+                  </p>
                 </div>
               </div>
-
-              {/* Draft Courses */}
-              <DraftCourses courses={courses} />
-
-              {/* Resources Section */}
-              <div className="resources-section">
-                <p className="resources-intro">
-                  Based on your experience, we think these resources will be
-                  helpful.
-                </p>
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                  <span className="text-white text-sm font-bold">2</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">
+                    Create quality content
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Record high-quality videos and engaging materials
+                  </p>
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

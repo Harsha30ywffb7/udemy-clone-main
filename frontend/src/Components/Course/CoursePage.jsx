@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { courseService, courseUtils } from "../../services/courseService";
-import CourseSidebar from "./CourseSidebar";
 
 // Material-UI Icons
 import StarIcon from "@mui/icons-material/Star";
@@ -34,12 +33,8 @@ const dummyCourseData = {
   rating: 4.7,
   total_ratings: 448887,
   total_students: 1486975,
-  price: 479,
-  originalPrice: 3109,
-  discount: 85,
+  // Pricing removed - free application
   thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-  timeLeft: "1 day left at this price!",
-  subscriptionPrice: 500,
 };
 
 const dummyIndividualCourseData = {
@@ -181,8 +176,7 @@ const dummyRecommendedCourses = [
     lastUpdated: "6/2025",
     rating: 4.6,
     totalRatings: 944436,
-    currentPrice: 499,
-    originalPrice: 3229,
+    // Pricing removed - free application
     isWishlisted: false,
   },
   {
@@ -194,8 +188,6 @@ const dummyRecommendedCourses = [
     lastUpdated: "8/2025",
     rating: 4.6,
     totalRatings: 51388,
-    currentPrice: 479,
-    originalPrice: 3089,
     isWishlisted: false,
   },
   {
@@ -207,8 +199,6 @@ const dummyRecommendedCourses = [
     lastUpdated: "7/2025",
     rating: 4.7,
     totalRatings: 6640,
-    currentPrice: 499,
-    originalPrice: 2129,
     isWishlisted: false,
   },
   {
@@ -220,8 +210,6 @@ const dummyRecommendedCourses = [
     lastUpdated: "8/2025",
     rating: 4.6,
     totalRatings: 19879,
-    currentPrice: 499,
-    originalPrice: 2129,
     isWishlisted: false,
   },
   {
@@ -233,8 +221,6 @@ const dummyRecommendedCourses = [
     lastUpdated: "8/2025",
     rating: 4.6,
     totalRatings: 347530,
-    currentPrice: 699,
-    originalPrice: 4469,
     isWishlisted: false,
   },
   {
@@ -246,8 +232,6 @@ const dummyRecommendedCourses = [
     lastUpdated: "8/2025",
     rating: 4.7,
     totalRatings: 1634892,
-    currentPrice: 499,
-    originalPrice: 3219,
     isWishlisted: false,
   },
 ];
@@ -1540,18 +1524,8 @@ const CoursePage = () => {
                             </span>
                           </div>
 
-                          {/* Price */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-1.5">
-                              <span className="text-sm font-bold text-gray-900">
-                                ₹{course.currentPrice}
-                              </span>
-                              <span className="text-xs text-gray-500 line-through">
-                                ₹{course.originalPrice}
-                              </span>
-                            </div>
-
-                            {/* Wishlist Button */}
+                          {/* Wishlist Button */}
+                          <div className="flex items-center justify-end">
                             <button className="flex-shrink-0 p-0.5 text-gray-400 hover:text-red-500 transition-colors">
                               <svg
                                 className="w-3.5 h-3.5"
@@ -1590,379 +1564,11 @@ const CoursePage = () => {
                   )}
                 </div>
               </div>
-
-              {/* Instructor Section */}
-              <div className="bg-white border-t border-gray-200">
-                <div className="max-w-4xl mx-auto px-10 py-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">
-                    Instructor
-                  </h2>
-
-                  <div className="flex items-start space-x-4 mb-6">
-                    {/* Instructor Photo */}
-                    <div className="flex-shrink-0">
-                      <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden">
-                        <img
-                          src={instructorData.profileImage}
-                          alt={instructorData.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextSibling.style.display = "flex";
-                          }}
-                        />
-                        <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg hidden">
-                          {instructorData.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Instructor Info */}
-                    <div className="flex-1">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-bold text-purple-600 mb-1">
-                          {instructorData.name}
-                        </h3>
-                        <p className="text-sm text-gray-900 mb-3">
-                          {instructorData.title}
-                        </p>
-
-                        {/* Instructor Metrics */}
-                        <div className="flex items-center space-x-6">
-                          <div className="flex items-center space-x-1">
-                            <StarIcon className="text-yellow-400 text-sm" />
-                            <span className="text-sm font-bold text-gray-900">
-                              {instructorData.rating} Instructor Rating
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                              />
-                            </svg>
-                            <span className="text-sm text-gray-600">
-                              {instructorData.totalReviews.toLocaleString()}{" "}
-                              Reviews
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                              />
-                            </svg>
-                            <span className="text-sm text-gray-600">
-                              {instructorData.totalStudents.toLocaleString()}{" "}
-                              Students
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg
-                              className="w-4 h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                              />
-                            </svg>
-                            <span className="text-sm text-gray-600">
-                              {instructorData.totalCourses} Courses
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Instructor Bio */}
-                  <div className="mb-6">
-                    <div
-                      className={`${
-                        !instructorData.bio.isExpanded
-                          ? "max-h-32 overflow-hidden"
-                          : ""
-                      }`}
-                    >
-                      <div
-                        className="text-sm text-gray-700 leading-relaxed whitespace-pre-line"
-                        dangerouslySetInnerHTML={{
-                          __html: instructorData.bio.isExpanded
-                            ? instructorData.bio.full.replace(
-                                /\*\*(.*?)\*\*/g,
-                                "<strong>$1</strong>"
-                              )
-                            : instructorData.bio.short.replace(
-                                /\*\*(.*?)\*\*/g,
-                                "<strong>$1</strong>"
-                              ),
-                        }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        setInstructorData({
-                          ...instructorData,
-                          bio: {
-                            ...instructorData.bio,
-                            isExpanded: !instructorData.bio.isExpanded,
-                          },
-                        });
-                      }}
-                      className="text-purple-600 font-bold text-sm mt-2 flex items-center space-x-1 hover:text-purple-700"
-                    >
-                      <span>
-                        {instructorData.bio.isExpanded
-                          ? "Show less"
-                          : "Show more"}
-                      </span>
-                      {instructorData.bio.isExpanded ? (
-                        <KeyboardArrowUpIcon className="text-xs" />
-                      ) : (
-                        <KeyboardArrowDownIcon className="text-xs" />
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Instructor Expertise */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Expertise
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {instructorData.expertise.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Instructor Achievements */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Achievements
-                    </h4>
-                    <ul className="space-y-2">
-                      {instructorData.achievements.map((achievement, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-sm text-gray-700">
-                            {achievement}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Teaching Style */}
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Teaching Style
-                    </h4>
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-700">
-                        <strong>Approach:</strong>{" "}
-                        {instructorData.teachingStyle.approach}
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        <strong>Focus:</strong>{" "}
-                        {instructorData.teachingStyle.focus}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {instructorData.teachingStyle.features.map(
-                          (feature, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded"
-                            >
-                              {feature}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reviews Section */}
-              <div className="bg-white border-t border-gray-200">
-                <div className="max-w-4xl mx-auto px-10 py-6">
-                  {/* Overall Rating Header */}
-                  <div className="flex items-center space-x-2 mb-6">
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {reviewsData.overallRating} course rating
-                    </h2>
-                    <span className="text-xl text-gray-600">•</span>
-                    <span className="text-xl text-gray-600">
-                      {(reviewsData.totalRatings / 1000).toFixed(0)}K ratings
-                    </span>
-                    <div className="flex ml-2">
-                      <StarIcon className="text-yellow-400 text-xl" />
-                    </div>
-                  </div>
-
-                  {/* Reviews Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(showMoreReviews
-                      ? reviewsData.reviews
-                      : reviewsData.reviews.slice(0, 4)
-                    ).map((review) => (
-                      <div
-                        key={review.id}
-                        className="border border-gray-200 rounded p-4"
-                      >
-                        {/* Reviewer Info */}
-                        <div className="flex items-start space-x-3 mb-3">
-                          <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
-                            {review.reviewerInitials}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 text-sm">
-                              {review.reviewerName}
-                            </h3>
-                            <div className="flex items-center space-x-1 mb-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <StarIcon
-                                  key={star}
-                                  className={`text-xs ${
-                                    star <= review.rating
-                                      ? "text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <p className="text-xs text-gray-600">
-                              {review.timePosted}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Review Text */}
-                        <div className="mb-3">
-                          <p
-                            className={`text-gray-900 text-sm ${
-                              !review.isExpanded ? "line-clamp-3" : ""
-                            }`}
-                          >
-                            {review.reviewText}
-                          </p>
-                          {review.reviewText.length > 200 && (
-                            <button
-                              onClick={() => {
-                                const updatedReviews = reviewsData.reviews.map(
-                                  (r) =>
-                                    r.id === review.id
-                                      ? { ...r, isExpanded: !r.isExpanded }
-                                      : r
-                                );
-                                setReviewsData({
-                                  ...reviewsData,
-                                  reviews: updatedReviews,
-                                });
-                              }}
-                              className="text-purple-600 font-bold text-xs mt-1 hover:text-purple-700"
-                            >
-                              {review.isExpanded ? "Show less" : "Show more"}
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Helpful Section */}
-                        <div className="flex items-center space-x-3">
-                          <span className="text-xs text-gray-600">
-                            Helpful?
-                          </span>
-                          <div className="flex items-center space-x-2">
-                            <button className="flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-                                />
-                              </svg>
-                              <span className="text-xs">
-                                {review.helpfulCount}
-                              </span>
-                            </button>
-                            <button className="flex items-center space-x-1 text-gray-600 hover:text-red-600 transition-colors">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a2 2 0 002 2h.095c.5 0 .905-.405.905-.905 0-.714.211-1.412.608-2.006L17 13V4m-7 10h2"
-                                />
-                              </svg>
-                              <span className="text-xs">
-                                {review.notHelpfulCount}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Show All Reviews Button */}
-                  <div className="text-center mt-6">
-                    <button
-                      onClick={() => setShowMoreReviews(!showMoreReviews)}
-                      className="px-4 py-2 bg-purple-600 text-white font-bold text-sm rounded hover:bg-purple-700 transition-colors"
-                    >
-                      {showMoreReviews
-                        ? "Show less reviews"
-                        : "Show all reviews"}
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right Sidebar - CourseSidebar component */}
             <div className="w-80 flex-shrink-0">
-              <CourseSidebar courseData={courseData} />
+              {/* Removed CourseSidebar component */}
             </div>
           </div>
         </div>

@@ -26,14 +26,6 @@ const instructorSchema = new mongoose.Schema(
     },
 
     // Instructor statistics
-    rating: {
-      type: Number,
-      default: 0,
-    },
-    totalReviews: {
-      type: Number,
-      default: 0,
-    },
     totalStudents: {
       type: Number,
       default: 0,
@@ -130,7 +122,6 @@ const instructorSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-instructorSchema.index({ rating: -1 });
 instructorSchema.index({ totalStudents: -1 });
 instructorSchema.index({ isVerified: 1 });
 instructorSchema.index({ isFeatured: 1 });
