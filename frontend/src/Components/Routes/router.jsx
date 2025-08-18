@@ -1,10 +1,8 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Header } from "../Header/Header";
-import { Landigpage } from "../LandingPage/Landin";
+import { Landin } from "../LandingPage/Landin";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
-import Payment from "../Payment/Payment";
-import CoursePage from "../Course/CoursePage";
 import Wishlist from "../Wishlist/Wishlist";
 import Instructor from "../Login_Signup/Instructor";
 import InstructorOnboarding from "../Instructor/InstructorOnboarding";
@@ -13,8 +11,9 @@ import CourseCreation from "../Instructor/CourseCreation";
 import CourseEditPage from "../Instructor/CourseEditPage";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
-import CourseAddPage from "../Course/CourseAddPage";
-import IntendedLearners from "../Course/Plan/IntendedLearners";
+import Footer from "../Footer/Footer";
+import CoursePage from "../Course/CoursePage";
+import ProfilePage from "../Login_Signup/ProfilePage";
 
 // Protected Route for Instructor Onboarding
 const InstructorOnboardingRoute = () => {
@@ -26,14 +25,9 @@ const InstructorOnboardingRoute = () => {
     return <Navigate to="/login" />;
   }
 
-  // If not an instructor, redirect to home
-  if (userData.userType !== "instructor") {
+  // Only instructors can access onboarding
+  if (userData.role !== "instructor") {
     return <Navigate to="/" />;
-  }
-
-  // If already onboarded, redirect to courses
-  if (userData.isOnboarded) {
-    return <Navigate to="/instructor/courses" />;
   }
 
   // Show onboarding
@@ -50,38 +44,38 @@ const InstructorCoursesRoute = () => {
     return <Navigate to="/login" />;
   }
 
-  // If not an instructor, redirect to home
-  if (userData.userType !== "instructor") {
+  // Only instructors can access instructor courses
+  if (userData.role !== "instructor") {
     return <Navigate to="/" />;
-  }
-
-  // If not onboarded, redirect to onboarding
-  if (!userData.isOnboarded) {
-    return <Navigate to="/instructor/onboard" />;
   }
 
   // Show courses
   return <InstructorCourses />;
 };
 
+const InstructorRoutes = () => {
+  return <Instructor />;
+};
+
 // Protected Route for Course Creation
 const CourseCreationRoute = () => {
   const { user } = useSelector((store) => store.auth);
   const userData = user?.user;
+  const token = localStorage.getItem("token");
 
   // If not logged in, redirect to login
-  if (!userData) {
+  if (!token) {
     return <Navigate to="/login" />;
   }
 
-  // If not an instructor, redirect to home
-  if (userData.userType !== "instructor") {
-    return <Navigate to="/" />;
+  // If token exists but no user data, show loading or redirect
+  if (token && !userData) {
+    return <Navigate to="/login" />;
   }
 
-  // If not onboarded, redirect to onboarding
-  if (!userData.isOnboarded) {
-    return <Navigate to="/instructor/onboard" />;
+  // Only instructors can create courses
+  if (userData.role !== "instructor") {
+    return <Navigate to="/" />;
   }
 
   // Show course creation
@@ -91,28 +85,23 @@ const CourseCreationRoute = () => {
 export const AllRoutes = () => {
   const location = useLocation();
   const isInstructorPage = location.pathname.startsWith("/instructor");
-  const { user } = useSelector((store) => store.auth);
-  const userData = user?.user;
+  const isCourseCreatePage = location.pathname.includes("/course/create");
+  const isProfilePage = location.pathname.includes("/profile");
 
   return (
     <>
-      <Header />
+      {!isProfilePage && !isCourseCreatePage && <Header />}
       <Routes>
-        <Route path="/" element={<Landigpage />}></Route>
+        <Route path="/" element={<Landin />}></Route>
         <Route path="/courses/:id" element={<CoursePage />}></Route>
+        <Route path="/course/create" element={<CourseCreationRoute />} />
+        <Route path="/course/:id" element={<CoursePage />}></Route>
+        <Route path="/profile" element={<ProfilePage />}></Route>
+        <Route path="/profile/edit" element={<ProfilePage />}></Route>
         <Route path="/wishlist" element={<Wishlist />}></Route>
-        <Route path="/payment" element={<Payment />}></Route>
         <Route path="/signup" element={<Signup />}></Route>
         <Route path="/login" element={<Login />}></Route>
-        <Route path="/teach" element={<Instructor />}></Route>
-        <Route
-          path="/course/:courseId/manage/goals"
-          element={<CourseAddPage />}
-        ></Route>
-        <Route
-          path="/course/:courseId/manage/intended-learners"
-          element={<IntendedLearners />}
-        ></Route>
+        <Route path="/teach" element={<InstructorRoutes />}></Route>
         <Route
           path="/instructor/onboard"
           element={<InstructorOnboardingRoute />}
@@ -121,12 +110,12 @@ export const AllRoutes = () => {
           path="/instructor/courses"
           element={<InstructorCoursesRoute />}
         />
-        <Route path="/course/create" element={<CourseCreationRoute />} />
         <Route
           path="/instructor/course/:courseId/edit"
           element={<CourseEditPage />}
         />
       </Routes>
+      {!isProfilePage && <Footer />}
     </>
   );
 };
