@@ -1,202 +1,148 @@
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import "./header.css";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageIcon from "@mui/icons-material/Language";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
-import Avatar from "@mui/material/Avatar";
-import { deepPurple } from "@mui/material/colors";
 import Badge from "@mui/material/Badge";
-import { useEffect, useRef, useState } from "react";
-import axios from "axios";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { auth, fetchUserData } from "../../Redux/login/action";
-import { addToCart } from "../../Redux/cart/action";
+import { fetchUserData } from "../../Redux/login/action";
 import ProfileDropdown from "./ProfileDropdown";
 
 export const Header = () => {
-  const { cart } = useSelector((store) => store.cart);
   const { user } = useSelector((store) => store.auth);
   const { wishlist } = useSelector((store) => store.wishlist);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Check token and user state on every render
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // If token exists but no user data, fetch user data
-    if (token && !user.user) {
+    // Only fetch user data if we have a token but no user data
+    if (token && !user.user && !user.loading) {
       dispatch(fetchUserData(token));
-      console.log("user", user);
     }
 
-    // If on login page and already logged in, redirect to home
-    if (token && window.location.pathname === "/login") {
+    // Redirect from login page if already logged in
+    if (token && user.user && window.location.pathname === "/login") {
       navigate("/");
-      return;
     }
+  }, [dispatch, navigate, user.user, user.loading]);
 
-    // Fetch cart data if user exists
-    if (token && user?.user?._id) {
-      axios
-        .get(`https://udemy-vr4p.onrender.com/cart/${user.user._id}`)
-        .then(({ data }) => {
-          console.log(data);
-          dispatch(addToCart(data.length));
-        })
-        .catch((err) => {
-          console.log("Cart fetch error:", err);
-        });
-    }
-  }, [dispatch, navigate, user.user]);
+  console.log("user in header", user.user);
 
-  // Check if user is an instructor
-  const isInstructor = user?.user?.userType === "instructor";
-  const location = useLocation();
   const isInstructorPage = location.pathname.startsWith("/instructor");
   const isLoggedIn = !!user?.user;
-  const [showStudentTooltip, setShowStudentTooltip] = useState(false);
+  const isInstructor = user?.user?.role === "instructor";
 
   return (
-    <>
-      <header>
-        <div className="topnavbar">
-          <Link className="udemylink" to={"/"}>
-            <img
-              className="udemylogo"
-              src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-              alt=""
+    <header className="max-w-full">
+      <div className="flex items-center justify-between px-6 h-[72px] bg-white flex-nowrap">
+        <Link to="/" className="flex-shrink-0 pr-3 text-purple-700">
+          <img
+            className="w-[91px] h-[34px]"
+            src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
+            alt="Udemy Logo"
+          />
+        </Link>
+
+        {!isInstructorPage && (
+          <nav>
+            <button className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100">
+              Explore
+            </button>
+          </nav>
+        )}
+
+        {!isInstructorPage && (
+          <div className="flex items-center flex-4 max-w-[800px] min-w-[400px] mx-4 border border-gray-900 rounded-full px-3 bg-white h-12">
+            <button className="bg-transparent text-gray-900 border-none text-xs mr-2">
+              <SearchIcon />
+            </button>
+            <input
+              type="text"
+              placeholder="Search for anything"
+              className="bg-transparent border-none w-full h-full text-sm focus:outline-none"
             />
-          </Link>
-          {!isInstructorPage && (
-            <nav>
-              <button>
-                <span className="nav-span">Explore</span>
-              </button>
-            </nav>
-          )}
-          {!isInstructorPage && (
-            <div className="searchbar">
-              <button>
-                <SearchIcon />
-              </button>
-              <input type="text" name="" placeholder="Search for anything" />
-            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          {/* Show Teach button only for instructors */}
+          {isLoggedIn && isInstructor && !isInstructorPage && (
+            <Link
+              to="/instructor/courses"
+              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+            >
+              Teach
+            </Link>
           )}
 
-          <div className="right-side-nav">
-            {!isInstructorPage && (
-              <div>
-                <Link className="linkstyle" to={"#"}>
-                  <span className="nav-span">Udemy Business</span>
-                </Link>
-              </div>
-            )}
-            <div>
-              {isInstructor ? (
-                !isInstructorPage ? (
-                  <Link className="linkstyle" to="/instructor/courses">
-                    <span className="nav-span">Instructor</span>
-                  </Link>
-                ) : (
-                  <div
-                    className="student-button-container"
-                    onMouseEnter={() => setShowStudentTooltip(true)}
-                    onMouseLeave={() => setShowStudentTooltip(false)}
-                  >
-                    <button
-                      className="student-button"
-                      onClick={() => navigate("/")}
-                    >
-                      Student
-                    </button>
-                    {showStudentTooltip && (
-                      <div className="tooltip">
-                        Switch to the student view here - get back to the
-                        courses you're taking.
-                      </div>
-                    )}
-                  </div>
-                )
-              ) : (
-                <Link className="linkstyle" to="/teach">
-                  <span className="nav-span">Teach on Udemy</span>
-                </Link>
-              )}
+          {/* Show Teach on Udemy for non-logged in users */}
+          {!isLoggedIn && (
+            <Link
+              to="/teach"
+              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+            >
+              Teach on Udemy
+            </Link>
+          )}
+
+          {isLoggedIn && !isInstructorPage && (
+            <Link
+              to="#"
+              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+            >
+              My learning
+            </Link>
+          )}
+
+          {isLoggedIn && !isInstructorPage && (
+            <Link to="/wishlist">
+              <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100">
+                <Badge color="secondary" badgeContent={wishlist?.length || 0}>
+                  <FavoriteBorderOutlinedIcon />
+                </Badge>
+              </button>
+            </Link>
+          )}
+
+          {isLoggedIn && (
+            <Link to="#">
+              <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100">
+                <Badge color="secondary" badgeContent={0}>
+                  <NotificationsNoneOutlinedIcon />
+                </Badge>
+              </button>
+            </Link>
+          )}
+
+          {isLoggedIn ? (
+            <div className="bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold dropdown-container">
+              <ProfileDropdown user={user.user} />
             </div>
-            {isLoggedIn && !isInstructorPage ? (
-              <div>
-                <Link className="linkstyle" to={"#"}>
-                  <span className="nav-span">My learning</span>
-                </Link>
-              </div>
-            ) : null}
-            {isLoggedIn && !isInstructorPage ? (
-              <div>
-                <Link to={"/wishlist"}>
-                  <button className="wishlist-icon">
-                    <Badge
-                      color="secondary"
-                      badgeContent={wishlist?.length || 0}
-                    >
-                      <FavoriteBorderOutlinedIcon></FavoriteBorderOutlinedIcon>
-                    </Badge>
-                  </button>
-                </Link>
-              </div>
-            ) : null}
-            {!isInstructorPage && (
-              <div>
-                <Link to={"/cart"}>
-                  <button className="cart">
-                    <Badge color="secondary" badgeContent={cart}>
-                      <ShoppingCartOutlinedIcon></ShoppingCartOutlinedIcon>
-                    </Badge>
-                  </button>
-                </Link>
-              </div>
-            )}
-            {isLoggedIn ? (
-              <div>
-                <Link to={"#"}>
-                  <button className="notification-btn">
-                    <Badge color="secondary" badgeContent={0}>
-                      <NotificationsNoneOutlinedIcon></NotificationsNoneOutlinedIcon>
-                    </Badge>
-                  </button>
-                </Link>
-              </div>
-            ) : null}
-            {isLoggedIn ? (
-              <div className="profile-icon">
-                <ProfileDropdown user={user.user} />
-              </div>
-            ) : (
-              <>
-                <div>
-                  <Link to={"/login"}>
-                    <button className="login">Log in</button>
-                  </Link>
-                </div>
-                <div>
-                  <Link to={"/signup"}>
-                    <button className="signup">Sign up</button>
-                  </Link>
-                </div>
-                <div>
-                  <Link to={"#"}>
-                    <button className="lang">
-                      <LanguageIcon />
-                    </button>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+          ) : (
+            <>
+              <Link to="/login">
+                <button className="px-4 py-2 border border-gray-900 font-semibold text-sm hover:bg-gray-100">
+                  Log in
+                </button>
+              </Link>
+              <Link to="/signup">
+                <button className="px-4 py-2 border border-gray-900 bg-gray-900 text-white font-semibold text-sm">
+                  Sign up
+                </button>
+              </Link>
+              <Link to="#">
+                <button className="px-3 py-2 border border-gray-900">
+                  <LanguageIcon />
+                </button>
+              </Link>
+            </>
+          )}
         </div>
-      </header>
-    </>
+      </div>
+    </header>
   );
 };

@@ -3,13 +3,15 @@ import banner from "../../assets/middle.jpg";
 import StudentContainer from "./StudentContainer";
 import { styled } from "@mui/material/styles";
 import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
-import { useRef, useState } from "react";
+import { useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import Skeleton from "@mui/material/Skeleton";
 import HeroCarousel from "./HeroCarousel";
 import Advertisement from "./Advertisement";
 import FeaturedTopics from "./FeaturedTopics";
 import TopCategories from "./TopCategories";
 import CourseSuggestions from "./CourseSuggestions";
+
 export const LightTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({
@@ -32,8 +34,6 @@ export const LightTooltip = styled(({ className, ...props }) => (
     zIndex: "9999 !important",
   },
 }));
-// const { user } = useSelector((store) => store.auth);
-// console.log(store.auth);
 
 export const Landin = () => {
   return (
@@ -44,26 +44,33 @@ export const Landin = () => {
 };
 
 const LandingPage = () => {
-  // const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    localStorage.getItem("token") !== null
-  );
-  console.log(isLoggedIn);
+  const { user } = useSelector((store) => store.auth);
   const loading = useRef(true);
-  // const [products, setProducts] = useState([]);
 
-  // useEffect(() => {
-  //   axios
-  //     .get("https://udemy-vr4p.onrender.com/courses")
-  //     .then(({ data }) => {
-  //       // console.log(data);
-  loading.current = false;
-  //       setProducts([...data]);
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //     });
-  // }, []);
+  // Check if user is logged in based on Redux state and token existence
+  const isLoggedIn = !!(
+    user?.user &&
+    user?.token &&
+    localStorage.getItem("token")
+  );
+
+  console.log("LandingPage - isLoggedIn:", isLoggedIn, "user:", user);
+
+  // Simulate loading completion
+  useEffect(() => {
+    loading.current = false;
+  }, []);
+
+  // Log authentication state changes for debugging
+  useEffect(() => {
+    console.log("LandingPage - Auth state changed:", {
+      hasUser: !!user?.user,
+      hasToken: !!user?.token,
+      hasLocalStorageToken: !!localStorage.getItem("token"),
+      isLoggedIn,
+    });
+  }, [user, isLoggedIn]);
+
   return (
     <>
       <div>
@@ -106,6 +113,7 @@ const LandingPage = () => {
     </>
   );
 };
+
 const SkeltonLoading = () => {
   return (
     <>
@@ -126,13 +134,14 @@ const SkeltonLoading = () => {
     </>
   );
 };
+
 const Part = () => {
   return (
     <>
-      <Skeleton variant="text" className="wave" animation="wave" />
-      <Skeleton variant="text" className="wave" animation="wave" />
-      <Skeleton variant="text" className="wave" animation="wave" />
-      <Skeleton variant="text" className="wave" animation="wave" />
+      <Skeleton className="line" variant="text" animation="wave" />
+      <Skeleton className="line" variant="text" animation="wave" />
+      <Skeleton className="line" variant="text" animation="wave" />
+      <Skeleton className="line" variant="text" animation="wave" />
     </>
   );
 };

@@ -2,7 +2,6 @@ import Slider from "react-slick";
 import "./carousel.css";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
-import { ProdCard } from "../ProdCard/ProdCard";
 // import { ArrowBackIos, ArrowForwardIos } from "@material-ui/icons";
 const PreviousBtn = (props) => {
   const { className, onClick } = props;

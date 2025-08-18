@@ -4,11 +4,14 @@ import { useNavigate } from "react-router-dom";
 
 const HeroCarousel = () => {
   const { user } = useSelector((store) => store.auth);
-  console.log("storestorestore", user);
+  console.log("HeroCarousel user state:", user);
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
-  // if (!user?.user) return null;
+  // Don't render if user is not properly authenticated
+  if (!user?.user || !user?.token) {
+    return null;
+  }
 
   const carouselData = [
     {
