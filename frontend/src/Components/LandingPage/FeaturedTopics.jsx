@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import LinkButton from "../../share/UIElements/LinkButton.jsx";
 
 const FeaturedTopics = () => {
@@ -59,12 +60,12 @@ const FeaturedTopics = () => {
                     className={topicIndex > 0 ? "mt-[1rem]" : ""}
                   >
                     <div>
-                      <a
-                        href="#"
+                      <Link
+                        to="/"
                         className="text-[1rem] font-bold underline text-[#5624d0] cursor-pointer"
                       >
                         {topic.name}
-                      </a>
+                      </Link>
                     </div>
                     <div className="text-[0.8rem] text-[#6a6f73] mt-[0.8rem]">
                       {topic.students} students

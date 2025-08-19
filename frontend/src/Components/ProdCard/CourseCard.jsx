@@ -3,7 +3,6 @@ import { Star, StarHalf } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 
 const CourseCard = ({ item }) => {
-  console.log("item", item);
   const renderStars = () => {
     const fullStars = Math.floor(item.rateScore);
     const halfStar = item.rateScore % 1 >= 0.5;

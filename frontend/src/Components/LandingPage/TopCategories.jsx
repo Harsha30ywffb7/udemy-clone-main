@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const categories = [
   {
@@ -44,9 +45,9 @@ const TopCategories = () => {
         </h2>
         <div className="flex flex-wrap -mx-[1rem] justify-center -mb-[3.2rem]">
           {categories.map((category, index) => (
-            <a
+            <Link
               key={index}
-              href="#"
+              to="/"
               className="block mx-[1rem] mb-[1.6rem] max-w-[calc(100%/5-1rem)] cursor-pointer"
             >
               <div className="overflow-hidden ">
@@ -61,7 +62,7 @@ const TopCategories = () => {
                   {category.title}
                 </span>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </section>

@@ -140,7 +140,7 @@ const ProfileDropdown = ({ user }) => {
             <div className="flex justify-between items-center p-4 cursor-pointer transition-colors duration-300 hover:bg-purple-50 group">
               <div>
                 <p className="text-gray-800 m-0 font-bold text-base group-hover:text-purple-600">
-                  Udemy Business
+                  Vidhyara Business
                 </p>
                 <p className="text-gray-500 mt-1 m-0 text-sm font-normal">
                   Bring learning to your company

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { courses, sugestedCourses } from "../data/student-viewing-data/data";
+import React, { useState, useEffect } from "react";
+import { courseService } from "../../services/courseService";
 import CourseCard from "../ProdCard/CourseCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAngleLeft, faAngleRight } from "@fortawesome/free-solid-svg-icons";
 import ItemsCarousel from "react-items-carousel";
+import { Skeleton } from "@mui/material";
 
 const Arrow = ({ direction, children }) => (
   <div
@@ -11,7 +12,7 @@ const Arrow = ({ direction, children }) => (
       direction === "right" ? "right-[-1.6rem]" : "left-[-1.6rem]"
     } m-auto cursor-pointer z-[2] hover:shadow-[0_2px_4px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.08)]`}
   >
-    {children}
+    <FontAwesomeIcon icon={children} className="text-white text-[1.5rem]" />
   </div>
 );
 
@@ -21,43 +22,65 @@ const CoursesSection = ({
   data,
   activeIndex,
   setActiveIndex,
+  loading,
 }) => {
   const chevronWidth = 50;
+
+  if (loading) {
+    return (
+      <div className="mt-[4.8rem]">
+        <h2 className="mb-[1.6rem] max-w-[80rem] font-bold text-[1.5rem] tracking-[0.02rem] leading-[1.2]">
+          {title}{" "}
+          {highlight && <span className="text-[#8710d8]">"{highlight}"</span>}
+        </h2>
+        <div className="flex gap-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton
+              key={index}
+              variant="rectangular"
+              width={280}
+              height={320}
+              className="rounded-lg"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-[4.8rem] hover:cursor-pointer">
       <h2 className="mb-[1.6rem] max-w-[80rem] font-bold text-[1.5rem] tracking-[0.02rem] leading-[1.2]">
         {title}{" "}
-        {highlight && <span className="text-purple-700">"{highlight}"</span>}
+        {highlight && <span className="text-[#8710d8]">"{highlight}"</span>}
       </h2>
-
       <div className="relative">
         <ItemsCarousel
           requestToChangeActive={setActiveIndex}
           activeItemIndex={activeIndex}
           numberOfCards={5}
-          gutter={15}
+          gutter={16}
           leftChevron={
             <Arrow direction="left">
               <FontAwesomeIcon
-                style={{ color: "white", fontSize: "2rem" }}
                 icon={faAngleLeft}
+                className="text-white text-[1.8rem]"
               />
             </Arrow>
           }
           rightChevron={
             <Arrow direction="right">
               <FontAwesomeIcon
-                style={{ color: "white", fontSize: "2rem" }}
                 icon={faAngleRight}
+                className="text-white text-[1.8rem]"
               />
             </Arrow>
           }
-          outsideChevron={false}
+          outsideChevron
           chevronWidth={chevronWidth}
         >
-          {data.map((item) => (
-            <CourseCard item={item} key={item.id} />
+          {data.map((item, index) => (
+            <CourseCard key={index} item={item} />
           ))}
         </ItemsCarousel>
       </div>
@@ -68,22 +91,91 @@ const CoursesSection = ({
 const StudentContainer = () => {
   const [activeItemIndex1, setActiveItemIndex1] = useState(0);
   const [activeItemIndex2, setActiveItemIndex2] = useState(0);
+  const [studentsViewingCourses, setStudentsViewingCourses] = useState([]);
+  const [recommendedCourses, setRecommendedCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch different sets of courses for variety
+        const [studentsViewing, recommended] = await Promise.all([
+          courseService.getAllCourses({
+            sort: "students",
+            limit: 10,
+          }),
+          courseService.getAllCourses({
+            sort: "rating",
+            limit: 10,
+          }),
+        ]);
+
+        if (studentsViewing.success && studentsViewing.data?.courses) {
+          // Transform API data to match CourseCard component expectations
+          const transformedStudentsViewing = studentsViewing.data.courses.map(
+            (course) => ({
+              id: course.id,
+              img: course.thumbnail,
+              title: course.title,
+              desc: course.headline,
+              rateScore: course.rating?.toFixed(1) || "4.5",
+              reviewerNum: course.totalRatings || 0,
+              price: course.originalPrice || course.price,
+              onSale: course.originalPrice > course.price,
+              onSalePrice: course.price,
+              mark: course.totalStudents > 100000 ? "Bestseller" : "",
+            })
+          );
+          setStudentsViewingCourses(transformedStudentsViewing);
+        }
+
+        if (recommended.success && recommended.data?.courses) {
+          // Transform API data for recommended courses
+          const transformedRecommended = recommended.data.courses.map(
+            (course) => ({
+              id: course.id,
+              img: course.thumbnail,
+              title: course.title,
+              desc: course.headline,
+              rateScore: course.rating?.toFixed(1) || "4.5",
+              reviewerNum: course.totalRatings || 0,
+              price: course.originalPrice || course.price,
+              onSale: course.originalPrice > course.price,
+              onSalePrice: course.price,
+              mark: course.totalStudents > 100000 ? "Bestseller" : "",
+            })
+          );
+          setRecommendedCourses(transformedRecommended);
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
 
   return (
     <div className="mt-[6.4rem] px-[2.4rem]">
       <CoursesSection
-        title="Students Viewing"
-        data={courses}
+        title="Students are viewing"
+        data={studentsViewingCourses}
         activeIndex={activeItemIndex1}
         setActiveIndex={setActiveItemIndex1}
+        loading={loading}
       />
 
       <CoursesSection
-        title="Because you searched for"
-        highlight="zero to master"
-        data={sugestedCourses}
+        title="Top rated courses in"
+        highlight="Development"
+        data={recommendedCourses}
         activeIndex={activeItemIndex2}
         setActiveIndex={setActiveItemIndex2}
+        loading={loading}
       />
     </div>
   );

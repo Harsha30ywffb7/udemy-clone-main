@@ -2,7 +2,7 @@ import banner from "../../assets/middle.jpg";
 import StudentContainer from "./StudentContainer";
 import { styled } from "@mui/material/styles";
 import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
-import { useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import Skeleton from "@mui/material/Skeleton";
 import HeroCarousel from "./HeroCarousel";
@@ -44,7 +44,7 @@ export const Landin = () => {
 
 const LandingPage = () => {
   const { user } = useSelector((store) => store.auth);
-  const loading = useRef(true);
+  const [loading, setLoading] = useState(true);
 
   // Check if user is logged in based on Redux state and token existence
   const isLoggedIn = !!(
@@ -55,9 +55,13 @@ const LandingPage = () => {
 
   console.log("LandingPage - isLoggedIn:", isLoggedIn, "user:", user);
 
-  // Simulate loading completion
+  // Simulate loading completion - now properly triggers re-render
   useEffect(() => {
-    loading.current = false;
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000); // Small delay to show loading state briefly
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Log authentication state changes for debugging
@@ -67,8 +71,9 @@ const LandingPage = () => {
       hasToken: !!user?.token,
       hasLocalStorageToken: !!localStorage.getItem("token"),
       isLoggedIn,
+      loading,
     });
-  }, [user, isLoggedIn]);
+  }, [user, isLoggedIn, loading]);
 
   return (
     <>
@@ -101,7 +106,7 @@ const LandingPage = () => {
         )}
       </div>
 
-      {loading.current ? (
+      {loading ? (
         <>
           <SkeltonLoading />
           <SkeltonLoading />
@@ -109,10 +114,12 @@ const LandingPage = () => {
       ) : (
         <>
           <Advertisement />
-          <FeaturedTopics />
-          <TopCategories />
           <CourseSuggestions />
           <StudentContainer />
+          <FeaturedTopics />
+          <div className="mb-16">
+            <TopCategories />
+          </div>
         </>
       )}
     </>
