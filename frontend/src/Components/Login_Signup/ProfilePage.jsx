@@ -7,7 +7,7 @@ export default function ProfilePage() {
   // Source-of-truth copies for dirty checking
   const [initialState, setInitialState] = useState(null);
 
-  // Udemy profile form
+  // Vidhyara profile form
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -23,6 +23,10 @@ export default function ProfilePage() {
     youtube: "",
     language: "English (US)",
   });
+
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
 
   // Profile picture tab state
   const [photoFile, setPhotoFile] = useState(null);
@@ -40,7 +44,7 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (!token) return;
     axios
-      .get("/api/users/profile", {
+      .get(`${API_BASE_URL}/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(({ data }) => {
@@ -54,7 +58,7 @@ export default function ProfilePage() {
             !user?.userProfile?.biography?.format
               ? user?.userProfile?.biography?.content || ""
               : user?.bio || "",
-          biographyMarkdown: user?.userProfile?.biography?.content || "", // Map markdown
+          biographyMarkdown: user?.userProfile?.biography?.content || "",
           website: user?.socialLinks?.website || "",
           facebook: user?.socialLinks?.facebook || "",
           instagram: user?.socialLinks?.instagram || "",
@@ -221,7 +225,7 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className="flex space-x-6 border-b border-gray-200 mb-8 font-bold text-[12px]">
-        <TabButton id="profile" label="Udemy profile" />
+        <TabButton id="profile" label="Vidhyara profile" />
         <TabButton id="photo" label="Profile picture" />
         <TabButton id="privacy" label="Privacy settings" />
       </div>
@@ -286,7 +290,7 @@ export default function ProfilePage() {
               type="text"
               name="headline"
               maxLength={60}
-              placeholder="Instructor at Udemy"
+              placeholder="Instructor at Vidhyara"
               value={form.headline}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-[#5624d0] focus:border-[#5624d0] transition"

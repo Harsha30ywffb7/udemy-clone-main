@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import LinkButton from "../../share/UIElements/LinkButton.jsx";
 
 const Advertisement = () => {
@@ -20,7 +21,7 @@ const Advertisement = () => {
                 </h3>
                 <p className="text-[1rem] mt-0 mb-6 font-normal leading-relaxed">
                   Instructors from around the world teach millions of students
-                  on Udemy. We provide the tools and skills to teach what you
+                  on Vidhyara. We provide the tools and skills to teach what you
                   love.
                 </p>
                 <div>
@@ -39,7 +40,10 @@ const Advertisement = () => {
             <h3 className="font-['var(--suisse-works-alternative)'] font-bold text-2xl leading-tight tracking-tight m-0 mb-2">
               Trusted by companies of all sizes
             </h3>
-            <a className="flex flex-wrap justify-evenly items-center cursor-pointer">
+            <Link
+              to="/"
+              className="flex flex-wrap justify-evenly items-center cursor-pointer"
+            >
               <div className="m-4 inline-flex items-center">
                 <img
                   src="/images/advertisement/nasdaq-dark.svg"
@@ -80,12 +84,12 @@ const Advertisement = () => {
                   className="w-full h-auto"
                 />
               </div>
-            </a>
+            </Link>
           </div>
         </section>
       </div>
 
-      {/* Second Advertisement Section - Udemy Business */}
+      {/* Second Advertisement Section - Vidhyara Business */}
       <div className="m-0 mt-16 font-normal leading-relaxed text-2xl text-gray-900">
         <div className="py-16 w-full max-w-[134rem] mx-auto">
           <div className="flex items-center justify-center h-80">
@@ -93,21 +97,21 @@ const Advertisement = () => {
               <div className="flex flex-col justify-center text-left max-w-[40rem] mr-24">
                 <img
                   src="/images/advertisement/logo-ub.svg"
-                  alt="Udemy Business Logo"
+                  alt="Vidhyara Business Logo"
                   className="mb-2 w-[282px] h-12"
                 />
                 <p className="text-[1rem] mt-0 mb-6 font-normal leading-relaxed">
-                  Get unlimited access to 6,000+ of Udemy's top courses for your
-                  team. Learn and improve skills across business, tech, design,
-                  and more.
+                  Get unlimited access to 6,000+ of Vidhyara's top courses for
+                  your team. Learn and improve skills across business, tech,
+                  design, and more.
                 </p>
                 <div>
-                  <LinkButton>Get Udemy business</LinkButton>
+                  <LinkButton>Get Vidhyara business</LinkButton>
                 </div>
               </div>
               <img
                 src="/images/advertisement/ub-2x-v3.jpeg"
-                alt="Udemy Business"
+                alt="Vidhyara Business"
                 className="block w-[400px] h-[400px] object-contain max-w-full m-0"
               />
             </div>

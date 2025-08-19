@@ -18,7 +18,7 @@ const Carousel = ({ data }) => {
         leftChevron={
           <div className="w-12 h-12 bg-black border border-gray-500 rounded-full flex justify-center items-center absolute top-[15%] -left-6 z-10 hover:shadow-lg cursor-pointer">
             <FontAwesomeIcon
-              className="text-white text-[1.2rem]"
+              className="text-white text-[1.5rem]"
               icon={faAngleLeft}
             />
           </div>
@@ -26,7 +26,7 @@ const Carousel = ({ data }) => {
         rightChevron={
           <div className="w-12 h-12 bg-black border border-gray-500 rounded-full flex justify-center items-center absolute top-[15%] -right-6 z-10 hover:shadow-lg cursor-pointer">
             <FontAwesomeIcon
-              className="text-white text-[1.2rem]"
+              className="text-white text-[1.5rem]"
               icon={faAngleRight}
             />
           </div>
