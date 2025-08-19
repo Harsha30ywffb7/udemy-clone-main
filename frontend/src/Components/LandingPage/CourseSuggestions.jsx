@@ -81,7 +81,7 @@ const CourseSuggestions = () => {
       const selectedTab = courseTabs.find((tab) => tab.id === tabId);
       const params = {
         category: selectedTab?.category || "Development",
-        limit: 8,
+        limit: 10,
         sort: "newest",
       };
 

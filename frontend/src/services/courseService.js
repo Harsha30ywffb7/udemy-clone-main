@@ -222,6 +222,38 @@ export const courseService = {
     }
   },
 
+  // Update course step
+  updateCourseStep: async (courseId, stepName, data) => {
+    try {
+      console.log(
+        `📡 UPDATING COURSE STEP: ${stepName} for course ${courseId}`
+      );
+      const response = await apiClient.put(
+        `/courses/${courseId}/step/${stepName}`,
+        { data }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating course step ${stepName}:`, error);
+      throw error;
+    }
+  },
+
+  // Update course landing page (enhanced)
+  updateCourseLandingPageEnhanced: async (courseId, landingPageData) => {
+    try {
+      console.log(`📡 UPDATING COURSE LANDING PAGE: ${courseId}`);
+      const response = await apiClient.put(
+        `/courses/${courseId}/landing-page`,
+        landingPageData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course landing page:", error);
+      throw error;
+    }
+  },
+
   // Get course for editing
   getCourseForEdit: async (courseId) => {
     try {
@@ -302,24 +334,16 @@ export const courseService = {
       return { isValid: errors.length === 0, errors };
     },
 
-    price: (price, originalPrice) => {
+    category: (value) => {
       const errors = [];
-      if (price < 0) errors.push("Price cannot be negative");
-      if (originalPrice && originalPrice < price)
-        errors.push("Original price should be higher than current price");
-      return { isValid: errors.length === 0, errors };
+      if (!value) errors.push("Category is required");
+      return errors;
     },
 
-    thumbnailUrl: (url) => {
+    thumbnailUrl: (value) => {
       const errors = [];
-      if (!url?.trim()) errors.push("Course image is required");
-      else if (
-        !url.match(/\.(jpg|jpeg|png|gif|webp)$/i) &&
-        !url.startsWith("http")
-      ) {
-        errors.push("Please provide a valid image URL");
-      }
-      return { isValid: errors.length === 0, errors };
+      if (!value) errors.push("Course image is required");
+      return errors;
     },
   },
 
@@ -614,20 +638,6 @@ export const courseUtils = {
     } else {
       return `${hours}h ${minutes}min`;
     }
-  },
-
-  // Format price with currency
-  formatPrice: (price, currency = "INR") => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: currency,
-    }).format(price);
-  },
-
-  // Calculate discount percentage
-  calculateDiscount: (originalPrice, currentPrice) => {
-    if (!originalPrice || !currentPrice) return 0;
-    return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
   },
 
   // Format date

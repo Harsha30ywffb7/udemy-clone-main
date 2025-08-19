@@ -175,6 +175,16 @@ export const AllRoutes = () => {
         {/* Course Creation Flow */}
         <Route path="/course/create" element={<CourseCreationRoute />} />
         <Route
+          path="/course/create/:courseId"
+          element={<CourseCreationWorkflowRoute />}
+        />
+        <Route
+          path="/course/edit/:courseId"
+          element={<CourseCreationWorkflowRoute />}
+        />
+
+        {/* Legacy Routes - Keep for backward compatibility */}
+        <Route
           path="/instructor/course/create"
           element={<CourseCreationWorkflowRoute />}
         />
