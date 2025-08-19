@@ -255,13 +255,20 @@ router.post("/login", async (req, res) => {
 // Get user profile
 router.get("/profile", authenticate, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const user = await User.findById(userId).select("-password");
+    console.log("Profile request - req.user:", req.user);
+    console.log("Profile request - req.user.id:", req.user.id);
+    console.log("Profile request - req.user._id:", req.user._id);
+
+    // The authenticated user object IS the user, so just return it
+    // No need to query again since authenticate middleware already fetched the user
+    const user = req.user;
 
     if (!user) {
+      console.log("Profile request - No user in req.user");
       return res.status(404).json({ message: "User not found" });
     }
 
+    console.log("Profile request - User found:", user.email);
     res.json({ user });
   } catch (error) {
     console.error("Get profile error:", error);

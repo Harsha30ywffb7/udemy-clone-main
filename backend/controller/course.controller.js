@@ -5,711 +5,52 @@ const Instructor = require("../models/instructor.model");
 const Category = require("../models/category.model");
 const { authenticate } = require("../middlewares/authenticate");
 
-// Dummy data for simulation
-const dummyCourseData = {
-  title: "The Complete Full-Stack Web Development Bootcamp",
-  headline:
-    "Become a Full-Stack Web Developer with just ONE course. HTML, CSS, Javascript, Node, React, PostgreSQL, Web3 and DApps.",
-  visible_instructors: [{ title: "Dr. Angela Yu" }],
-  rating: 4.7,
-  total_ratings: 448887,
-  total_students: 1486975,
-  price: 479,
-  originalPrice: 3109,
-  discount: 85,
-  thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-  timeLeft: "1 day left at this price!",
-  subscriptionPrice: 500,
-};
-
-const dummyIndividualCourseData = {
-  primary_category: { title: "Development" },
-  primary_subcategory: { title: "Web Development" },
-  context_info: { label: { title: "Web Development" } },
-  bestseller_badge_content: { badge_text: "Bestseller" },
-  last_update_date: "2025-02-01",
-  caption_languages: [
-    "English",
-    "Arabic [Auto]",
-    "French [Auto]",
-    "German [Auto]",
-    "Italian [Auto]",
-    "Portuguese [Auto]",
-    "Spanish [Auto]",
-    "Turkish [Auto]",
-    "Dutch [Auto]",
-    "Indonesian [Auto]",
-    "Japanese [Auto]",
-    "Korean [Auto]",
-    "Polish [Auto]",
-    "Romanian [Auto]",
-    "Russian [Auto]",
-    "Swedish [Auto]",
-    "Thai [Auto]",
-    "Ukrainian [Auto]",
-    "Vietnamese [Auto]",
-    "Chinese [Auto]",
-    "Hindi [Auto]",
-    "Hungarian [Auto]",
-    "Norwegian [Auto]",
-    "Greek [Auto]",
-    "Hebrew [Auto]",
-    "Czech [Auto]",
-    "Danish [Auto]",
-  ],
-  what_you_will_learn_data: {
-    items: [
-      "Build 16 web development projects for your portfolio, ready to apply for junior developer jobs.",
-      "After the course you will be able to build ANY website you want.",
-      "Work as a freelance web developer.",
-      "Master backend development with Node",
-      "Learn the latest technologies, including Javascript, React, Node and even Web3 development.",
-      "Build fully-fledged websites and web apps for your startup or business.",
-      "Master frontend development with React",
-      "Learn professional developer best practices.",
-    ],
-  },
-  requirements_data: {
-    items: [
-      "No programming experience needed - I'll teach you everything you need to know",
-      "A computer with access to the internet",
-      "No paid software required",
-      "I'll walk you through, step-by-step how to get all the software installed and set up",
-    ],
-  },
-  description_data: {
-    content: `Welcome to the Complete Web Development Bootcamp, the only course you need to learn to code and become a full-stack web developer. With 150,000+ ratings and a 4.8 average, my Web Development course is one of the HIGHEST RATED courses in the history of Udemy!
-
-At 62+ hours, this Web Development course is without a doubt the most comprehensive web development course available online. Even if you have zero programming experience, this course will take you from beginner to mastery. Here's why:
-
-• The course is taught by the lead instructor at the App Brewery, London's leading in-person programming bootcamp.
-
-• The course has been updated to be 2024 ready and you'll be learning the latest tools and technologies used at large companies such as Apple, Google and Netflix.
-
-• The course doesn't cut any corners, there are beautiful animated explanation videos and tens of real-world projects which you will get to build.
-
-• The curriculum was developed over a period of four years, with comprehensive student testing and feedback.
-
-• We've taught over a million students how to code and many have gone on to change their lives by becoming professional developers or starting their own tech startup.
-
-• You'll save yourself over $12,000 by enrolling, but still get access to the same teaching materials and learn from the same instructor and curriculum as our in-person programming bootcamp.
-
-• The course is constantly updated with new content, with new projects and modules determined by students - that's you!
-
-We'll take you step-by-step through engaging video tutorials and teach you everything you need to know to succeed as a web developer.
-
-The course includes over 62 hours of HD video tutorials and builds your programming knowledge while making real-world websites and web apps.
-
-Throughout this comprehensive course, we cover a massive amount of tools and technologies, including:
-
-Front-End Web Development
-HTML 5
-CSS 3
-JavaScript ES6+
-Bootstrap 4
-Document Object Model (DOM)
-jQuery
-
-Backend Web Development
-Node.js
-NPM
-Express.js
-REST
-APIs
-Databases
-SQL
-MongoDB
-Mongoose
-Authentication
-Firebase
-React.js
-React Hooks
-Web3 Development
-Blockchain Development
-
-By the end of this course, you will be fluently programming and be ready to make any website you can dream of.
-
-You'll also build a portfolio of over 16 websites that you can show off to any potential employer.
-
-Sign up today, and look forward to:
-• HD video lectures
-• Code challenges and coding exercises
-• Beautiful real-world projects
-• Quizzes and practice tests
-• Downloadable programming resources and cheatsheets
-• Our best selling 12 Rules to Learn to Code eBook
-• $12,000+ web development bootcamp course materials and curriculum
-
-From beginner to expert, you're just a course away!`,
-    is_expanded: false,
-  },
-  course_has_labels: [
-    { is_primary: true, label: { title: "Web Development" } },
-    { is_primary: true, label: { title: "JavaScript" } },
-    { is_primary: false, label: { title: "React" } },
-  ],
-};
-
-const dummyIncentivesData = {
-  curriculum_data: {
-    sections: [
-      {
-        title: "Introduction to Web Development",
-        lecture_count: 4,
-        content_length: "45min",
-        items: [
-          {
-            title: "Welcome to the Course",
-            icon_class: "udi udi-video",
-            content_summary: "5min",
-            can_be_previewed: true,
-          },
-          {
-            title: "Course Overview and Setup",
-            icon_class: "udi udi-video",
-            content_summary: "12min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Development Environment Setup",
-            icon_class: "udi udi-article",
-            content_summary: "15min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Introduction Quiz",
-            icon_class: "udi udi-quiz",
-            content_summary: "10min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "HTML Fundamentals",
-        lecture_count: 5,
-        content_length: "2h 15min",
-        items: [
-          {
-            title: "HTML Basics and Structure",
-            icon_class: "udi udi-video",
-            content_summary: "25min",
-            can_be_previewed: false,
-          },
-          {
-            title: "HTML Elements and Tags",
-            icon_class: "udi udi-video",
-            content_summary: "30min",
-            can_be_previewed: false,
-          },
-          {
-            title: "HTML Forms and Input",
-            icon_class: "udi udi-video",
-            content_summary: "20min",
-            can_be_previewed: false,
-          },
-          {
-            title: "HTML Best Practices",
-            icon_class: "udi udi-article",
-            content_summary: "15min",
-            can_be_previewed: false,
-          },
-          {
-            title: "HTML Assignment: Create a Portfolio Page",
-            icon_class: "udi udi-assignment",
-            content_summary: "45min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "CSS Styling and Layout",
-        lecture_count: 6,
-        content_length: "3h 30min",
-        items: [
-          {
-            title: "CSS Basics and Selectors",
-            icon_class: "udi udi-video",
-            content_summary: "35min",
-            can_be_previewed: false,
-          },
-          {
-            title: "CSS Box Model and Layout",
-            icon_class: "udi udi-video",
-            content_summary: "40min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Flexbox Layout System",
-            icon_class: "udi udi-video",
-            content_summary: "30min",
-            can_be_previewed: false,
-          },
-          {
-            title: "CSS Grid Layout",
-            icon_class: "udi udi-video",
-            content_summary: "35min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Responsive Design Principles",
-            icon_class: "udi udi-article",
-            content_summary: "20min",
-            can_be_previewed: false,
-          },
-          {
-            title: "CSS Assignment: Style Your Portfolio",
-            icon_class: "udi udi-assignment",
-            content_summary: "60min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "JavaScript Programming",
-        lecture_count: 6,
-        content_length: "4h 15min",
-        items: [
-          {
-            title: "JavaScript Fundamentals",
-            icon_class: "udi udi-video",
-            content_summary: "45min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Variables, Functions, and Scope",
-            icon_class: "udi udi-video",
-            content_summary: "40min",
-            can_be_previewed: false,
-          },
-          {
-            title: "DOM Manipulation",
-            icon_class: "udi udi-video",
-            content_summary: "35min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Event Handling",
-            icon_class: "udi udi-video",
-            content_summary: "30min",
-            can_be_previewed: false,
-          },
-          {
-            title: "JavaScript Quiz: Fundamentals",
-            icon_class: "udi udi-quiz",
-            content_summary: "20min",
-            can_be_previewed: false,
-          },
-          {
-            title: "JavaScript Assignment: Interactive Portfolio",
-            icon_class: "udi udi-assignment",
-            content_summary: "90min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "React.js Framework",
-        lecture_count: 6,
-        content_length: "5h 20min",
-        items: [
-          {
-            title: "Introduction to React",
-            icon_class: "udi udi-video",
-            content_summary: "50min",
-            can_be_previewed: false,
-          },
-          {
-            title: "React Components and Props",
-            icon_class: "udi udi-video",
-            content_summary: "45min",
-            can_be_previewed: false,
-          },
-          {
-            title: "State and Lifecycle",
-            icon_class: "udi udi-video",
-            content_summary: "40min",
-            can_be_previewed: false,
-          },
-          {
-            title: "React Hooks",
-            icon_class: "udi udi-video",
-            content_summary: "55min",
-            can_be_previewed: false,
-          },
-          {
-            title: "React Router and Navigation",
-            icon_class: "udi udi-article",
-            content_summary: "25min",
-            can_be_previewed: false,
-          },
-          {
-            title: "React Assignment: Build a Todo App",
-            icon_class: "udi udi-assignment",
-            content_summary: "120min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "Backend Development with Node.js",
-        lecture_count: 6,
-        content_length: "4h 45min",
-        items: [
-          {
-            title: "Introduction to Node.js",
-            icon_class: "udi udi-video",
-            content_summary: "40min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Express.js Framework",
-            icon_class: "udi udi-video",
-            content_summary: "45min",
-            can_be_previewed: false,
-          },
-          {
-            title: "RESTful API Development",
-            icon_class: "udi udi-video",
-            content_summary: "50min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Database Integration with MongoDB",
-            icon_class: "udi udi-video",
-            content_summary: "55min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Authentication and Authorization",
-            icon_class: "udi udi-article",
-            content_summary: "30min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Backend Assignment: Build an API",
-            icon_class: "udi udi-assignment",
-            content_summary: "150min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-      {
-        title: "Final Project: Full-Stack Application",
-        lecture_count: 6,
-        content_length: "6h 30min",
-        items: [
-          {
-            title: "Project Planning and Architecture",
-            icon_class: "udi udi-video",
-            content_summary: "30min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Frontend Development",
-            icon_class: "udi udi-video",
-            content_summary: "60min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Backend Development",
-            icon_class: "udi udi-video",
-            content_summary: "60min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Database Design and Implementation",
-            icon_class: "udi udi-article",
-            content_summary: "25min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Testing and Deployment",
-            icon_class: "udi udi-video",
-            content_summary: "40min",
-            can_be_previewed: false,
-          },
-          {
-            title: "Final Project Submission",
-            icon_class: "udi udi-assignment",
-            content_summary: "120min",
-            can_be_previewed: false,
-          },
-        ],
-      },
-    ],
-    num_of_published_lectures: 42,
-    estimated_content_length_text: "21h 15m",
-  },
-};
-
-const dummyInstructorData = {
-  id: "instructor_001",
-  name: "Dr. Angela Yu",
-  title: "Developer and Lead Instructor",
-  profileImage: "/images/instructors/angela-yu.jpg",
-  rating: 4.7,
-  totalReviews: 992516,
-  totalStudents: 3245003,
-  totalCourses: 7,
-  bio: {
-    short:
-      "I'm Angela, I'm a developer with a passion for teaching. I'm the lead instructor at the London App Brewery, London's leading Programming Bootcamp.",
-    full: `I'm Angela, I'm a developer with a passion for teaching. I'm the **lead instructor** at the London App Brewery, London's leading **Programming Bootcamp**.
-
-I've helped hundreds of thousands of students learn to code and change their lives by becoming a developer. I've been invited by companies such as Twitter, Facebook and Google to teach their employees.
-
-My first foray into programming was when I was just 12 years old, wanting to build my own Space Invader game. Since then, I've made **hundreds of websites, apps and games**. But most importantly, I realised that my **greatest passion is teaching**.
-
-I spend most of my time researching how to make **learning to code fun** and make **hard concepts easy to understand**. I apply everything I discover into my bootcamp courses. In my courses, you'll find lots of **geeky humour** but also lots of **explanations and animations** to make sure everything is easy to understand.
-
-I'll be there for you every step of the way.`,
-    isExpanded: false,
-  },
-  socialLinks: {
-    website: "https://www.appbrewery.co",
-    twitter: "https://twitter.com/yu_angela",
-    linkedin: "https://linkedin.com/in/angela-yu",
-    github: "https://github.com/angela-yu",
-  },
-  expertise: [
-    "Web Development",
-    "Mobile App Development",
-    "Python Programming",
-    "JavaScript",
-    "React",
-    "Node.js",
-    "Flutter",
-    "Machine Learning",
-  ],
-  achievements: [
-    "Lead Instructor at London App Brewery",
-    "Taught at Twitter, Facebook, and Google",
-    "Over 3.2 million students worldwide",
-    "Creator of 7 bestselling courses",
-    "Featured in TechCrunch and Forbes",
-  ],
-  teachingStyle: {
-    approach: "Hands-on, project-based learning",
-    focus: "Making complex concepts easy to understand",
-    features: [
-      "Geeky humour",
-      "Clear explanations",
-      "Animations",
-      "Real-world projects",
-    ],
-  },
-};
-
-const dummyReviews = {
-  overallRating: 4.7,
-  totalRatings: 448887,
-  ratingBreakdown: {
-    5: 320000,
-    4: 80000,
-    3: 30000,
-    2: 10000,
-    1: 8887,
-  },
-  reviews: [
-    {
-      id: "1",
-      reviewerName: "Gytis B.",
-      reviewerInitials: "GB",
-      rating: 4.5,
-      timePosted: "3 weeks ago",
-      reviewText:
-        "I initially gave this course 5 stars, but after completing it, I found it a bit outdated, especially with React and some javascript concepts. However, the fundamentals are still solid and Angela is an excellent instructor. The course structure is well-organized and the projects are practical. I would recommend it for beginners, but intermediate developers might find some sections too basic.",
-      isExpanded: false,
-      helpfulCount: 45,
-      notHelpfulCount: 3,
-      isHelpful: null,
-    },
-    {
-      id: "2",
-      reviewerName: "Daniel H.",
-      reviewerInitials: "DH",
-      rating: 5,
-      timePosted: "a month ago",
-      reviewText:
-        "This bootcamp has been an incredible experience! The bite-sized structure makes it easy to follow along, and Angela's clear and engaging teaching style keeps you motivated throughout. The projects are practical and build upon each other perfectly. I went from knowing nothing about web development to building full-stack applications. Highly recommended for anyone starting their coding journey!",
-      isExpanded: false,
-      helpfulCount: 128,
-      notHelpfulCount: 2,
-      isHelpful: null,
-    },
-    {
-      id: "3",
-      reviewerName: "Md Nurul H.",
-      reviewerInitials: "MH",
-      rating: 5,
-      timePosted: "2 months ago",
-      reviewText:
-        "Angela Yu's Full Stack Web Development course is absolutely fantastic! It's well-structured, beginner-friendly, and hands-on. The course covers everything from HTML/CSS basics to advanced React concepts. The instructor explains complex topics in simple terms, and the practical projects help reinforce learning. I've already built several websites and feel confident in my web development skills.",
-      isExpanded: false,
-      helpfulCount: 89,
-      notHelpfulCount: 1,
-      isHelpful: null,
-    },
-    {
-      id: "4",
-      reviewerName: "Srianshu P.",
-      reviewerInitials: "SP",
-      rating: 5,
-      timePosted: "1 month ago",
-      reviewText:
-        "My experience with Angela Yu Ma'am was quite good. She is not only a good tutor but also an awesome human being who has a good sense of humour. The course content is comprehensive and up-to-date. The way she explains concepts makes complex topics easy to understand. The projects are real-world applicable and the community support is excellent.",
-      isExpanded: false,
-      helpfulCount: 67,
-      notHelpfulCount: 0,
-      isHelpful: null,
-    },
-    {
-      id: "5",
-      reviewerName: "Alex K.",
-      reviewerInitials: "AK",
-      rating: 4,
-      timePosted: "3 weeks ago",
-      reviewText:
-        "Great course overall! The content is well-organized and Angela is a fantastic instructor. I particularly enjoyed the hands-on projects and the way she breaks down complex concepts. The only minor issue is that some of the newer JavaScript features could be covered more extensively, but the fundamentals are solid.",
-      isExpanded: false,
-      helpfulCount: 34,
-      notHelpfulCount: 2,
-      isHelpful: null,
-    },
-    {
-      id: "6",
-      reviewerName: "Sarah M.",
-      reviewerInitials: "SM",
-      rating: 5,
-      timePosted: "2 weeks ago",
-      reviewText:
-        "This course exceeded my expectations! Angela's teaching style is engaging and the course structure is perfect for beginners. I love how each section builds upon the previous one. The projects are practical and helped me build a strong portfolio. The community is supportive and Angela is always responsive to questions. Worth every penny!",
-      isExpanded: false,
-      helpfulCount: 56,
-      notHelpfulCount: 1,
-      isHelpful: null,
-    },
-    {
-      id: "7",
-      reviewerName: "Michael R.",
-      reviewerInitials: "MR",
-      rating: 4.5,
-      timePosted: "1 week ago",
-      reviewText:
-        "Excellent course for web development beginners! The instructor explains everything clearly and the hands-on approach really helps with retention. The projects are well-designed and provide good practice. I would have given 5 stars, but some sections could use more recent updates. Still, highly recommended!",
-      isExpanded: false,
-      helpfulCount: 23,
-      notHelpfulCount: 1,
-      isHelpful: null,
-    },
-    {
-      id: "8",
-      reviewerName: "Emma L.",
-      reviewerInitials: "EL",
-      rating: 5,
-      timePosted: "4 days ago",
-      reviewText:
-        "This is hands down the best web development course I've taken! Angela's teaching method is brilliant - she makes complex topics accessible and fun. The course is comprehensive, covering everything from basics to advanced concepts. The projects are practical and helped me land my first web development job. Thank you, Angela!",
-      isExpanded: false,
-      helpfulCount: 78,
-      notHelpfulCount: 0,
-      isHelpful: null,
-    },
-  ],
-};
-
-const dummyRecommendedCourses = [
-  {
-    id: "1",
-    title: "The Web Developer Bootcamp 2025",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-    badge: "Premium",
-    totalHours: "74",
-    lastUpdated: "6/2025",
-    rating: 4.6,
-    totalRatings: 944436,
-    currentPrice: 499,
-    originalPrice: 3229,
-    isWishlisted: false,
-  },
-  {
-    id: "2",
-    title: "Complete web development course",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
-    badge: "Premium",
-    totalHours: "86.5",
-    lastUpdated: "8/2025",
-    rating: 4.6,
-    totalRatings: 51388,
-    currentPrice: 479,
-    originalPrice: 3089,
-    isWishlisted: false,
-  },
-  {
-    id: "3",
-    title: "100 Hours Web Development Bootcamp - Build 23 React Projects",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-    badge: "Premium",
-    totalHours: "128.5",
-    lastUpdated: "7/2025",
-    rating: 4.7,
-    totalRatings: 6640,
-    currentPrice: 499,
-    originalPrice: 2129,
-    isWishlisted: false,
-  },
-  {
-    id: "4",
-    title: "Complete 2025 Python Bootcamp: Learn Python from Scratch",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
-    badge: "Bestseller",
-    totalHours: "12.5",
-    lastUpdated: "8/2025",
-    rating: 4.6,
-    totalRatings: 19879,
-    currentPrice: 499,
-    originalPrice: 2129,
-    isWishlisted: false,
-  },
-  {
-    id: "5",
-    title: "Python Mega Course: Build 20 Real-World Apps & AI Assistants",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-    badge: "Premium",
-    totalHours: "51",
-    lastUpdated: "8/2025",
-    rating: 4.6,
-    totalRatings: 347530,
-    currentPrice: 699,
-    originalPrice: 4469,
-    isWishlisted: false,
-  },
-  {
-    id: "6",
-    title: "100 Days of Code: The Complete Python Pro Bootcamp",
-    thumbnail: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
-    badge: "Bestseller",
-    totalHours: "56.5",
-    lastUpdated: "8/2025",
-    rating: 4.7,
-    totalRatings: 1634892,
-    currentPrice: 499,
-    originalPrice: 3219,
-    isWishlisted: false,
-  },
-];
-
 // ==================== API ENDPOINTS ====================
 
 // Get course basic data (for sidebar and header)
 router.get("/:id/basic", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+      .populate("instructorId", "name")
+      .lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    const basicData = {
+      title: course.title,
+      headline: course.subtitle,
+      visible_instructors: [
+        {
+          title: course.instructorId?.name
+            ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+            : "Unknown Instructor",
+        },
+      ],
+      rating: course.rating || 0,
+      total_ratings: course.totalRatings || 0,
+      total_students: course.totalStudents || 0,
+      price: course.price || 0,
+      originalPrice: course.originalPrice || course.price,
+      discount: course.originalPrice
+        ? Math.round(
+            ((course.originalPrice - course.price) / course.originalPrice) * 100
+          )
+        : 0,
+      thumbnail: course.thumbnailUrl,
+      timeLeft: "Limited time offer!",
+      subscriptionPrice: course.price,
+    };
 
     res.json({
       success: true,
-      data: dummyCourseData,
+      data: basicData,
     });
   } catch (error) {
     console.error("Get course basic data error:", error);
@@ -723,12 +64,41 @@ router.get("/:id/basic", async (req, res) => {
 // Get course detailed data (for main content)
 router.get("/:id/detailed", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+      .populate("instructorId", "name")
+      .lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    const detailedData = {
+      primary_category: { title: course.category },
+      primary_subcategory: { title: course.subcategory },
+      context_info: { label: { title: course.category } },
+      bestseller_badge_content: {
+        badge_text: course.totalStudents > 100000 ? "Bestseller" : "",
+      },
+      last_update_date: course.updatedAt
+        ? course.updatedAt.toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      caption_languages: [course.language || "English"],
+      description: course.description,
+      requirements: course.requirements || [],
+      learningObjectives: course.learningObjectives || [],
+      level: course.level,
+      duration: course.duration || 0,
+      totalLectures: course.totalLectures || 0,
+    };
 
     res.json({
       success: true,
-      data: dummyIndividualCourseData,
+      data: detailedData,
     });
   } catch (error) {
     console.error("Get course detailed data error:", error);
@@ -742,12 +112,27 @@ router.get("/:id/detailed", async (req, res) => {
 // Get course curriculum/sections
 router.get("/:id/curriculum", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 350));
+    const { id } = req.params;
+
+    const course = await Course.findById(id).lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Return basic curriculum structure
+    const curriculumData = {
+      sections: course.sections || [],
+      totalLectures: course.totalLectures || 0,
+      totalDuration: course.duration || 0,
+    };
 
     res.json({
       success: true,
-      data: dummyIncentivesData,
+      data: curriculumData,
     });
   } catch (error) {
     console.error("Get course curriculum error:", error);
@@ -761,12 +146,41 @@ router.get("/:id/curriculum", async (req, res) => {
 // Get course instructor data
 router.get("/:id/instructor", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+      .populate("instructorId", "name")
+      .lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Get instructor profile
+    const instructor = await Instructor.findOne({
+      user: course.instructorId._id,
+    }).lean();
+
+    const instructorData = {
+      name: course.instructorId?.name
+        ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+        : "Unknown Instructor",
+      title: instructor?.title || "Expert Instructor",
+      bio:
+        instructor?.bio?.full ||
+        "Experienced instructor passionate about teaching.",
+      image: instructor?.profileImage || null,
+      totalStudents: instructor?.totalStudents || 0,
+      totalCourses: instructor?.totalCourses || 1,
+      socialLinks: instructor?.socialLinks || {},
+    };
 
     res.json({
       success: true,
-      data: dummyInstructorData,
+      data: instructorData,
     });
   } catch (error) {
     console.error("Get course instructor error:", error);
@@ -780,37 +194,41 @@ router.get("/:id/instructor", async (req, res) => {
 // Get course reviews
 router.get("/:id/reviews", async (req, res) => {
   try {
+    const { id } = req.params;
     const { page = 1, limit = 8, rating } = req.query;
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    const course = await Course.findById(id).lean();
 
-    let filteredReviews = dummyReviews.reviews;
-
-    // Filter by rating if provided
-    if (rating) {
-      filteredReviews = filteredReviews.filter(
-        (review) => review.rating >= parseInt(rating)
-      );
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
     }
 
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedReviews = filteredReviews.slice(startIndex, endIndex);
+    // Since we removed reviews from the schema, return empty reviews with course rating info
+    const reviewsData = {
+      averageRating: course.rating || 0,
+      totalRatings: course.totalRatings || 0,
+      ratingBreakdown: {
+        5: Math.floor((course.totalRatings || 0) * 0.6),
+        4: Math.floor((course.totalRatings || 0) * 0.25),
+        3: Math.floor((course.totalRatings || 0) * 0.1),
+        2: Math.floor((course.totalRatings || 0) * 0.03),
+        1: Math.floor((course.totalRatings || 0) * 0.02),
+      },
+      reviews: [], // Empty since we removed reviews
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: 0,
+        totalReviews: 0,
+        hasMore: false,
+      },
+    };
 
     res.json({
       success: true,
-      data: {
-        ...dummyReviews,
-        reviews: paginatedReviews,
-        pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(filteredReviews.length / limit),
-          totalReviews: filteredReviews.length,
-          hasMore: endIndex < filteredReviews.length,
-        },
-      },
+      data: reviewsData,
     });
   } catch (error) {
     console.error("Get course reviews error:", error);
@@ -824,16 +242,52 @@ router.get("/:id/reviews", async (req, res) => {
 // Get recommended courses (students also bought)
 router.get("/:id/recommended", async (req, res) => {
   try {
+    const { id } = req.params;
     const { limit = 6 } = req.query;
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    const currentCourse = await Course.findById(id).lean();
 
-    const limitedCourses = dummyRecommendedCourses.slice(0, parseInt(limit));
+    if (!currentCourse) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Find courses in the same category, excluding the current course
+    const recommendedCourses = await Course.find({
+      _id: { $ne: id },
+      category: currentCourse.category,
+      status: "published",
+      isActive: true,
+    })
+      .populate("instructorId", "name")
+      .limit(parseInt(limit))
+      .lean();
+
+    // Transform to match expected format
+    const transformedCourses = recommendedCourses.map((course) => ({
+      id: course._id,
+      title: course.title,
+      headline: course.subtitle,
+      instructor: {
+        name: course.instructorId?.name
+          ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+          : "Unknown Instructor",
+      },
+      rating: course.rating || 0,
+      totalRatings: course.totalRatings || 0,
+      totalStudents: course.totalStudents || 0,
+      price: course.price || 0,
+      originalPrice: course.originalPrice || course.price,
+      thumbnail: course.thumbnailUrl,
+      category: course.category,
+      level: course.level,
+    }));
 
     res.json({
       success: true,
-      data: limitedCourses,
+      data: transformedCourses,
     });
   } catch (error) {
     console.error("Get recommended courses error:", error);
@@ -847,23 +301,41 @@ router.get("/:id/recommended", async (req, res) => {
 // Get related topics
 router.get("/:id/related-topics", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    const { id } = req.params;
 
+    const course = await Course.findById(id).lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Generate related topics based on course category and subcategory
     const relatedTopics = [
-      "Web Development",
-      "JavaScript",
-      "React",
-      "Node.js",
-      "MongoDB",
-      "Full Stack Development",
-      "Frontend Development",
-      "Backend Development",
-    ];
+      course.category,
+      course.subcategory,
+      course.topic,
+    ].filter(Boolean);
+
+    // Add some generic related topics based on category
+    if (course.category === "Development") {
+      relatedTopics.push(
+        "Web Development",
+        "Programming",
+        "Software Development"
+      );
+    } else if (course.category === "IT & Software") {
+      relatedTopics.push("Cloud Computing", "DevOps", "System Administration");
+    }
+
+    // Remove duplicates and limit to 8 topics
+    const uniqueTopics = [...new Set(relatedTopics)].slice(0, 8);
 
     res.json({
       success: true,
-      data: relatedTopics,
+      data: uniqueTopics,
     });
   } catch (error) {
     console.error("Get related topics error:", error);
@@ -961,42 +433,10 @@ router.get("/:id/stats", async (req, res) => {
   }
 });
 
-// Get course pricing and offers
-router.get("/:id/pricing", async (req, res) => {
-  try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 150));
-
-    const pricing = {
-      currentPrice: 479,
-      originalPrice: 3109,
-      discount: 85,
-      subscriptionPrice: 500,
-      timeLeft: "1 day left at this price!",
-      currency: "INR",
-      isOnSale: true,
-      saleEndsAt: "2025-02-02T00:00:00Z",
-    };
-
-    res.json({
-      success: true,
-      data: pricing,
-    });
-  } catch (error) {
-    console.error("Get course pricing error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
-
-// ==================== INSTRUCTOR ENDPOINTS ====================
-
 // Get instructor's courses
 router.get("/instructor/my-courses", authenticate, async (req, res) => {
   try {
-    console.log(req.user.role);
+    console.log("user role state", req.user);
     // Only instructors can access their courses
     if (req.user.role !== "instructor") {
       return res.status(403).json({
@@ -1006,20 +446,51 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
     }
 
     // Fetch real courses from database for the authenticated user
-    console.log(req.user.userId);
+    console.log(req.user.id);
 
     const courses = await Course.find({
-      instructorId: req.user.userId,
+      instructorId: req.user.id,
     }).select(
-      "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount"
+      "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount sections"
     );
 
     console.log(courses);
+
+    // Function to calculate course completion percentage
+    const calculateCompletionPercentage = (course) => {
+      const requiredFields = {
+        title: !!course.title,
+        subtitle: !!course.subtitle,
+        thumbnailUrl: !!course.thumbnailUrl,
+        price: course.price >= 0,
+        sections: course.sections && course.sections.length > 0,
+      };
+
+      const sectionsWithContent = course.sections
+        ? course.sections.filter(
+            (section) => section.content && section.content.length > 0
+          ).length
+        : 0;
+
+      const totalRequiredSteps = 5; // Basic course info steps
+      const completedSteps =
+        Object.values(requiredFields).filter(Boolean).length;
+      const contentProgress = sectionsWithContent > 0 ? 1 : 0; // 1 point for having content
+
+      return Math.round(
+        ((completedSteps + contentProgress) / (totalRequiredSteps + 1)) * 100
+      );
+    };
+
     // Transform the data to match frontend expectations
     const instructorCourses = courses.map((course) => ({
       id: course._id,
       title: course.title,
-      status: course.status,
+      subtitle: course.subtitle,
+      status: course.status.toUpperCase(),
+      visibility: "Public", // Default visibility
+      progress: calculateCompletionPercentage(course),
+      isCompleted: course.status === "published",
       totalStudents: course.enrollmentCount || 0,
       rating: 0, // You can add rating logic later
       totalRatings: 0, // You can add rating logic later
@@ -1054,7 +525,7 @@ router.get("/instructor", authenticate, async (req, res) => {
 
     // Fetch real courses from database for the authenticated user
     const courses = await Course.find({
-      instructorId: req.user.userId,
+      instructorId: req.user.id,
     }).select(
       "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount"
     );
@@ -1090,16 +561,59 @@ router.get("/instructor", authenticate, async (req, res) => {
 // Get a specific course by ID (legacy endpoint)
 router.get("/:id", async (req, res) => {
   try {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const { id } = req.params;
+
+    const course = await Course.findById(id)
+      .populate("instructorId", "name")
+      .lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Get instructor profile
+    const instructor = await Instructor.findOne({
+      user: course.instructorId._id,
+    }).lean();
 
     const courseData = {
-      ...dummyCourseData,
-      ...dummyIndividualCourseData,
-      curriculum: dummyIncentivesData,
-      instructor: dummyInstructorData,
-      reviews: dummyReviews,
-      recommendedCourses: dummyRecommendedCourses,
+      id: course._id,
+      title: course.title,
+      subtitle: course.subtitle,
+      description: course.description,
+      category: course.category,
+      subcategory: course.subcategory,
+      level: course.level,
+      language: course.language,
+      rating: course.rating || 0,
+      totalRatings: course.totalRatings || 0,
+      totalStudents: course.totalStudents || 0,
+      price: course.price || 0,
+      originalPrice: course.originalPrice || course.price,
+      thumbnailUrl: course.thumbnailUrl,
+      duration: course.duration || 0,
+      totalLectures: course.totalLectures || 0,
+      requirements: course.requirements || [],
+      learningObjectives: course.learningObjectives || [],
+      sections: course.sections || [],
+      instructor: {
+        name: course.instructorId?.name
+          ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+          : "Unknown Instructor",
+        title: instructor?.title || "Expert Instructor",
+        bio:
+          instructor?.bio?.full ||
+          "Experienced instructor passionate about teaching.",
+        image: instructor?.profileImage || null,
+        totalStudents: instructor?.totalStudents || 0,
+        totalCourses: instructor?.totalCourses || 1,
+        socialLinks: instructor?.socialLinks || {},
+      },
+      createdAt: course.createdAt,
+      updatedAt: course.updatedAt,
     };
 
     res.json({
@@ -1127,83 +641,93 @@ router.get("/", async (req, res) => {
       limit = 12,
     } = req.query;
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 400));
-
-    // Mock course list
-    const courses = Array.from({ length: 20 }, (_, i) => ({
-      id: `course_${i + 1}`,
-      title: `Course ${i + 1}: Web Development Masterclass`,
-      headline: `Learn web development from scratch with this comprehensive course`,
-      instructor: { name: "Dr. Angela Yu" },
-      rating: 4.5 + Math.random() * 0.5,
-      totalRatings: Math.floor(Math.random() * 100000) + 1000,
-      totalStudents: Math.floor(Math.random() * 1000000) + 10000,
-      price: Math.floor(Math.random() * 500) + 200,
-      originalPrice: Math.floor(Math.random() * 2000) + 1000,
-      thumbnail: "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-      category: "Development",
-      level: "All Levels",
-      createdAt: new Date(
-        Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
-      ),
-    }));
+    // Build query
+    let query = { status: "published", isActive: true };
 
     // Apply filters
-    let filteredCourses = courses;
-
     if (category) {
-      filteredCourses = filteredCourses.filter(
-        (course) => course.category === category
-      );
+      query.category = category;
     }
 
     if (level) {
-      filteredCourses = filteredCourses.filter(
-        (course) => course.level === level
-      );
+      query.level = level;
     }
 
     if (search) {
-      filteredCourses = filteredCourses.filter(
-        (course) =>
-          course.title.toLowerCase().includes(search.toLowerCase()) ||
-          course.headline.toLowerCase().includes(search.toLowerCase())
-      );
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { subtitle: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
     }
 
-    // Apply sorting
+    // Build sort object
+    let sortObj = {};
     switch (sort) {
       case "rating":
-        filteredCourses.sort((a, b) => b.rating - a.rating);
+        sortObj = { rating: -1 };
         break;
       case "students":
-        filteredCourses.sort((a, b) => b.totalStudents - a.totalStudents);
+        sortObj = { totalStudents: -1 };
         break;
       case "price":
-        filteredCourses.sort((a, b) => a.price - b.price);
+        sortObj = { price: 1 };
         break;
       case "oldest":
-        filteredCourses.sort((a, b) => a.createdAt - b.createdAt);
+        sortObj = { createdAt: 1 };
         break;
       default: // newest
-        filteredCourses.sort((a, b) => b.createdAt - a.createdAt);
+        sortObj = { createdAt: -1 };
+        break;
     }
 
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
+    // Get total count for pagination
+    const totalCourses = await Course.countDocuments(query);
+
+    // Fetch courses with pagination
+    const courses = await Course.find(query)
+      .populate("instructorId", "name")
+      .sort(sortObj)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Transform data to match frontend expectations
+    const transformedCourses = courses.map((course) => ({
+      id: course._id,
+      title: course.title,
+      headline: course.subtitle,
+      desc: course.description,
+      instructor: {
+        name: course.instructorId?.name
+          ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+          : "Unknown Instructor",
+      },
+      rating: course.rating || 0,
+      rateScore: course.rating || 0,
+      totalRatings: course.totalRatings || 0,
+      reviewerNum: course.totalRatings || 0,
+      totalStudents: course.totalStudents || 0,
+      price: course.price || 0,
+      originalPrice: course.originalPrice || course.price,
+      img: course.thumbnailUrl,
+      thumbnail: course.thumbnailUrl,
+      category: course.category,
+      level: course.level,
+      createdAt: course.createdAt,
+      duration: course.duration,
+      totalLectures: course.totalLectures,
+    }));
 
     res.json({
       success: true,
       data: {
-        courses: paginatedCourses,
+        courses: transformedCourses,
         pagination: {
           currentPage: parseInt(page),
-          totalPages: Math.ceil(filteredCourses.length / limit),
-          totalCourses: filteredCourses.length,
-          hasMore: endIndex < filteredCourses.length,
+          totalPages: Math.ceil(totalCourses / limit),
+          totalCourses: totalCourses,
+          hasMore: page * limit < totalCourses,
         },
       },
     });
@@ -1216,20 +740,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Create a new course (instructor only)
+// Create new course (landing page data)
 router.post("/", authenticate, async (req, res) => {
   try {
-    const {
-      title,
-      headline,
-      description,
-      category,
-      subcategory,
-      price,
-      originalPrice,
-      thumbnail,
-    } = req.body;
-
     // Only instructors can create courses
     if (req.user.role !== "instructor") {
       return res.status(403).json({
@@ -1238,34 +751,310 @@ router.post("/", authenticate, async (req, res) => {
       });
     }
 
-    // Simulate course creation
-    const newCourse = {
-      id: `course_${Date.now()}`,
+    const {
       title,
-      headline,
-      instructor: req.user.userId,
+      subtitle,
+      description,
       category,
       subcategory,
+      topic,
+      language,
+      level,
+      thumbnailUrl,
+      promoVideoUrl,
       price,
       originalPrice,
-      thumbnail,
-      status: "draft",
-      createdAt: new Date(),
-    };
+      learningObjectives,
+      requirements,
+      targetAudience,
+      keywords,
+      status, // Add status to destructuring
+    } = req.body;
 
-    //add this into database
-    const course = await Course.create(newCourse);
+    console.log("📝 CREATE COURSE - Request data:", {
+      title,
+      subtitle,
+      description,
+      category,
+      status,
+    });
+
+    // Different validation levels based on course status
+    const isDraft = !status || status === "draft";
+
+    if (isDraft) {
+      // Minimal validation for draft courses - only require title
+      console.log("📝 DRAFT COURSE - Applying minimal validation");
+      if (!title || title.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Course title is required to create a draft",
+        });
+      }
+    } else {
+      // Full validation for published courses
+      console.log("📝 PUBLISHED COURSE - Applying full validation");
+      if (!title || !subtitle || !description || !category || !thumbnailUrl) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Title, subtitle, description, category, and thumbnail are required for published courses",
+        });
+      }
+
+      if (description && description.length < 200) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Description must be at least 200 characters for published courses",
+        });
+      }
+
+      if (
+        !learningObjectives ||
+        learningObjectives.filter((obj) => obj && obj.trim()).length < 4
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "At least 4 learning objectives are required for published courses",
+        });
+      }
+    }
+
+    const newCourse = new Course({
+      title: title ? title.trim() : "",
+      subtitle: subtitle ? subtitle.trim() : "",
+      description: description ? description.trim() : "",
+      category: category || "",
+      subcategory: subcategory || "",
+      topic: topic || "",
+      language: language || "English",
+      level: level || "Beginner",
+      thumbnailUrl: thumbnailUrl || "",
+      promoVideoUrl: promoVideoUrl || "",
+      price: parseFloat(price) || 0,
+      originalPrice: parseFloat(originalPrice) || parseFloat(price) || 0,
+      instructorId: req.user.id,
+      learningObjectives: learningObjectives
+        ? learningObjectives.filter((obj) => obj && obj.trim())
+        : [],
+      requirements: requirements
+        ? requirements.filter((req) => req && req.trim())
+        : [],
+      targetAudience: targetAudience
+        ? targetAudience.filter((aud) => aud && aud.trim())
+        : [],
+      keywords: keywords ? keywords.filter((kw) => kw && kw.trim()) : [],
+      status: status || "draft", // Default to draft if not specified
+      sections: [], // Will be populated in curriculum step
+      completedSteps: status === "draft" ? ["landing-page"] : [], // Track completed steps
+    });
+
+    console.log("💾 CREATING COURSE:", {
+      title: newCourse.title,
+      status: newCourse.status,
+      instructorId: newCourse.instructorId,
+    });
+
+    const savedCourse = await newCourse.save();
+
+    console.log("✅ COURSE CREATED SUCCESSFULLY:", savedCourse._id);
 
     res.status(201).json({
       success: true,
-      message: "Course created successfully",
-      data: course,
+      message: `Course ${isDraft ? "draft created" : "created"} successfully`,
+      data: {
+        _id: savedCourse._id,
+        id: savedCourse._id,
+        courseId: savedCourse._id,
+        title: savedCourse.title,
+        status: savedCourse.status,
+        completedSteps: savedCourse.completedSteps || [],
+      },
     });
   } catch (error) {
     console.error("Create course error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Update course landing page
+router.put("/:id/landing-page", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only instructors can update courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can update courses",
+      });
+    }
+
+    const course = await Course.findById(id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update your own courses",
+      });
+    }
+
+    const {
+      title,
+      subtitle,
+      description,
+      category,
+      subcategory,
+      topic,
+      language,
+      level,
+      thumbnailUrl,
+      promoVideoUrl,
+      price,
+      originalPrice,
+      learningObjectives,
+      requirements,
+      targetAudience,
+      keywords,
+    } = req.body;
+
+    // Validation
+    if (title && title.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Title must be at least 10 characters",
+      });
+    }
+
+    if (description && description.length < 200) {
+      return res.status(400).json({
+        success: false,
+        message: "Description must be at least 200 characters",
+      });
+    }
+
+    // Update fields
+    if (title) course.title = title.trim();
+    if (subtitle) course.subtitle = subtitle.trim();
+    if (description) course.description = description.trim();
+    if (category) course.category = category;
+    if (subcategory !== undefined) course.subcategory = subcategory;
+    if (topic !== undefined) course.topic = topic;
+    if (language) course.language = language;
+    if (level) course.level = level;
+    if (thumbnailUrl) course.thumbnailUrl = thumbnailUrl;
+    if (promoVideoUrl !== undefined) course.promoVideoUrl = promoVideoUrl;
+    if (price !== undefined) course.price = parseFloat(price) || 0;
+    if (originalPrice !== undefined)
+      course.originalPrice = parseFloat(originalPrice) || course.price;
+    if (learningObjectives)
+      course.learningObjectives = learningObjectives.filter((obj) =>
+        obj.trim()
+      );
+    if (requirements)
+      course.requirements = requirements.filter((req) => req.trim());
+    if (targetAudience)
+      course.targetAudience = targetAudience.filter((aud) => aud.trim());
+    if (keywords) course.keywords = keywords.filter((kw) => kw.trim());
+
+    const updatedCourse = await course.save();
+
+    res.json({
+      success: true,
+      message: "Course landing page updated successfully",
+      data: {
+        courseId: updatedCourse._id,
+        title: updatedCourse.title,
+        subtitle: updatedCourse.subtitle,
+        status: updatedCourse.status,
+      },
+    });
+  } catch (error) {
+    console.error("Update course landing page error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Get course for editing (landing page data)
+router.get("/:id/edit", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only instructors can edit courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can edit courses",
+      });
+    }
+
+    const course = await Course.findById(id).lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only edit your own courses",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        courseId: course._id,
+        title: course.title,
+        subtitle: course.subtitle,
+        description: course.description,
+        category: course.category,
+        subcategory: course.subcategory,
+        topic: course.topic,
+        language: course.language,
+        level: course.level,
+        thumbnailUrl: course.thumbnailUrl,
+        promoVideoUrl: course.promoVideoUrl,
+        price: course.price,
+        originalPrice: course.originalPrice,
+        learningObjectives: course.learningObjectives,
+        requirements: course.requirements,
+        targetAudience: course.targetAudience,
+        keywords: course.keywords,
+        status: course.status,
+        totalSections: course.sections?.length || 0,
+        totalLectures: course.totalLectures,
+        totalDuration: course.totalDuration,
+      },
+    });
+  } catch (error) {
+    console.error("Get course for editing error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
     });
   }
 });
@@ -1331,50 +1120,350 @@ router.delete("/:id", authenticate, async (req, res) => {
   }
 });
 
-// Get instructor's courses
-// router.get("/instructor/my-courses", authenticate, async (req, res) => {
-//   try {
-//     // Allow all authenticated users to access their courses
-//     // Removed instructor-only restriction
+// Update course curriculum
+router.put("/:id/curriculum", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sections } = req.body;
 
-//     // Simulate instructor courses
-//     // const instructorCourses = [
-//     //   {
-//     //     id: "course_1",
-//     //     title: "The Complete Full-Stack Web Development Bootcamp",
-//     //     status: "published",
-//     //     totalStudents: 1486975,
-//     //     rating: 4.7,
-//     //     totalRatings: 448887,
-//     //     price: 479,
-//     //     thumbnail:
-//     //       "https://img-c.udemycdn.com/course/750x422/851712_fc61_6.jpg",
-//     //     createdAt: "2023-01-15",
-//     //   },
-//     //   {
-//     //     id: "course_2",
-//     //     title: "Python for Beginners",
-//     //     status: "draft",
-//     //     totalStudents: 0,
-//     //     rating: 0,
-//     //     totalRatings: 0,
-//     //     price: 299,
-//     //     thumbnail: "https://img-c.udemycdn.com/course/750x422/567828_67d0.jpg",
-//     //     createdAt: "2025-01-20",
-//     //   },
-//     // ];
+    // Only instructors can update their courses
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can update course curriculum",
+      });
+    }
 
-//     res.json({
-//       success: true,
-//       data: instructorCourses,
-//     });
-//   } catch (error) {
-//     console.error("Get instructor courses error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//     });
-//   }
-// });
+    const course = await Course.findById(id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update your own courses",
+      });
+    }
+
+    // Update sections with proper structure
+    const updatedSections = sections.map((section, index) => ({
+      title: section.title,
+      description: section.description || "",
+      sortOrder: index,
+      isPublished: section.isPublished || false,
+      content: (section.content || []).map((content, contentIndex) => ({
+        contentType: content.contentType,
+        title: content.title,
+        description: content.description || "",
+        duration: content.duration || 0,
+        isPreview: content.isPreview || false,
+        isFree: content.isFree || false,
+        sortOrder: contentIndex,
+
+        // Content-specific data
+        ...(content.video && { video: content.video }),
+        ...(content.slides && { slides: content.slides }),
+        ...(content.document && { document: content.document }),
+        ...(content.article && { article: content.article }),
+        ...(content.quiz && { quiz: content.quiz }),
+        ...(content.codingExercise && {
+          codingExercise: content.codingExercise,
+        }),
+        ...(content.assignment && { assignment: content.assignment }),
+        ...(content.resources && { resources: content.resources }),
+      })),
+      analytics: {
+        totalDuration: (section.content || []).reduce(
+          (total, content) => total + (content.duration || 0),
+          0
+        ),
+        totalContent: (section.content || []).length,
+        averageCompletionRate: 0,
+      },
+    }));
+
+    course.sections = updatedSections;
+
+    // Update course statistics
+    course.updateStatistics();
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Curriculum updated successfully",
+      data: {
+        sections: course.sections,
+        totalDuration: course.totalDuration,
+        totalLectures: course.totalLectures,
+        totalQuizzes: course.totalQuizzes,
+        totalAssignments: course.totalAssignments,
+      },
+    });
+  } catch (error) {
+    console.error("Update curriculum error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Upload course content file (video, slides, documents)
+router.post("/:id/upload", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sectionId, contentId, fileType } = req.body;
+
+    // Only instructors can upload files
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can upload course content",
+      });
+    }
+
+    const course = await Course.findById(id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only upload to your own courses",
+      });
+    }
+
+    // For now, return a mock response since we don't have actual file upload setup
+    // In production, you would integrate with AWS S3, Google Cloud Storage, etc.
+    const mockFileUrl = `https://storage.example.com/courses/${id}/${sectionId}/${contentId}/${fileType}_${Date.now()}`;
+
+    res.json({
+      success: true,
+      message: "File uploaded successfully",
+      data: {
+        url: mockFileUrl,
+        fileType,
+        uploadStatus: "completed",
+        size: Math.floor(Math.random() * 100000000), // Mock file size
+      },
+    });
+  } catch (error) {
+    console.error("Upload file error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Get course curriculum for editing
+router.get("/:id/curriculum/edit", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only instructors can edit curriculum
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can edit course curriculum",
+      });
+    }
+
+    const course = await Course.findById(id).lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only edit your own courses",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        courseId: course._id,
+        title: course.title,
+        sections: course.sections || [],
+        totalDuration: course.totalDuration,
+        totalLectures: course.totalLectures,
+        totalQuizzes: course.totalQuizzes,
+        totalAssignments: course.totalAssignments,
+      },
+    });
+  } catch (error) {
+    console.error("Get curriculum for editing error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Bulk upload endpoint for multiple files
+router.post("/:id/bulk-upload", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { files, sectionId } = req.body;
+
+    // Only instructors can bulk upload
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can bulk upload course content",
+      });
+    }
+
+    const course = await Course.findById(id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Verify the instructor owns this course
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only upload to your own courses",
+      });
+    }
+
+    // Mock bulk upload processing
+    const uploadResults = files.map((file, index) => ({
+      filename: file.name,
+      url: `https://storage.example.com/courses/${id}/${sectionId}/bulk_${Date.now()}_${index}`,
+      uploadStatus: "completed",
+      size: Math.floor(Math.random() * 100000000),
+      contentType: file.type.startsWith("video/")
+        ? "video"
+        : file.type.includes("presentation") || file.type.includes("pdf")
+        ? "document"
+        : "article",
+    }));
+
+    res.json({
+      success: true,
+      message: `${files.length} files uploaded successfully`,
+      data: {
+        uploads: uploadResults,
+        totalFiles: files.length,
+        successfulUploads: uploadResults.length,
+      },
+    });
+  } catch (error) {
+    console.error("Bulk upload error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Get content analytics
+router.get("/:id/analytics/content", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const course = await Course.findById(id).lean();
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Calculate content analytics
+    const analytics = {
+      totalSections: course.sections?.length || 0,
+      totalContent:
+        course.totalLectures + course.totalQuizzes + course.totalAssignments,
+      totalDuration: course.totalDuration,
+      contentBreakdown: {
+        videos: 0,
+        articles: 0,
+        quizzes: 0,
+        assignments: 0,
+        codingExercises: 0,
+      },
+      sectionAnalytics: [],
+    };
+
+    // Analyze each section
+    course.sections?.forEach((section) => {
+      const sectionAnalytics = {
+        sectionId: section._id,
+        title: section.title,
+        contentCount: section.content?.length || 0,
+        duration: section.analytics?.totalDuration || 0,
+        isPublished: section.isPublished,
+        completionRate: section.analytics?.averageCompletionRate || 0,
+      };
+
+      // Count content types in this section
+      section.content?.forEach((content) => {
+        switch (content.contentType) {
+          case "video":
+          case "video_slide_mashup":
+            analytics.contentBreakdown.videos++;
+            break;
+          case "article":
+            analytics.contentBreakdown.articles++;
+            break;
+          case "quiz":
+          case "practice_test":
+            analytics.contentBreakdown.quizzes++;
+            break;
+          case "assignment":
+            analytics.contentBreakdown.assignments++;
+            break;
+          case "coding_exercise":
+            analytics.contentBreakdown.codingExercises++;
+            break;
+        }
+      });
+
+      analytics.sectionAnalytics.push(sectionAnalytics);
+    });
+
+    res.json({
+      success: true,
+      data: analytics,
+    });
+  } catch (error) {
+    console.error("Get content analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

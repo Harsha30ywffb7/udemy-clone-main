@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
+
+console.log("API Base URL:", API_BASE_URL, import.meta.env.VITE_API_BASE_URL);
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
@@ -32,6 +36,9 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// This function has been moved to instructorService.js
+// Use instructorService.getCourses() instead
 
 // Course API Service
 export const courseService = {
@@ -188,7 +195,9 @@ export const courseService = {
     }
   },
 
-  // Create new course (instructor only)
+  // Course Creation and Management
+
+  // Create new course
   createCourse: async (courseData) => {
     try {
       const response = await apiClient.post("/courses", courseData);
@@ -197,6 +206,121 @@ export const courseService = {
       console.error("Error creating course:", error);
       throw error;
     }
+  },
+
+  // Update course landing page
+  updateCourseLandingPage: async (courseId, landingPageData) => {
+    try {
+      const response = await apiClient.put(
+        `/courses/${courseId}/landing-page`,
+        landingPageData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course landing page:", error);
+      throw error;
+    }
+  },
+
+  // Get course for editing
+  getCourseForEdit: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/edit`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching course for edit:", error);
+      throw error;
+    }
+  },
+
+  // Upload course image
+  uploadCourseImage: async (courseId, imageFile) => {
+    try {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append("courseId", courseId);
+
+      const response = await apiClient.post(
+        `/courses/${courseId}/upload-image`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            console.log(`Upload progress: ${percentCompleted}%`);
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading course image:", error);
+      throw error;
+    }
+  },
+
+  // Validation utilities for course data
+  validateCourseData: {
+    title: (title) => {
+      const errors = [];
+      if (!title?.trim()) errors.push("Title is required");
+      else if (title.length < 10)
+        errors.push("Title should be at least 10 characters");
+      else if (title.length > 100)
+        errors.push("Title should be less than 100 characters");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    subtitle: (subtitle) => {
+      const errors = [];
+      if (!subtitle?.trim()) errors.push("Subtitle is required");
+      else if (subtitle.length < 10)
+        errors.push("Subtitle should be at least 10 characters");
+      else if (subtitle.length > 200)
+        errors.push("Subtitle should be less than 200 characters");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    description: (description) => {
+      const errors = [];
+      if (!description?.trim()) errors.push("Description is required");
+      else if (description.length < 200)
+        errors.push("Description should be at least 200 characters");
+      else if (description.length > 5000)
+        errors.push("Description should be less than 5000 characters");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    learningObjectives: (objectives) => {
+      const errors = [];
+      const validObjectives = objectives?.filter((obj) => obj.trim()) || [];
+      if (validObjectives.length < 4)
+        errors.push("At least 4 learning objectives are required");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    price: (price, originalPrice) => {
+      const errors = [];
+      if (price < 0) errors.push("Price cannot be negative");
+      if (originalPrice && originalPrice < price)
+        errors.push("Original price should be higher than current price");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    thumbnailUrl: (url) => {
+      const errors = [];
+      if (!url?.trim()) errors.push("Course image is required");
+      else if (
+        !url.match(/\.(jpg|jpeg|png|gif|webp)$/i) &&
+        !url.startsWith("http")
+      ) {
+        errors.push("Please provide a valid image URL");
+      }
+      return { isValid: errors.length === 0, errors };
+    },
   },
 
   // Update course (instructor only)
@@ -230,6 +354,249 @@ export const courseService = {
       console.error("Error fetching instructor courses:", error);
       throw error;
     }
+  },
+
+  // Curriculum and Content Management
+
+  // Get course curriculum for editing
+  getCurriculumForEdit: async (courseId) => {
+    try {
+      const response = await apiClient.get(
+        `/courses/${courseId}/curriculum/edit`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching curriculum for edit:", error);
+      throw error;
+    }
+  },
+
+  // Update course curriculum
+  updateCourseCurriculum: async (courseId, curriculumData) => {
+    try {
+      const response = await apiClient.put(
+        `/courses/${courseId}/curriculum`,
+        curriculumData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course curriculum:", error);
+      throw error;
+    }
+  },
+
+  // Upload course content file
+  uploadCourseContent: async (courseId, uploadData) => {
+    try {
+      const response = await apiClient.post(
+        `/courses/${courseId}/upload`,
+        uploadData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (uploadData.onProgress) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              uploadData.onProgress(percentCompleted);
+            }
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading course content:", error);
+      throw error;
+    }
+  },
+
+  // Bulk upload multiple files
+  bulkUploadContent: async (courseId, uploadData) => {
+    try {
+      const response = await apiClient.post(
+        `/courses/${courseId}/bulk-upload`,
+        uploadData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (uploadData.onProgress) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              uploadData.onProgress(percentCompleted);
+            }
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error bulk uploading content:", error);
+      throw error;
+    }
+  },
+
+  // Get content analytics
+  getCourseContentAnalytics: async (courseId) => {
+    try {
+      const response = await apiClient.get(
+        `/courses/${courseId}/analytics/content`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching content analytics:", error);
+      throw error;
+    }
+  },
+
+  // Content validation utilities
+  validateContent: {
+    video: (videoData) => {
+      const errors = [];
+      if (!videoData.title?.trim()) errors.push("Video title is required");
+      if (!videoData.video?.url && !videoData.video?.file)
+        errors.push("Video file is required");
+      if (videoData.duration && videoData.duration < 0)
+        errors.push("Duration must be positive");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    article: (articleData) => {
+      const errors = [];
+      if (!articleData.title?.trim()) errors.push("Article title is required");
+      if (!articleData.article?.content?.trim())
+        errors.push("Article content is required");
+      if (
+        articleData.article?.estimatedReadTime &&
+        articleData.article.estimatedReadTime < 1
+      ) {
+        errors.push("Read time must be at least 1 minute");
+      }
+      return { isValid: errors.length === 0, errors };
+    },
+
+    quiz: (quizData) => {
+      const errors = [];
+      if (!quizData.title?.trim()) errors.push("Quiz title is required");
+      if (!quizData.quiz?.questions || quizData.quiz.questions.length === 0) {
+        errors.push("Quiz must have at least one question");
+      }
+      if (
+        quizData.quiz?.passingScore &&
+        (quizData.quiz.passingScore < 0 || quizData.quiz.passingScore > 100)
+      ) {
+        errors.push("Passing score must be between 0 and 100");
+      }
+      return { isValid: errors.length === 0, errors };
+    },
+
+    codingExercise: (exerciseData) => {
+      const errors = [];
+      if (!exerciseData.title?.trim())
+        errors.push("Exercise title is required");
+      if (!exerciseData.codingExercise?.language)
+        errors.push("Programming language is required");
+      if (!exerciseData.codingExercise?.instructions?.trim())
+        errors.push("Instructions are required");
+      return { isValid: errors.length === 0, errors };
+    },
+
+    assignment: (assignmentData) => {
+      const errors = [];
+      if (!assignmentData.title?.trim())
+        errors.push("Assignment title is required");
+      if (!assignmentData.assignment?.instructions?.trim())
+        errors.push("Instructions are required");
+      if (!assignmentData.assignment?.submissionType)
+        errors.push("Submission type is required");
+      return { isValid: errors.length === 0, errors };
+    },
+  },
+
+  // File upload utilities
+  uploadUtils: {
+    // Get allowed file types for content type
+    getAllowedFileTypes: (contentType) => {
+      const fileTypes = {
+        video: ["mp4", "mov", "avi", "wmv", "flv", "webm"],
+        slides: ["ppt", "pptx", "pdf"],
+        document: ["pdf", "doc", "docx", "txt"],
+        image: ["jpg", "jpeg", "png", "gif", "webp", "svg"],
+        audio: ["mp3", "wav", "ogg", "aac"],
+      };
+      return fileTypes[contentType] || [];
+    },
+
+    // Get max file size for content type (in bytes)
+    getMaxFileSize: (contentType) => {
+      const sizes = {
+        video: 500 * 1024 * 1024, // 500MB
+        slides: 50 * 1024 * 1024, // 50MB
+        document: 25 * 1024 * 1024, // 25MB
+        image: 10 * 1024 * 1024, // 10MB
+        audio: 25 * 1024 * 1024, // 25MB
+      };
+      return sizes[contentType] || 10 * 1024 * 1024; // Default 10MB
+    },
+
+    // Validate file before upload
+    validateFile: (file, contentType) => {
+      const errors = [];
+      const allowedTypes =
+        courseService.uploadUtils.getAllowedFileTypes(contentType);
+      const maxSize = courseService.uploadUtils.getMaxFileSize(contentType);
+
+      if (!file) {
+        errors.push("No file selected");
+        return { isValid: false, errors };
+      }
+
+      // Check file extension
+      const fileExtension = file.name.split(".").pop().toLowerCase();
+      if (!allowedTypes.includes(fileExtension)) {
+        errors.push(
+          `File type .${fileExtension} is not allowed. Allowed types: ${allowedTypes.join(
+            ", "
+          )}`
+        );
+      }
+
+      // Check file size
+      if (file.size > maxSize) {
+        const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+        errors.push(`File size must be less than ${maxSizeMB}MB`);
+      }
+
+      return { isValid: errors.length === 0, errors };
+    },
+
+    // Format file size for display
+    formatFileSize: (bytes) => {
+      if (bytes === 0) return "0 Bytes";
+      const k = 1024;
+      const sizes = ["Bytes", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    },
+
+    // Format duration for display
+    formatDuration: (seconds) => {
+      if (!seconds || seconds <= 0) return "0:00";
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+
+      if (hours > 0) {
+        return `${hours}:${minutes
+          .toString()
+          .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+      } else {
+        return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+      }
+    },
   },
 };
 
