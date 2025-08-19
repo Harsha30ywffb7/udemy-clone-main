@@ -40,9 +40,9 @@ export const Header = () => {
       <div className="flex items-center justify-between px-6 h-[72px] bg-white flex-nowrap">
         <Link to="/" className="flex-shrink-0 pr-3 text-purple-700">
           <img
-            className="w-[91px] h-[34px]"
             src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-            alt="Udemy Logo"
+            alt="Vidhyara Logo"
+            className="h-8"
           />
         </Link>
         {!isInstructorPage && (
@@ -76,13 +76,13 @@ export const Header = () => {
             </Link>
           )}
 
-          {/* Show Teach on Udemy for non-logged in users */}
-          {!isLoggedIn && (
+          {/* Show Teach on Vidhyara for non-logged in users */}
+          {!user?.user && (
             <Link
-              to="/teach"
-              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+              to="/instructor-signup"
+              className="text-[#1c1d1f] hover:text-[#5624d0] text-sm font-medium"
             >
-              Teach on Udemy
+              Teach on Vidhyara
             </Link>
           )}
 

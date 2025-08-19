@@ -1,51 +1,36 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white border-t border-gray-700">
-      <div className="flex flex-wrap items-center justify-between py-4 px-6 gap-4">
-        {/* Logo */}
-        <div className="flex-shrink-0">
-          <a href="#" className="block cursor-pointer w-20 h-6">
+    <footer className="mt-16 bg-[#1c1d1f] text-white py-8">
+      <div className="max-w-[134rem] mx-auto px-[2.4rem]">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+              About us
+            </Link>
+            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+              Contact us
+            </Link>
+            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+              Help and support
+            </Link>
+            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+              Privacy policy
+            </Link>
+          </div>
+
+          <div className="flex items-center space-x-4">
             <img
               src="/images/logo-udemy-inverted.svg"
-              alt="Udemy Logo"
-              className="w-full h-auto"
+              alt="Vidhyara Logo"
+              className="h-8"
             />
-          </a>
-        </div>
-
-        {/* Footer Links */}
-        <div className="flex flex-wrap items-center gap-6 md:gap-8">
-          <a
-            href="#"
-            className="text-sm text-white hover:text-gray-300 hover:underline transition-colors duration-200 whitespace-nowrap"
-          >
-            About us
-          </a>
-          <a
-            href="#"
-            className="text-sm text-white hover:text-gray-300 hover:underline transition-colors duration-200 whitespace-nowrap"
-          >
-            Contact us
-          </a>
-          <a
-            href="#"
-            className="text-sm text-white hover:text-gray-300 hover:underline transition-colors duration-200 whitespace-nowrap"
-          >
-            Help and support
-          </a>
-          <a
-            href="#"
-            className="text-sm text-white hover:text-gray-300 hover:underline transition-colors duration-200 whitespace-nowrap"
-          >
-            Privacy policy
-          </a>
-        </div>
-
-        {/* Copyright */}
-        <div className="flex-shrink-0 text-sm whitespace-nowrap">
-          &copy; 2024 Udemy, Inc.
+            <span className="text-sm text-gray-300">
+              &copy; 2024 Vidhyara, Inc.
+            </span>
+          </div>
         </div>
       </div>
     </footer>
