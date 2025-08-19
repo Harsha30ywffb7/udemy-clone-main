@@ -8,6 +8,7 @@ import Instructor from "../Login_Signup/Instructor";
 import InstructorOnboarding from "../Instructor/InstructorOnboarding";
 import InstructorCourses from "../Instructor/InstructorCourses";
 import CourseCreation from "../Instructor/CourseCreation";
+import CourseCreationWorkflow from "../Instructor/CourseCreationWorkflow";
 import CourseEditPage from "../Instructor/CourseEditPage";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
@@ -15,71 +16,104 @@ import Footer from "../Footer/Footer";
 import CoursePage from "../Course/CoursePage";
 import ProfilePage from "../Login_Signup/ProfilePage";
 
-// Protected Route for Instructor Onboarding
-const InstructorOnboardingRoute = () => {
-  const { user } = useSelector((store) => store.auth);
-  const userData = user?.user;
-
-  // If not logged in, redirect to login
-  if (!userData) {
-    return <Navigate to="/login" />;
-  }
-
-  // Only instructors can access onboarding
-  if (userData.role !== "instructor") {
-    return <Navigate to="/" />;
-  }
-
-  // Show onboarding
-  return <InstructorOnboarding />;
-};
-
-// Protected Route for Instructor Courses
-const InstructorCoursesRoute = () => {
-  const { user } = useSelector((store) => store.auth);
-  const userData = user?.user;
-
-  // If not logged in, redirect to login
-  if (!userData) {
-    return <Navigate to="/login" />;
-  }
-
-  // Only instructors can access instructor courses
-  if (userData.role !== "instructor") {
-    return <Navigate to="/" />;
-  }
-
-  // Show courses
-  return <InstructorCourses />;
-};
-
-const InstructorRoutes = () => {
-  return <Instructor />;
-};
-
-// Protected Route for Course Creation
-const CourseCreationRoute = () => {
+// General Protected Route Component for authenticated users
+const ProtectedRoute = ({ children }) => {
   const { user } = useSelector((store) => store.auth);
   const userData = user?.user;
   const token = localStorage.getItem("token");
 
-  // If not logged in, redirect to login
+  console.log("🛡️ PROTECTED ROUTE - Checking authentication...");
+  console.log("🛡️ PROTECTED ROUTE - Token exists:", !!token);
+  console.log("🛡️ PROTECTED ROUTE - User data exists:", !!userData);
+
+  // If no token, redirect to login
   if (!token) {
+    console.log("🚫 PROTECTED ROUTE - No token found, redirecting to login");
     return <Navigate to="/login" />;
   }
 
-  // If token exists but no user data, show loading or redirect
-  if (token && !userData) {
+  // If token but no user data, redirect to login (invalid token)
+  if (!userData) {
+    console.log(
+      "🚫 PROTECTED ROUTE - Token exists but no user data, redirecting to login"
+    );
     return <Navigate to="/login" />;
   }
 
-  // Only instructors can create courses
+  console.log("✅ PROTECTED ROUTE - Authentication verified, allowing access");
+  return children;
+};
+
+// Protected Route Component for Instructors
+const InstructorProtectedRoute = ({ children }) => {
+  const { user } = useSelector((store) => store.auth);
+  const userData = user?.user;
+  const token = localStorage.getItem("token");
+
+  console.log("👨‍🏫 INSTRUCTOR ROUTE - Checking instructor authentication...");
+  console.log("👨‍🏫 INSTRUCTOR ROUTE - Token exists:", !!token);
+  console.log("👨‍🏫 INSTRUCTOR ROUTE - User data exists:", !!userData);
+  console.log("👨‍🏫 INSTRUCTOR ROUTE - User role:", userData?.role);
+
+  // If no token, redirect to login
+  if (!token) {
+    console.log("🚫 INSTRUCTOR ROUTE - No token found, redirecting to login");
+    return <Navigate to="/login" />;
+  }
+
+  // If token but no user data, redirect to login (invalid token)
+  if (!userData) {
+    console.log(
+      "🚫 INSTRUCTOR ROUTE - Token exists but no user data, redirecting to login"
+    );
+    return <Navigate to="/login" />;
+  }
+
+  // If user exists but is not an instructor, redirect to home
   if (userData.role !== "instructor") {
+    console.log(
+      "🚫 INSTRUCTOR ROUTE - User is not an instructor, redirecting to home"
+    );
     return <Navigate to="/" />;
   }
 
-  // Show course creation
-  return <CourseCreation />;
+  console.log("✅ INSTRUCTOR ROUTE - Authentication verified, allowing access");
+  return children;
+};
+
+// Individual Protected Route Components
+const InstructorOnboardingRoute = () => (
+  <InstructorProtectedRoute>
+    <InstructorOnboarding />
+  </InstructorProtectedRoute>
+);
+
+const InstructorCoursesRoute = () => (
+  <InstructorProtectedRoute>
+    <InstructorCourses />
+  </InstructorProtectedRoute>
+);
+
+const CourseCreationRoute = () => (
+  <InstructorProtectedRoute>
+    <CourseCreation />
+  </InstructorProtectedRoute>
+);
+
+const CourseCreationWorkflowRoute = () => (
+  <InstructorProtectedRoute>
+    <CourseCreationWorkflow />
+  </InstructorProtectedRoute>
+);
+
+const CourseEditRoute = () => (
+  <InstructorProtectedRoute>
+    <CourseEditPage />
+  </InstructorProtectedRoute>
+);
+
+const InstructorRoutes = () => {
+  return <Instructor />;
 };
 
 export const AllRoutes = () => {
@@ -92,16 +126,43 @@ export const AllRoutes = () => {
     <>
       {!isProfilePage && !isCourseCreatePage && <Header />}
       <Routes>
-        <Route path="/" element={<Landin />}></Route>
-        <Route path="/courses/:id" element={<CoursePage />}></Route>
-        <Route path="/course/create" element={<CourseCreationRoute />} />
-        <Route path="/course/:id" element={<CoursePage />}></Route>
-        <Route path="/profile" element={<ProfilePage />}></Route>
-        <Route path="/profile/edit" element={<ProfilePage />}></Route>
-        <Route path="/wishlist" element={<Wishlist />}></Route>
-        <Route path="/signup" element={<Signup />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-        <Route path="/teach" element={<InstructorRoutes />}></Route>
+        {/* Public Routes */}
+        <Route path="/" element={<Landin />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/teach" element={<InstructorRoutes />} />
+
+        {/* Course Routes */}
+        <Route path="/courses/:id" element={<CoursePage />} />
+        <Route path="/course/:id" element={<CoursePage />} />
+
+        {/* User Routes */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Instructor Routes - Organized and Clean */}
         <Route
           path="/instructor/onboard"
           element={<InstructorOnboardingRoute />}
@@ -110,9 +171,22 @@ export const AllRoutes = () => {
           path="/instructor/courses"
           element={<InstructorCoursesRoute />}
         />
+
+        {/* Course Creation Flow */}
+        <Route path="/course/create" element={<CourseCreationRoute />} />
+        <Route
+          path="/instructor/course/create"
+          element={<CourseCreationWorkflowRoute />}
+        />
+        <Route
+          path="/instructor/course/edit/:courseId"
+          element={<CourseCreationWorkflowRoute />}
+        />
+
+        {/* Legacy Course Edit Route */}
         <Route
           path="/instructor/course/:courseId/edit"
-          element={<CourseEditPage />}
+          element={<CourseEditRoute />}
         />
       </Routes>
       {!isProfilePage && <Footer />}

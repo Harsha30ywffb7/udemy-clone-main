@@ -89,9 +89,9 @@ const Instructor = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center">
           <img
-            className="h-12 w-auto"
             src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-            alt="Udemy"
+            alt="Vidhyara"
+            className="h-10 mb-6"
           />
         </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

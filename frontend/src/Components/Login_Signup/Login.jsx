@@ -68,14 +68,14 @@ const Login = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center">
           <img
-            className="h-12 w-auto"
             src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-            alt="Udemy"
+            alt="Vidhyara"
+            className="h-10 mb-6"
           />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Log in to your Vidhyara account
+          </h1>
         </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Log in to your Udemy account
-        </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
