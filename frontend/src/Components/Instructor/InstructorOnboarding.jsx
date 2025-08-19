@@ -10,7 +10,7 @@ const QUESTIONS = [
     total: 3,
     title: "Share your knowledge",
     description:
-      "Udemy courses are video-based experiences that give students the chance to learn actionable skills. Whether you have experience teaching, or it’s your first time, we’ll help you package your knowledge into an online course that improves student lives.",
+      "Vidhyara courses are video-based experiences that give students the chance to learn actionable skills. Whether you have experience teaching, or it’s your first time, we’ll help you package your knowledge into an online course that improves student lives.",
     prompt: "What kind of teaching have you done before?",
     options: [
       { id: "informal", label: "In person, informally" },
@@ -42,7 +42,7 @@ const QUESTIONS = [
     total: 3,
     title: "Expand your reach",
     description:
-      "Once you publish your course, you can grow your student audience and make an impact with the support of Udemy's marketplace promotions and also through your own marketing efforts. Together, we’ll help the right students discover your course.",
+      "Once you publish your course, you can grow your student audience and make an impact with the support of Vidhyara's marketplace promotions and also through your own marketing efforts. Together, we’ll help the right students discover your course.",
     prompt: "Do you have an audience to share your course with?",
     options: [
       { id: "none", label: "Not at the moment" },

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import { instructorService } from "../../services/instructorService";
 
 const CourseCreation = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -10,6 +10,8 @@ const CourseCreation = () => {
     category: "",
     timeCommitment: "",
   });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const navigate = useNavigate();
 
   const steps = [
@@ -91,6 +93,45 @@ const CourseCreation = () => {
     },
   ];
 
+  // Validation functions
+  const validateField = (field, value) => {
+    switch (field) {
+      case "title":
+        if (!value.trim()) return "Course title is required";
+        if (value.length < 5) return "Title should be at least 5 characters";
+        if (value.length > 60) return "Title should be less than 60 characters";
+        return "";
+      case "courseType":
+        if (!value) return "Please select a course type";
+        return "";
+      case "category":
+        if (!value) return "Please select a category";
+        return "";
+      case "timeCommitment":
+        if (!value) return "Please select your time commitment";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const validateCurrentStep = () => {
+    const stepKey = {
+      1: "courseType",
+      2: "title",
+      3: "category",
+      4: "timeCommitment",
+    };
+
+    const field = stepKey[currentStep];
+    if (field) {
+      const error = validateField(field, courseData[field]);
+      setErrors((prev) => ({ ...prev, [field]: error }));
+      return !error;
+    }
+    return true;
+  };
+
   const handleOptionSelect = (value) => {
     const stepKey = {
       1: "courseType",
@@ -99,21 +140,49 @@ const CourseCreation = () => {
       4: "timeCommitment",
     };
 
+    const field = stepKey[currentStep];
+    console.log("Selected value:", value, field);
+
+    // Clear error when selecting an option
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
     setCourseData({
       ...courseData,
-      [stepKey[currentStep]]: value,
+      [field]: value,
     });
 
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
+    console.log("Current step after selection:", currentStep);
+
+    if (currentStep === steps.length) {
+      console.log("Final step reached, handle course creation");
+      // Final step reached, handle course creation
+      handleCreateCourse();
+    }
   };
 
   const handleInputChange = (e) => {
+    const value = e.target.value;
+
     setCourseData({
       ...courseData,
-      title: e.target.value,
+      title: value,
     });
+
+    // Real-time validation - clear error if field becomes valid
+    if (touched.title) {
+      const error = validateField("title", value);
+      setErrors((prev) => ({ ...prev, title: error }));
+    }
+  };
+
+  const handleInputBlur = (e) => {
+    setTouched((prev) => ({ ...prev, title: true }));
+    const error = validateField("title", e.target.value);
+    setErrors((prev) => ({ ...prev, title: error }));
   };
 
   const handleBack = () => {
@@ -123,56 +192,73 @@ const CourseCreation = () => {
   };
 
   const handleContinue = () => {
-    if (currentStep === 2 && courseData.title.trim()) {
-      setCurrentStep(currentStep + 1);
-    } else if (currentStep > 2) {
+    setTouched((prev) => ({ ...prev, title: true }));
+
+    if (validateCurrentStep()) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleCreateCourse = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "/api/courses",
-        {
-          title: courseData.title,
-          category: courseData.category,
-          type: courseData.courseType,
-          timeCommitment: courseData.timeCommitment,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    // Validate all fields before submitting
+    const allErrors = {};
+    Object.keys(courseData).forEach((field) => {
+      const error = validateField(field, courseData[field]);
+      if (error) allErrors[field] = error;
+    });
 
-      if (response.data.success) {
-        navigate("/instructor/courses");
+    setErrors(allErrors);
+    setTouched({
+      courseType: true,
+      title: true,
+      category: true,
+      timeCommitment: true,
+    });
+
+    if (Object.keys(allErrors).some((key) => allErrors[key])) {
+      return; // Don't submit if there are errors
+    }
+
+    try {
+      const result = await instructorService.createCourse({
+        title: courseData.title,
+        category: courseData.category,
+        type: courseData.courseType,
+        timeCommitment: courseData.timeCommitment,
+      });
+
+      if (result.success) {
+        // Redirect to course creation workflow with the new course ID
+        navigate(`/instructor/course/edit/${result.data.courseId}`);
+      } else {
+        console.error("Course creation failed:", result.message);
+        // If API fails, still redirect to workflow for demo purposes
+        navigate("/instructor/course/create");
       }
     } catch (error) {
       console.error("Error creating course:", error);
+      // If API fails, still redirect to workflow for demo purposes
+      navigate("/instructor/course/create");
     }
   };
 
   const currentStepData = steps.find((step) => step.id === currentStep);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between max-w-6xl mx-auto">
           <Link to="/" className="flex items-center">
             <img
               src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-              alt="Udemy"
+              alt="Vidhyara"
               className="h-8"
             />
           </Link>
           <button
             onClick={() => navigate("/instructor/courses")}
-            className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+            className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
           >
             Exit
           </button>
@@ -180,15 +266,15 @@ const CourseCreation = () => {
       </header>
 
       {/* Progress Bar */}
-      <div className="bg-gray-100 px-6 py-2">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">
+      <div className="bg-white px-6 py-3 border-b border-gray-100">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm text-gray-600 font-medium">
               Step {currentStep} of {steps.length}
             </span>
-            <div className="flex-1 bg-gray-300 rounded-full h-2 ml-4">
+            <div className="flex-1 bg-gray-200 rounded-full h-1.5 ml-4">
               <div
-                className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                className="bg-purple-600 h-1.5 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${(currentStep / steps.length) * 100}%` }}
               ></div>
             </div>
@@ -197,60 +283,110 @@ const CourseCreation = () => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-3xl mx-auto px-6 py-16">
         <div className="max-w-2xl mx-auto">
           {/* Step Title */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
               {currentStepData?.title}
             </h1>
             {currentStepData?.subtitle && (
-              <p className="text-lg text-gray-600">
+              <p className="text-base text-gray-600 leading-relaxed">
                 {currentStepData.subtitle}
               </p>
             )}
           </div>
 
           {/* Step Content */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Step 1 & 4: Option Cards */}
             {(currentStep === 1 || currentStep === 4) && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {currentStepData.options.map((option) => (
                   <button
                     key={option.id}
-                    onClick={() => handleOptionSelect(option.id)}
-                    className="w-full p-6 border-2 border-gray-200 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200 text-left group"
+                    onClick={() => handleOptionSelect(option.title)}
+                    className="w-full p-5 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-25 hover:shadow-sm transition-all duration-200 text-left group bg-white"
                   >
                     <div className="flex items-start space-x-4">
-                      <div className="text-2xl group-hover:scale-110 transition-transform duration-200">
+                      <div className="text-xl group-hover:scale-105 transition-transform duration-200 mt-1">
                         {option.icon}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
                           {option.title}
                         </h3>
-                        <p className="text-gray-600">{option.description}</p>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {option.description}
+                        </p>
                       </div>
                     </div>
                   </button>
                 ))}
+
+                {/* Error Message */}
+                {touched[currentStep === 1 ? "courseType" : "timeCommitment"] &&
+                  errors[
+                    currentStep === 1 ? "courseType" : "timeCommitment"
+                  ] && (
+                    <div className="mt-3 text-sm text-red-600 flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {
+                        errors[
+                          currentStep === 1 ? "courseType" : "timeCommitment"
+                        ]
+                      }
+                    </div>
+                  )}
               </div>
             )}
 
             {/* Step 2: Title Input */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
                   <input
                     type="text"
                     placeholder={currentStepData.placeholder}
                     value={courseData.title}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none transition-colors duration-200"
+                    onBlur={(e) => handleInputBlur(e)}
+                    className={`w-full px-4 py-3 text-base border rounded-lg focus:outline-none transition-colors duration-200 ${
+                      errors.title && touched.title
+                        ? "border-red-500"
+                        : "border-gray-300 focus:border-purple-500"
+                    }`}
                     maxLength="60"
                   />
                   <div className="flex justify-between items-center mt-2">
+                    <div>
+                      {errors.title && touched.title && (
+                        <span className="text-sm text-red-600 flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {errors.title}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-sm text-gray-500">
                       {courseData.title.length}/60
                     </span>
@@ -260,14 +396,13 @@ const CourseCreation = () => {
                 <div className="flex justify-between">
                   <button
                     onClick={handleBack}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
                   >
                     Previous
                   </button>
                   <button
                     onClick={handleContinue}
-                    disabled={!courseData.title.trim()}
-                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-medium"
                   >
                     Continue
                   </button>
@@ -278,24 +413,44 @@ const CourseCreation = () => {
             {/* Step 3: Category Selection */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {currentStepData.options.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => handleOptionSelect(category)}
-                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200 text-left"
-                    >
-                      <span className="text-gray-900 font-medium">
-                        {category}
-                      </span>
-                    </button>
-                  ))}
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {currentStepData.options.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => handleOptionSelect(category)}
+                        className="p-3 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-25 transition-all duration-200 text-left"
+                      >
+                        <span className="text-gray-900 font-medium text-sm">
+                          {category}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Error Message */}
+                  {touched.category && errors.category && (
+                    <div className="mt-3 text-sm text-red-600 flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {errors.category}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between">
                   <button
                     onClick={handleBack}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
                   >
                     Previous
                   </button>
@@ -323,39 +478,43 @@ const CourseCreation = () => {
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
                     You're ready to create your course!
                   </h2>
-                  <p className="text-gray-600 mb-8">
+                  <p className="text-base text-gray-600 mb-8 leading-relaxed">
                     Based on your selections, we'll help you create an amazing
                     learning experience.
                   </p>
                 </div>
 
                 {/* Course Summary */}
-                <div className="bg-gray-50 rounded-lg p-6 text-left max-w-md mx-auto">
-                  <h3 className="font-semibold text-gray-900 mb-4">
+                <div className="bg-white rounded-lg p-6 border border-gray-200 text-left max-w-md mx-auto">
+                  <h3 className="font-semibold text-gray-900 mb-4 text-base">
                     Course Summary:
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Type:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {courseData.courseType}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Title:</span>
-                      <span className="font-medium">{courseData.title}</span>
+                      <span className="font-medium text-gray-900">
+                        {courseData.title}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Category:</span>
-                      <span className="font-medium">{courseData.category}</span>
+                      <span className="font-medium text-gray-900">
+                        {courseData.category}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Time Commitment:</span>
-                      <span className="font-medium">
-                        {courseData.timeCommitment} hours/week
+                      <span className="font-medium text-gray-900">
+                        {courseData.timeCommitment}
                       </span>
                     </div>
                   </div>
@@ -364,13 +523,13 @@ const CourseCreation = () => {
                 <div className="flex justify-center space-x-4">
                   <button
                     onClick={handleBack}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                    className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200 font-medium"
                   >
                     Back
                   </button>
                   <button
                     onClick={handleCreateCourse}
-                    className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+                    className="px-8 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium"
                   >
                     Create Course
                   </button>

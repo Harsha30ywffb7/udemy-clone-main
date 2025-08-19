@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { courseService, courseUtils } from "../../services/courseService";
 
 // Material-UI Icons
@@ -710,7 +710,7 @@ const CoursePage = () => {
   const { id } = useParams();
   const [courseData, setCourseData] = useState(dummyCourseData);
   const [courseDetails, setCourseDetails] = useState(dummyIndividualCourseData);
-  const [loading, setLoading] = useState(false); // Set to false to use dummy data
+  const [loading, setLoading] = useState(true); // Set to true to load real data
   const [showSliderMenu, setShowSliderMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showButton, setShowButton] = useState(false);
@@ -744,14 +744,29 @@ const CoursePage = () => {
   const courseBodyRef = useRef(null);
 
   useEffect(() => {
-    // Fetch course data using the new API service
-    fetchCourseData();
-    fetchCourseDetails();
-    fetchCourseCurriculum();
-    fetchCourseInstructor();
-    fetchCourseReviews();
-    fetchRecommendedCourses();
-    fetchRelatedTopics();
+    const loadCourseData = async () => {
+      setLoading(true);
+      try {
+        // Fetch course data using the new API service
+        await Promise.all([
+          fetchCourseData(),
+          fetchCourseDetails(),
+          fetchCourseCurriculum(),
+          fetchCourseInstructor(),
+          fetchCourseReviews(),
+          fetchRecommendedCourses(),
+          fetchRelatedTopics(),
+        ]);
+      } catch (error) {
+        console.error("Error loading course data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      loadCourseData();
+    }
   }, [id]);
 
   useEffect(() => {
@@ -773,17 +788,14 @@ const CoursePage = () => {
   // API calls using the new course service
   const fetchCourseData = async () => {
     try {
-      setLoading(true);
       const response = await courseService.getCourseBasic(id);
       if (response.success) {
         setCourseData(response.data);
+      } else {
+        console.error("Failed to fetch course basic data:", response.message);
       }
     } catch (error) {
       console.error("Error fetching course basic data:", error);
-      // Fallback to dummy data
-      setCourseData(dummyCourseData);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -792,11 +804,14 @@ const CoursePage = () => {
       const response = await courseService.getCourseDetailed(id);
       if (response.success) {
         setCourseDetails(response.data);
+      } else {
+        console.error(
+          "Failed to fetch course detailed data:",
+          response.message
+        );
       }
     } catch (error) {
       console.error("Error fetching course detailed data:", error);
-      // Fallback to dummy data
-      setCourseDetails(dummyIndividualCourseData);
     }
   };
 
@@ -1139,17 +1154,17 @@ const CoursePage = () => {
         <div className="flex-1 mr-8 max-w-4xl">
           {/* Course Categories */}
           <div className="flex items-center text-sm font-semibold text-purple-300 mb-6">
-            <a href="#" className="hover:text-purple-200">
-              {courseDetails.primary_category?.title}
-            </a>
+            <Link to="/" className="hover:text-purple-200">
+              Development
+            </Link>
             <KeyboardArrowRightIcon className="text-white text-xs mx-1" />
-            <a href="#" className="hover:text-purple-200">
-              {courseDetails.primary_subcategory?.title}
-            </a>
+            <Link to="/" className="hover:text-purple-200">
+              Web Development
+            </Link>
             <KeyboardArrowRightIcon className="text-white text-xs mx-1" />
-            <a href="#" className="hover:text-purple-200">
-              {courseDetails?.context_info?.label?.title}
-            </a>
+            <Link to="/" className="hover:text-purple-200">
+              JavaScript
+            </Link>
           </div>
 
           {/* Course Title */}

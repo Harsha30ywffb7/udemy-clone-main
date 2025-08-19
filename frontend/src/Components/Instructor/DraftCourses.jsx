@@ -1,33 +1,183 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { instructorService } from "../../services/instructorService";
 
 const Courses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("Newest");
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const courses = [
-    {
-      id: 1,
-      title: "Data structures and algorithms",
-      status: "DRAFT",
-      visibility: "Public",
-      progress: 85,
-      isCompleted: false,
-    },
-    {
-      id: 2,
-      title: "Data structures and algorithms",
-      status: "DRAFT",
-      visibility: "Public",
-      progress: 0,
-      isCompleted: false,
-    },
-  ];
+  // Fetch instructor courses from API
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setError("Please login to view your courses");
+          return;
+        }
+
+        const result = await instructorService.getCourses();
+        if (result.success) {
+          setCourses(result.data);
+          setError(null);
+        } else {
+          setError(result.message);
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        setError("Failed to load courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // Filter and search functionality
+  const filteredCourses = useMemo(() => {
+    let filtered = courses;
+
+    // Apply status filter
+    if (activeFilter === "Published") {
+      filtered = filtered.filter((course) => course.status === "PUBLISHED");
+    } else if (activeFilter === "Draft") {
+      filtered = filtered.filter((course) => course.status === "DRAFT");
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter((course) =>
+        course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "Newest":
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case "Oldest":
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        case "A-Z":
+          return a.title.localeCompare(b.title);
+        case "Z-A":
+          return b.title.localeCompare(a.title);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [courses, searchTerm, sortBy, activeFilter]);
+
+  const getFilterCounts = () => {
+    const all = courses.length;
+    const published = courses.filter((c) => c.status === "PUBLISHED").length;
+    const draft = courses.filter((c) => c.status === "DRAFT").length;
+    return { all, published, draft };
+  };
+
+  const { all, published, draft } = getFilterCounts();
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="p-6 bg-white min-h-screen font-sans">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Courses</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-64 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="w-32 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mb-6">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="w-20 h-8 bg-gray-200 rounded-full animate-pulse"
+            ></div>
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-gray-50 rounded-lg border border-gray-200 p-5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="space-y-2">
+                    <div className="w-48 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-32 h-3 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-6">
+                  <div className="w-20 h-2 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="flex space-x-1">
+                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-6 bg-white min-h-screen font-sans">
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="w-8 h-8 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Error Loading Courses
+          </h3>
+          <p className="text-sm text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen font-sans">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 m-0">Courses</h1>
-        <div className="flex items-center gap-4">
+    <div className="p-6 bg-white min-h-screen font-sans">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 m-0">Courses</h2>
+        <div className="flex items-center gap-3">
           {/* Search Container */}
           <div className="relative flex items-center">
             <input
@@ -35,11 +185,11 @@ const Courses = () => {
               placeholder="Search your courses"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-70 h-12 px-4 pr-12 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:border-purple-600 transition-colors duration-200"
+              className="w-64 h-10 px-3 pr-10 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-purple-500 transition-colors duration-200"
             />
-            <div className="absolute right-4 text-gray-400">
+            <div className="absolute right-3 text-gray-400">
               <svg
-                className="w-5 h-5"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -59,14 +209,14 @@ const Courses = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="h-12 px-4 pr-10 border-2 border-gray-300 rounded text-sm text-gray-900 bg-white focus:outline-none focus:border-purple-600 cursor-pointer appearance-none"
+              className="h-10 px-3 pr-8 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-purple-500 cursor-pointer appearance-none"
             >
               <option value="Newest">Newest</option>
               <option value="Oldest">Oldest</option>
               <option value="A-Z">A-Z</option>
               <option value="Z-A">Z-A</option>
             </select>
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
               <svg
                 className="w-4 h-4"
                 fill="none"
@@ -84,42 +234,78 @@ const Courses = () => {
           </div>
 
           {/* New Course Button */}
-          <button className="h-12 px-6 bg-purple-600 text-white font-medium rounded hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200">
+          <button
+            onClick={() => navigate("/course/create")}
+            className="h-10 px-4 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200 text-sm"
+          >
             New Course
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <button className="px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-full border border-purple-600 hover:bg-purple-100 transition-colors duration-200">
-          All (2)
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => setActiveFilter("All")}
+          className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors duration-200 ${
+            activeFilter === "All"
+              ? "text-purple-600 bg-purple-50 border-purple-600"
+              : "text-gray-600 bg-white border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          All ({all})
         </button>
-        <button className="px-4 py-2 text-sm font-medium text-gray-600 bg-white rounded-full border border-gray-300 hover:bg-gray-50 transition-colors duration-200">
-          Published (0)
+        <button
+          onClick={() => setActiveFilter("Published")}
+          className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors duration-200 ${
+            activeFilter === "Published"
+              ? "text-purple-600 bg-purple-50 border-purple-600"
+              : "text-gray-600 bg-white border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Published ({published})
         </button>
-        <button className="px-4 py-2 text-sm font-medium text-gray-600 bg-white rounded-full border border-gray-300 hover:bg-gray-50 transition-colors duration-200">
-          Draft (2)
+        <button
+          onClick={() => setActiveFilter("Draft")}
+          className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors duration-200 ${
+            activeFilter === "Draft"
+              ? "text-purple-600 bg-purple-50 border-purple-600"
+              : "text-gray-600 bg-white border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          Draft ({draft})
         </button>
       </div>
 
       {/* Course List */}
-      <div className="space-y-4">
-        {courses.map((course) => (
+      <div className="space-y-3">
+        {filteredCourses.map((course) => (
           <div
             key={course.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
+            className="bg-gray-50 rounded-lg border border-gray-200 p-5 hover:shadow-sm transition-shadow duration-200"
           >
             <div className="flex items-center justify-between">
               {/* Course Info */}
               <div className="flex items-center space-x-4">
-                {/* Course Image Placeholder */}
-                <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                {/* Course Image */}
+                <div className="w-14 h-14 bg-gray-200 rounded flex items-center justify-center overflow-hidden">
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.nextSibling.style.display = "flex";
+                      }}
+                    />
+                  ) : null}
                   <svg
-                    className="w-8 h-8 text-gray-400"
+                    className="w-7 h-7 text-gray-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    style={{ display: course.thumbnail ? "none" : "block" }}
                   >
                     <path
                       strokeLinecap="round"
@@ -132,14 +318,23 @@ const Courses = () => {
 
                 {/* Course Details */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h3 className="text-base font-semibold text-gray-900 mb-1">
                     {course.title}
                   </h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
+                  <div className="flex items-center space-x-3 text-sm text-gray-600">
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        course.status === "PUBLISHED"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {course.status}
                     </span>
                     <span>{course.visibility}</span>
+                    {course.totalStudents > 0 && (
+                      <span>{course.totalStudents} students</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -148,22 +343,36 @@ const Courses = () => {
               <div className="flex items-center space-x-6">
                 {/* Progress */}
                 <div className="flex items-center space-x-2">
-                  <div className="w-24 h-2 bg-gray-200 rounded-full">
+                  <div className="w-20 h-1.5 bg-gray-200 rounded-full">
                     <div
-                      className="h-2 bg-green-500 rounded-full"
-                      style={{ width: `${course.progress}%` }}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        course.progress === 100
+                          ? "bg-green-500"
+                          : course.progress > 70
+                          ? "bg-blue-500"
+                          : course.progress > 40
+                          ? "bg-yellow-500"
+                          : "bg-red-400"
+                      }`}
+                      style={{ width: `${Math.max(course.progress, 5)}%` }}
                     ></div>
                   </div>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 min-w-[3rem]">
                     {course.progress}%
                   </span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() =>
+                      navigate(`/instructor/course/edit/${course.id}`)
+                    }
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200"
+                    title="Edit course"
+                  >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -176,9 +385,12 @@ const Courses = () => {
                       />
                     </svg>
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                  <button
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200"
+                    title="More options"
+                  >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -198,12 +410,12 @@ const Courses = () => {
         ))}
       </div>
 
-      {/* Empty State (if no courses) */}
-      {courses.length === 0 && (
+      {/* Empty State */}
+      {filteredCourses.length === 0 && !loading && (
         <div className="text-center py-16">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-12 h-12 text-gray-400"
+              className="w-10 h-10 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -216,15 +428,22 @@ const Courses = () => {
               />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Jump Into Course Creation
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {searchTerm ? "No courses found" : "Jump Into Course Creation"}
           </h3>
-          <p className="text-gray-600 mb-6">
-            Create an engaging course with the help of our marketplace insights.
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            {searchTerm
+              ? `No courses match "${searchTerm}". Try a different search term.`
+              : "Create an engaging course with the help of our marketplace insights."}
           </p>
-          <button className="px-6 py-3 bg-purple-600 text-white font-medium rounded hover:bg-purple-700 transition-colors duration-200">
-            Create Your Course
-          </button>
+          {!searchTerm && (
+            <button
+              onClick={() => navigate("/course/create")}
+              className="px-5 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200 text-sm"
+            >
+              Create Your Course
+            </button>
+          )}
         </div>
       )}
     </div>
