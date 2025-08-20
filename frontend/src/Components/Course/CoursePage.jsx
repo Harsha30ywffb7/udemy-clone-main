@@ -1,10 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactPlayer from "react-player";
-import { courseService } from "../../services/courseService";
-import "./VideoPlayer.css";
+import VideoSection from "./VideoSection";
+import CurriculumList from "./CurriculumList";
+import CourseHeader from "./CourseHeader";
+import CourseMetaBlocks from "./CourseMetaBlocks";
 
-// Material-UI Icons
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import SlideshowIcon from "@mui/icons-material/Slideshow";
+import ArticleIcon from "@mui/icons-material/Article";
+import HelpIcon from "@mui/icons-material/Help";
+import CodeIcon from "@mui/icons-material/Code";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import DescriptionIcon from "@mui/icons-material/Description";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloseIcon from "@mui/icons-material/Close";
 import StarIcon from "@mui/icons-material/Star";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LanguageIcon from "@mui/icons-material/Language";
@@ -18,20 +28,18 @@ import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import SettingsIcon from "@mui/icons-material/Settings";
-import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import ArticleIcon from "@mui/icons-material/Article";
-import HelpIcon from "@mui/icons-material/Help";
-import CodeIcon from "@mui/icons-material/Code";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import SlideshowIcon from "@mui/icons-material/Slideshow";
-import DescriptionIcon from "@mui/icons-material/Description";
-import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import CloseIcon from "@mui/icons-material/Close";
+import {
+  FALLBACK_MP4_URL,
+  isYoutubeUrl,
+  getContentIcon,
+  formatDuration,
+} from "./constants";
+import { courseService } from "../../services/courseService";
 
 const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  
 
   // Course data
   const [course, setCourse] = useState(null);
@@ -40,13 +48,17 @@ const CoursePage = () => {
 
   // Video player state
   const [currentVideo, setCurrentVideo] = useState(null);
+  const playerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState("");
+  const FALLBACK_SRC = FALLBACK_MP4_URL;
 
   // UI state
   const [expandedSections, setExpandedSections] = useState(new Set());
@@ -88,30 +100,37 @@ const CoursePage = () => {
     loadCourseData();
   }, [id]);
 
-  // Content type to icon mapping
-  const getContentIcon = (contentType) => {
-    const iconMap = {
-      video: VideoLibraryIcon,
-      video_slide_mashup: SlideshowIcon,
-      article: ArticleIcon,
-      quiz: HelpIcon,
-      coding_exercise: CodeIcon,
-      assignment: AssignmentIcon,
-      practice_test: HelpIcon,
-      role_play: PlayCircleOutlineIcon,
-      presentation: SlideshowIcon,
-      document: DescriptionIcon,
-    };
-    return iconMap[contentType] || VideoLibraryIcon;
-  };
+  // Keyboard shortcuts for video player
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (!isVideoMode) return;
 
-  // Format duration
-  const formatDuration = (seconds) => {
-    if (!seconds || seconds === 0) return "0:00";
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs.toString().padStart(2, "0")}`;
-  };
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          handlePlayPause();
+          break;
+        case "f":
+        case "F":
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case "m":
+        case "M":
+          e.preventDefault();
+          toggleMute();
+          break;
+        case "Escape":
+          if (isFullscreen) {
+            toggleFullscreen();
+          }
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
+  }, [isVideoMode, isFullscreen]);
 
   // Handle content click (video mode activation)
   const handleContentClick = (
@@ -127,11 +146,19 @@ const CoursePage = () => {
         contentIndex,
         sectionTitle,
       };
+      console.log("videoData", videoData);
 
       setCurrentVideo(videoData);
       setIsVideoMode(true);
-      setPlaying(true);
+      // don't auto-play to avoid browser autoplay blocks; show overlay instead
+      setPlaying(false);
       setPlayed(0);
+      const srcCandidate = content.video?.url || "";
+      const chosen = isYoutubeUrl(srcCandidate)
+        ? FALLBACK_MP4_URL
+        : srcCandidate;
+      setCurrentSrc(chosen);
+      setVideoLoading(false);
     } else {
       alert(
         `${content.contentType.replace("_", " ").toUpperCase()}: ${
@@ -147,6 +174,7 @@ const CoursePage = () => {
     setCurrentVideo(null);
     setPlaying(false);
     setPlayed(0);
+    setVideoLoading(false);
   };
 
   // Toggle section expansion
@@ -162,11 +190,23 @@ const CoursePage = () => {
 
   // Video player event handlers
   const handlePlayPause = () => {
-    setPlaying(!playing);
+    const next = !playing;
+    setPlaying(next);
+    setVideoLoading(next);
   };
 
   const handleProgress = (state) => {
     setPlayed(state.played);
+    if (state.playedSeconds && state.playedSeconds > 0) {
+      setVideoLoading(false);
+    }
+    if (
+      playerRef.current &&
+      typeof playerRef.current.getDuration === "function"
+    ) {
+      const d = playerRef.current.getDuration();
+      if (d && d !== duration) setDuration(d);
+    }
   };
 
   const handleDuration = (duration) => {
@@ -286,36 +326,57 @@ const CoursePage = () => {
           {/* Video Player Section */}
           <div className="flex-1 bg-black relative">
             <div className="relative w-full h-full">
-              {/* React Player */}
-              <ReactPlayer
-                ref={playerRef}
-                url={currentVideo.video.url}
-                width="100%"
-                height="100%"
+              <VideoSection
+                playerRef={playerRef}
+                url={currentSrc || FALLBACK_SRC}
                 playing={playing}
                 volume={muted ? 0 : volume}
                 onProgress={handleProgress}
-                onDuration={handleDuration}
                 onEnded={() =>
                   markAsCompleted(
                     currentVideo.sectionIndex,
                     currentVideo.contentIndex
                   )
                 }
-                controls={false}
-                className="react-player"
+                onError={(error) => {
+                  console.error("Video playback error:", error);
+                  setVideoLoading(false);
+                }}
+                onPlay={() => setVideoLoading(false)}
+                style={{ position: "absolute", top: 0, left: 0 }}
               />
+
+              {/* Loading Overlay */}
+              {videoLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-6">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Click to Play Overlay */}
+              {!playing && !videoLoading && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
+                  onClick={handlePlayPause}
+                >
+                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-6 hover:bg-white/30 transition-all duration-200">
+                    <PlayArrowIcon className="text-white text-6xl" />
+                  </div>
+                </div>
+              )}
 
               {/* Custom Controls Overlay */}
               {showControls && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                   {/* Progress Bar */}
                   <div
-                    className="w-full h-2 bg-gray-600 rounded-full cursor-pointer mb-4"
+                    className="w-full h-2 bg-gray-600 rounded-full cursor-pointer mb-4 hover:h-3 transition-all duration-200"
                     onClick={handleSeek}
                   >
                     <div
-                      className="h-full bg-purple-500 rounded-full"
+                      className="h-full bg-purple-500 rounded-full transition-all duration-200"
                       style={{ width: `${played * 100}%` }}
                     />
                   </div>
@@ -323,10 +384,14 @@ const CoursePage = () => {
                   {/* Controls */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
+                      {/* Keyboard shortcuts hint */}
+                      <div className="text-xs text-gray-400 hidden md:block">
+                        Space: Play/Pause • F: Fullscreen • M: Mute
+                      </div>
                       {/* Play/Pause */}
                       <button
                         onClick={handlePlayPause}
-                        className="text-white hover:text-purple-400 text-2xl"
+                        className="text-white hover:text-purple-400 text-2xl transition-colors duration-200 hover:scale-110"
                       >
                         {playing ? <PauseIcon /> : <PlayArrowIcon />}
                       </button>
@@ -335,7 +400,7 @@ const CoursePage = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={toggleMute}
-                          className="text-white hover:text-purple-400"
+                          className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110"
                         >
                           {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                         </button>
@@ -346,7 +411,7 @@ const CoursePage = () => {
                           step={0.1}
                           value={muted ? 0 : volume}
                           onChange={handleVolumeChange}
-                          className="w-20 h-1 bg-gray-600 rounded-lg appearance-none slider"
+                          className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer"
                         />
                       </div>
 
@@ -359,14 +424,14 @@ const CoursePage = () => {
 
                     <div className="flex items-center gap-4">
                       {/* Settings */}
-                      <button className="text-white hover:text-purple-400">
+                      <button className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110">
                         <SettingsIcon />
                       </button>
 
                       {/* Fullscreen */}
                       <button
                         onClick={toggleFullscreen}
-                        className="text-white hover:text-purple-400"
+                        className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110"
                       >
                         {isFullscreen ? (
                           <FullscreenExitIcon />
@@ -398,131 +463,14 @@ const CoursePage = () => {
                 {formatDuration(curriculum.totalDuration)}
               </div>
             </div>
-
-            {/* Sections List */}
-            <div className="divide-y divide-gray-700">
-              {curriculum.sections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="bg-gray-800">
-                  {/* Section Header */}
-                  <button
-                    onClick={() => toggleSection(sectionIndex)}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center justify-between"
-                  >
-                    <div>
-                      <h3 className="font-medium">{section.title}</h3>
-                      <p className="text-sm text-gray-400">
-                        {section.content?.length || 0} lectures •{" "}
-                        {formatDuration(
-                          section.content?.reduce(
-                            (total, content) => total + (content.duration || 0),
-                            0
-                          ) || 0
-                        )}
-                      </p>
-                    </div>
-                    {expandedSections.has(sectionIndex) ? (
-                      <KeyboardArrowUpIcon />
-                    ) : (
-                      <KeyboardArrowDownIcon />
-                    )}
-                  </button>
-
-                  {/* Section Content */}
-                  {expandedSections.has(sectionIndex) && (
-                    <div className="bg-gray-750">
-                      {section.content?.map((content, contentIndex) => {
-                        const IconComponent = getContentIcon(
-                          content.contentType
-                        );
-                        const isCompleted = isContentCompleted(
-                          sectionIndex,
-                          contentIndex
-                        );
-                        const isCurrent =
-                          currentVideo &&
-                          currentVideo.sectionIndex === sectionIndex &&
-                          currentVideo.contentIndex === contentIndex;
-
-                        return (
-                          <button
-                            key={contentIndex}
-                            onClick={() =>
-                              handleContentClick(
-                                content,
-                                sectionIndex,
-                                contentIndex,
-                                section.title
-                              )
-                            }
-                            className={`w-full px-6 py-3 text-left hover:bg-gray-600 flex items-center gap-3 border-l-4 ${
-                              isCurrent
-                                ? "border-purple-500 bg-gray-700"
-                                : "border-transparent"
-                            }`}
-                          >
-                            <div className="flex-shrink-0">
-                              {isCompleted ? (
-                                <CheckCircleIcon
-                                  className="text-green-500"
-                                  style={{ fontSize: 20 }}
-                                />
-                              ) : (
-                                <IconComponent
-                                  className={
-                                    content.contentType === "video"
-                                      ? "text-blue-400"
-                                      : "text-gray-400"
-                                  }
-                                  style={{ fontSize: 20 }}
-                                />
-                              )}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={`font-medium truncate ${
-                                  isCurrent ? "text-purple-300" : "text-white"
-                                }`}
-                              >
-                                {content.title}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-400">
-                                <span className="capitalize">
-                                  {content.contentType.replace("_", " ")}
-                                </span>
-                                {content.duration > 0 && (
-                                  <>
-                                    <span>•</span>
-                                    <AccessTimeIcon style={{ fontSize: 12 }} />
-                                    <span>
-                                      {formatDuration(content.duration)}
-                                    </span>
-                                  </>
-                                )}
-                                {content.isPreview && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-green-400">
-                                      Preview
-                                    </span>
-                                  </>
-                                )}
-                                {content.isFree && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="text-blue-400">Free</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <CurriculumList
+              curriculum={curriculum}
+              expandedSections={expandedSections}
+              toggleSection={toggleSection}
+              currentVideo={currentVideo}
+              isContentCompleted={isContentCompleted}
+              handleContentClick={handleContentClick}
+            />
           </div>
         </div>
       </div>
@@ -532,136 +480,7 @@ const CoursePage = () => {
   // Regular Course Page Layout
   return (
     <div className="bg-gray-900 min-h-screen">
-      {/* Course Header */}
-      <div className="bg-gray-800 text-white">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex gap-8">
-            {/* Left Content */}
-            <div className="flex-1">
-              {/* Course Title */}
-              <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-
-              {/* Course Headline */}
-              <p className="text-lg text-gray-300 mb-6">{course.headline}</p>
-
-              {/* Course Stats */}
-              <div className="flex items-center gap-6 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-400 font-bold">
-                    {course.rating || 4.5}
-                  </span>
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon
-                        key={star}
-                        className="text-yellow-400 text-sm"
-                      />
-                    ))}
-                  </div>
-                  <span className="text-purple-300">
-                    ({course.total_ratings?.toLocaleString() || "0"} ratings)
-                  </span>
-                </div>
-                <div className="text-gray-300">
-                  {course.total_students?.toLocaleString() || "0"} students
-                </div>
-              </div>
-
-              {/* Instructor */}
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-gray-300">Created by</span>
-                <span className="text-purple-300 font-semibold">
-                  {course.visible_instructors
-                    ?.map((instructor) => instructor.title || instructor.name)
-                    .join(", ") || "Instructor"}
-                </span>
-              </div>
-
-              {/* Course Details */}
-              <div className="flex items-center gap-4 text-sm text-gray-400">
-                <div className="flex items-center gap-1">
-                  <AccessTimeIcon className="text-xs" />
-                  <span>
-                    Last updated {course.last_update_date || "Recently"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <LanguageIcon className="text-xs" />
-                  <span>{course.language || "English"}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Sidebar - Course Card */}
-            <div className="w-80 flex-shrink-0">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                {/* Course Thumbnail */}
-                <div className="relative">
-                  <img
-                    src={course.thumbnailUrl || course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      e.target.src = `https://via.placeholder.com/320x180/6366f1/ffffff?text=${encodeURIComponent(
-                        course.title.substring(0, 20)
-                      )}`;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                    <button className="bg-white bg-opacity-90 rounded-full p-4 hover:bg-opacity-100 transition-all">
-                      <PlayCircleOutlineIcon className="text-gray-800 text-4xl" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Course Actions */}
-                <div className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="text-3xl font-bold text-green-600 mb-2">
-                      FREE
-                    </div>
-                  </div>
-
-                  <button className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 font-medium mb-3">
-                    Enroll for Free
-                  </button>
-
-                  <div className="text-center text-sm text-gray-600">
-                    30-Day Money-Back Guarantee
-                  </div>
-
-                  {/* Course Features */}
-                  <div className="mt-6 space-y-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <AccessTimeIcon className="text-gray-500 text-xs" />
-                      <span>
-                        {formatDuration(curriculum?.totalDuration || 0)}{" "}
-                        on-demand video
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ArticleIcon className="text-gray-500 text-xs" />
-                      <span>{curriculum?.totalLectures || 0} articles</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircleIcon className="text-gray-500 text-xs" />
-                      <span>Full lifetime access</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircleIcon className="text-gray-500 text-xs" />
-                      <span>Access on mobile and TV</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircleIcon className="text-gray-500 text-xs" />
-                      <span>Certificate of completion</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CourseHeader course={course} />
 
       {/* Course Body */}
       <div className="bg-white">
@@ -671,9 +490,11 @@ const CoursePage = () => {
             <div className="flex-1 max-w-4xl">
               {/* What You'll Learn */}
               <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-6">What you'll learn</h2>
+                <h2 className="text-2xl font-bold mb-6">
+                  What you'll learn from Course
+                </h2>
                 <div className="grid grid-cols-2 gap-4">
-                  {course.learning_objectives?.map((objective, index) => (
+                  {course.learningObjectives?.map((objective, index) => (
                     <div key={index} className="flex items-start gap-3">
                       <CheckCircleIcon className="text-gray-700 text-sm flex-shrink-0 mt-0.5" />
                       <span className="text-sm text-gray-700">{objective}</span>
@@ -858,7 +679,7 @@ const CoursePage = () => {
                   Who this course is for
                 </h2>
                 <ul className="space-y-2">
-                  {course.target_audience?.map((audience, index) => (
+                  {course.targetAudience?.map((audience, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></div>
                       <span className="text-sm text-gray-700">{audience}</span>
