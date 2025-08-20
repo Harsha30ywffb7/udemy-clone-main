@@ -3,10 +3,11 @@ import LanguageIcon from "@mui/icons-material/Language";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import Badge from "@mui/material/Badge";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserData } from "../../Redux/login/action";
 import ProfileDropdown from "./ProfileDropdown";
+import { courseService } from "../../services/courseService";
 
 export const Header = () => {
   const { user } = useSelector((store) => store.auth);
@@ -35,6 +36,66 @@ export const Header = () => {
   const isLoggedIn = !!user?.user;
   const isInstructor = user?.user?.role === "instructor";
 
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const suggestionsCacheRef = useRef(new Map());
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef(null);
+
+  const onChangeQuery = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      const q = value.trim();
+      if (!q) {
+        // Show last cached results if any
+        const cached = suggestionsCacheRef.current.get("") || [];
+        setSuggestions(cached);
+        return;
+      }
+      try {
+        // serve from cache if present
+        if (suggestionsCacheRef.current.has(q)) {
+          setSuggestions(suggestionsCacheRef.current.get(q));
+          setOpen(true);
+          return;
+        }
+        const res = await courseService.getSearchSuggestions(q, 8);
+        const data = res?.data || [];
+        setSuggestions(data);
+        suggestionsCacheRef.current.set(q, data);
+        if (!suggestionsCacheRef.current.has("")) {
+          suggestionsCacheRef.current.set("", data);
+        }
+        setOpen(true);
+      } catch (err) {
+        setSuggestions([]);
+      }
+    }, 400);
+  };
+
+  const onFocus = () => {
+    if (suggestions.length > 0) setOpen(true);
+  };
+
+  const onBlur = () => {
+    setTimeout(() => setOpen(false), 150);
+  };
+
+  const goToCourse = (id) => {
+    navigate(`/course/${id}`);
+    setOpen(false);
+  };
+
+  const goToSearchResults = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (q.length === 0) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+    setOpen(false);
+  };
+
   return (
     <header className="max-w-full">
       <div className="flex items-center justify-between px-6 h-[72px] bg-white flex-nowrap">
@@ -53,7 +114,10 @@ export const Header = () => {
           </nav>
         )}
         {!isInstructorPage && (
-          <div className="flex items-center flex-4 max-w-[800px] min-w-[400px] mx-4 border border-gray-900 rounded-full px-3 bg-white h-12">
+          <form
+            onSubmit={goToSearchResults}
+            className="relative flex items-center flex-4 max-w-[800px] min-w-[400px] mx-4 border border-gray-900 rounded-full px-3 bg-white h-12"
+          >
             <button className="bg-transparent text-gray-900 border-none text-xs mr-2">
               <SearchIcon />
             </button>
@@ -61,8 +125,49 @@ export const Header = () => {
               type="text"
               placeholder="Search for anything"
               className="bg-transparent border-none w-full h-full text-sm focus:outline-none"
+              value={query}
+              onChange={onChangeQuery}
+              onFocus={onFocus}
+              onBlur={onBlur}
             />
-          </div>
+            {open && (
+              <div className="absolute left-0 top-12 w-full bg-white border border-gray-200 shadow-xl rounded-md z-50 p-3">
+                <div className="text-xs font-semibold text-gray-500 px-2 pb-2">
+                  Popular on Vidhyara
+                </div>
+
+                <ul>
+                  {suggestions.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
+                        onMouseDown={() => goToCourse(s.id)}
+                      >
+                        <span className="text-gray-500">
+                          <SearchIcon fontSize="small" />
+                        </span>
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-900 line-clamp-1">
+                            {s.title}
+                          </div>
+                          {s.subtitle && (
+                            <div className="text-xs text-gray-500 line-clamp-1">
+                              {s.subtitle}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                  {suggestions.length === 0 && (
+                    <li className="px-2 py-2 text-sm text-gray-500">
+                      No results
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </form>
         )}
 
         <div className="flex items-center gap-2">
