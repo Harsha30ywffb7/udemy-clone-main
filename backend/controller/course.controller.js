@@ -772,6 +772,27 @@ router.post("/", authenticate, async (req, res) => {
             "At least 4 learning objectives are required for published courses",
         });
       }
+
+      if (
+        !requirements ||
+        requirements.filter((req) => req && req.trim()).length === 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one requirement is required for published courses",
+        });
+      }
+
+      if (
+        !targetAudience ||
+        targetAudience.filter((aud) => aud && aud.trim()).length === 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "At least one target audience is required for published courses",
+        });
+      }
     }
 
     const newCourse = new Course({
