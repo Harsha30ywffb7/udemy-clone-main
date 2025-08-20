@@ -26,6 +26,19 @@ router.get("/:id/basic", async (req, res) => {
     const basicData = {
       title: course.title,
       headline: course.subtitle,
+      description: course.description,
+      category: course.category,
+      subcategory: course.subcategory,
+      level: course.level,
+      language: course.language,
+      thumbnail: course.thumbnailUrl,
+      status: course.status,
+      rating: course.rating || 0,
+      total_ratings: course.totalRatings || 0,
+      total_students: course.totalStudents || 0,
+      learningObjectives: course.learningObjectives || [],
+      requirements: course.requirements || [],
+      targetAudience: course.targetAudience || [],
       visible_instructors: [
         {
           title: course.instructorId?.name
@@ -33,19 +46,6 @@ router.get("/:id/basic", async (req, res) => {
             : "Unknown Instructor",
         },
       ],
-      rating: course.rating || 0,
-      total_ratings: course.totalRatings || 0,
-      total_students: course.totalStudents || 0,
-      price: course.price || 0,
-      originalPrice: course.originalPrice || course.price,
-      discount: course.originalPrice
-        ? Math.round(
-            ((course.originalPrice - course.price) / course.originalPrice) * 100
-          )
-        : 0,
-      thumbnail: course.thumbnailUrl,
-      timeLeft: "Limited time offer!",
-      subscriptionPrice: course.price,
     };
 
     res.json({
@@ -184,54 +184,6 @@ router.get("/:id/instructor", async (req, res) => {
     });
   } catch (error) {
     console.error("Get course instructor error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
-
-// Get course reviews
-router.get("/:id/reviews", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { page = 1, limit = 8, rating } = req.query;
-
-    const course = await Course.findById(id).lean();
-
-    if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: "Course not found",
-      });
-    }
-
-    // Since we removed reviews from the schema, return empty reviews with course rating info
-    const reviewsData = {
-      averageRating: course.rating || 0,
-      totalRatings: course.totalRatings || 0,
-      ratingBreakdown: {
-        5: Math.floor((course.totalRatings || 0) * 0.6),
-        4: Math.floor((course.totalRatings || 0) * 0.25),
-        3: Math.floor((course.totalRatings || 0) * 0.1),
-        2: Math.floor((course.totalRatings || 0) * 0.03),
-        1: Math.floor((course.totalRatings || 0) * 0.02),
-      },
-      reviews: [], // Empty since we removed reviews
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: 0,
-        totalReviews: 0,
-        hasMore: false,
-      },
-    };
-
-    res.json({
-      success: true,
-      data: reviewsData,
-    });
-  } catch (error) {
-    console.error("Get course reviews error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -685,6 +637,8 @@ router.get("/", async (req, res) => {
     const totalCourses = await Course.countDocuments(query);
 
     // Fetch courses with pagination
+    const allCourses = await Course.find({});
+    console.log("testing 1", allCourses, query, sortObj, page, limit);
     const courses = await Course.find(query)
       .populate("instructorId", "name")
       .sort(sortObj)
@@ -762,8 +716,6 @@ router.post("/", authenticate, async (req, res) => {
       level,
       thumbnailUrl,
       promoVideoUrl,
-      price,
-      originalPrice,
       learningObjectives,
       requirements,
       targetAudience,
@@ -833,8 +785,6 @@ router.post("/", authenticate, async (req, res) => {
       level: level || "Beginner",
       thumbnailUrl: thumbnailUrl || "",
       promoVideoUrl: promoVideoUrl || "",
-      price: parseFloat(price) || 0,
-      originalPrice: parseFloat(originalPrice) || parseFloat(price) || 0,
       instructorId: req.user.id,
       learningObjectives: learningObjectives
         ? learningObjectives.filter((obj) => obj && obj.trim())
@@ -864,14 +814,10 @@ router.post("/", authenticate, async (req, res) => {
     res.status(201).json({
       success: true,
       message: `Course ${isDraft ? "draft created" : "created"} successfully`,
-      data: {
-        _id: savedCourse._id,
-        id: savedCourse._id,
-        courseId: savedCourse._id,
-        title: savedCourse.title,
-        status: savedCourse.status,
-        completedSteps: savedCourse.completedSteps || [],
-      },
+      courseId: savedCourse._id,
+      title: savedCourse.title,
+      status: savedCourse.status,
+      completedSteps: savedCourse.completedSteps || [],
     });
   } catch (error) {
     console.error("Create course error:", error);
@@ -887,8 +833,9 @@ router.post("/", authenticate, async (req, res) => {
 router.put("/:id/landing-page", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("📝 UPDATE COURSE LANDING PAGE:", id);
 
-    // Only instructors can update courses
+    // Check if user owns this course or is an instructor
     if (req.user.role !== "instructor") {
       return res.status(403).json({
         success: false,
@@ -897,7 +844,6 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
     }
 
     const course = await Course.findById(id);
-
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -905,7 +851,7 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
       });
     }
 
-    // Verify the instructor owns this course
+    // Check ownership
     if (course.instructorId.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
@@ -924,67 +870,189 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
       level,
       thumbnailUrl,
       promoVideoUrl,
-      price,
-      originalPrice,
       learningObjectives,
       requirements,
       targetAudience,
       keywords,
     } = req.body;
 
-    // Validation
-    if (title && title.trim().length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: "Title must be at least 10 characters",
-      });
+    console.log("📝 UPDATING COURSE DATA:", {
+      title,
+      category,
+      status: course.status,
+    });
+
+    // Update course fields
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (subtitle !== undefined) updateData.subtitle = subtitle.trim();
+    if (description !== undefined) updateData.description = description.trim();
+    if (category !== undefined) updateData.category = category;
+    if (subcategory !== undefined) updateData.subcategory = subcategory || "";
+    if (topic !== undefined) updateData.topic = topic || "";
+    if (language !== undefined) updateData.language = language || "English";
+    if (level !== undefined) updateData.level = level || "Beginner";
+    if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
+    if (promoVideoUrl !== undefined)
+      updateData.promoVideoUrl = promoVideoUrl || "";
+
+    // Handle arrays
+    if (learningObjectives !== undefined) {
+      updateData.learningObjectives = Array.isArray(learningObjectives)
+        ? learningObjectives.filter((obj) => obj && obj.trim())
+        : [];
+    }
+    if (requirements !== undefined) {
+      updateData.requirements = Array.isArray(requirements)
+        ? requirements.filter((req) => req && req.trim())
+        : [];
+    }
+    if (targetAudience !== undefined) {
+      updateData.targetAudience = Array.isArray(targetAudience)
+        ? targetAudience.filter((aud) => aud && aud.trim())
+        : [];
+    }
+    if (keywords !== undefined) {
+      updateData.keywords = Array.isArray(keywords)
+        ? keywords.filter((kw) => kw && kw.trim())
+        : [];
     }
 
-    if (description && description.length < 200) {
-      return res.status(400).json({
-        success: false,
-        message: "Description must be at least 200 characters",
-      });
+    // Update completedSteps to include landing-page
+    const currentCompletedSteps = course.completedSteps || [];
+    if (!currentCompletedSteps.includes("landing-page")) {
+      updateData.completedSteps = [...currentCompletedSteps, "landing-page"];
+      console.log("📝 MARKING LANDING PAGE AS COMPLETED");
     }
 
-    // Update fields
-    if (title) course.title = title.trim();
-    if (subtitle) course.subtitle = subtitle.trim();
-    if (description) course.description = description.trim();
-    if (category) course.category = category;
-    if (subcategory !== undefined) course.subcategory = subcategory;
-    if (topic !== undefined) course.topic = topic;
-    if (language) course.language = language;
-    if (level) course.level = level;
-    if (thumbnailUrl) course.thumbnailUrl = thumbnailUrl;
-    if (promoVideoUrl !== undefined) course.promoVideoUrl = promoVideoUrl;
-    if (price !== undefined) course.price = parseFloat(price) || 0;
-    if (originalPrice !== undefined)
-      course.originalPrice = parseFloat(originalPrice) || course.price;
-    if (learningObjectives)
-      course.learningObjectives = learningObjectives.filter((obj) =>
-        obj.trim()
-      );
-    if (requirements)
-      course.requirements = requirements.filter((req) => req.trim());
-    if (targetAudience)
-      course.targetAudience = targetAudience.filter((aud) => aud.trim());
-    if (keywords) course.keywords = keywords.filter((kw) => kw.trim());
+    const updatedCourse = await Course.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select("-passwordHash");
 
-    const updatedCourse = await course.save();
+    console.log("✅ COURSE LANDING PAGE UPDATED:", updatedCourse._id);
 
     res.json({
       success: true,
       message: "Course landing page updated successfully",
       data: {
+        _id: updatedCourse._id,
+        id: updatedCourse._id,
         courseId: updatedCourse._id,
         title: updatedCourse.title,
-        subtitle: updatedCourse.subtitle,
         status: updatedCourse.status,
+        completedSteps: updatedCourse.completedSteps || [],
       },
     });
   } catch (error) {
-    console.error("Update course landing page error:", error);
+    console.error("❌ UPDATE COURSE LANDING PAGE ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Update course step completion
+router.put("/:id/step/:stepName", authenticate, async (req, res) => {
+  try {
+    const { id, stepName } = req.params;
+    const { data } = req.body;
+
+    console.log(`📝 UPDATE COURSE STEP: ${stepName} for course ${id}`);
+
+    // Check if user owns this course or is an instructor
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can update courses",
+      });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Check ownership
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only update your own courses",
+      });
+    }
+
+    // Update step data based on step name
+    const updateData = {};
+    const currentCompletedSteps = course.completedSteps || [];
+
+    switch (stepName) {
+      case "landing-page":
+        // Update landing page specific data
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.subtitle !== undefined) updateData.subtitle = data.subtitle;
+        if (data.description !== undefined)
+          updateData.description = data.description;
+        if (data.category !== undefined) updateData.category = data.category;
+        if (data.thumbnailUrl !== undefined)
+          updateData.thumbnailUrl = data.thumbnailUrl;
+        break;
+
+      case "curriculum":
+        // Update curriculum specific data
+        if (data.sections !== undefined) updateData.sections = data.sections;
+        break;
+
+      case "publish":
+        // Update publish specific data
+        if (data.status !== undefined) updateData.status = data.status;
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Invalid step name",
+        });
+    }
+
+    // Add step to completed steps if not already present
+    if (!currentCompletedSteps.includes(stepName)) {
+      updateData.completedSteps = [...currentCompletedSteps, stepName];
+      console.log(`📝 MARKING STEP ${stepName.toUpperCase()} AS COMPLETED`);
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: false } // Skip validation for step updates
+    ).select("-passwordHash");
+
+    console.log(
+      `✅ COURSE STEP ${stepName.toUpperCase()} UPDATED:`,
+      updatedCourse._id
+    );
+
+    res.json({
+      success: true,
+      message: `Course ${stepName} updated successfully`,
+      data: {
+        _id: updatedCourse._id,
+        id: updatedCourse._id,
+        courseId: updatedCourse._id,
+        title: updatedCourse.title,
+        status: updatedCourse.status,
+        completedSteps: updatedCourse.completedSteps || [],
+      },
+    });
+  } catch (error) {
+    console.error(
+      `❌ UPDATE COURSE STEP ${stepName.toUpperCase()} ERROR:`,
+      error
+    );
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1037,13 +1105,13 @@ router.get("/:id/edit", authenticate, async (req, res) => {
         level: course.level,
         thumbnailUrl: course.thumbnailUrl,
         promoVideoUrl: course.promoVideoUrl,
-        price: course.price,
-        originalPrice: course.originalPrice,
         learningObjectives: course.learningObjectives,
         requirements: course.requirements,
         targetAudience: course.targetAudience,
         keywords: course.keywords,
         status: course.status,
+        sections: course.sections || [], // Include sections data for curriculum
+        completedSteps: course.completedSteps || [], // Include completed steps
         totalSections: course.sections?.length || 0,
         totalLectures: course.totalLectures,
         totalDuration: course.totalDuration,
@@ -1166,16 +1234,23 @@ router.put("/:id/curriculum", authenticate, async (req, res) => {
         isFree: content.isFree || false,
         sortOrder: contentIndex,
 
-        // Content-specific data
-        ...(content.video && { video: content.video }),
-        ...(content.slides && { slides: content.slides }),
-        ...(content.document && { document: content.document }),
-        ...(content.article && { article: content.article }),
-        ...(content.quiz && { quiz: content.quiz }),
-        ...(content.codingExercise && {
-          codingExercise: content.codingExercise,
-        }),
-        ...(content.assignment && { assignment: content.assignment }),
+        // Content-specific data - only include if content type matches and data exists
+        ...(content.contentType === "video" &&
+          content.video && { video: content.video }),
+        ...(content.contentType === "video_slide_mashup" &&
+          content.slides && { slides: content.slides }),
+        ...(content.contentType === "document" &&
+          content.document && { document: content.document }),
+        ...(content.contentType === "article" &&
+          content.article && { article: content.article }),
+        ...(content.contentType === "quiz" &&
+          content.quiz && { quiz: content.quiz }),
+        ...(content.contentType === "coding_exercise" &&
+          content.codingExercise && {
+            codingExercise: content.codingExercise,
+          }),
+        ...(content.contentType === "assignment" &&
+          content.assignment && { assignment: content.assignment }),
         ...(content.resources && { resources: content.resources }),
       })),
       analytics: {
@@ -1190,9 +1265,20 @@ router.put("/:id/curriculum", authenticate, async (req, res) => {
 
     course.sections = updatedSections;
 
+    // Mark curriculum step as completed
+    const currentCompletedSteps = course.completedSteps || [];
+    if (!currentCompletedSteps.includes("curriculum")) {
+      course.completedSteps = [...currentCompletedSteps, "curriculum"];
+      console.log("📝 MARKING CURRICULUM STEP AS COMPLETED");
+    }
+
     // Update course statistics
     course.updateStatistics();
-    await course.save();
+
+    // Skip validation for draft courses to allow flexible content structure
+    const saveOptions =
+      course.status === "draft" ? { validateBeforeSave: false } : {};
+    await course.save(saveOptions);
 
     res.json({
       success: true,
@@ -1203,6 +1289,7 @@ router.put("/:id/curriculum", authenticate, async (req, res) => {
         totalLectures: course.totalLectures,
         totalQuizzes: course.totalQuizzes,
         totalAssignments: course.totalAssignments,
+        completedSteps: course.completedSteps || [],
       },
     });
   } catch (error) {
@@ -1458,6 +1545,187 @@ router.get("/:id/analytics/content", authenticate, async (req, res) => {
     });
   } catch (error) {
     console.error("Get content analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Publish course
+router.post("/:id/publish", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("📝 PUBLISH COURSE:", id);
+
+    // Check if user owns this course or is an instructor
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can publish courses",
+      });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Check ownership
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only publish your own courses",
+      });
+    }
+
+    // Validate course is ready for publishing
+    const validationErrors = [];
+
+    if (!course.title || course.title.trim().length === 0) {
+      validationErrors.push("Course title is required");
+    }
+
+    if (!course.subtitle || course.subtitle.trim().length === 0) {
+      validationErrors.push("Course subtitle is required");
+    }
+
+    if (!course.description || course.description.trim().length < 200) {
+      validationErrors.push(
+        "Course description must be at least 200 characters"
+      );
+    }
+
+    if (!course.category) {
+      validationErrors.push("Course category is required");
+    }
+
+    if (!course.thumbnailUrl) {
+      validationErrors.push("Course thumbnail image is required");
+    }
+
+    if (
+      !course.learningObjectives ||
+      course.learningObjectives.filter((obj) => obj && obj.trim()).length < 4
+    ) {
+      validationErrors.push("At least 4 learning objectives are required");
+    }
+
+    if (!course.sections || course.sections.length === 0) {
+      validationErrors.push(
+        "Course must have at least one section with content"
+      );
+    } else {
+      const hasContent = course.sections.some(
+        (section) => section.content && section.content.length > 0
+      );
+      if (!hasContent) {
+        validationErrors.push(
+          "Course must have at least one lecture or content item"
+        );
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Course validation failed",
+        errors: validationErrors,
+      });
+    }
+
+    // Update course status to published
+    course.status = "published";
+
+    // Mark publish step as completed
+    const currentCompletedSteps = course.completedSteps || [];
+    if (!currentCompletedSteps.includes("publish")) {
+      course.completedSteps = [...currentCompletedSteps, "publish"];
+    }
+
+    await course.save();
+
+    console.log("✅ COURSE PUBLISHED SUCCESSFULLY:", course._id);
+
+    res.json({
+      success: true,
+      message: "Course published successfully",
+      data: {
+        courseId: course._id,
+        title: course.title,
+        status: course.status,
+        completedSteps: course.completedSteps,
+      },
+    });
+  } catch (error) {
+    console.error("❌ PUBLISH COURSE ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
+// Unpublish course
+router.post("/:id/unpublish", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("📝 UNPUBLISH COURSE:", id);
+
+    // Check if user owns this course or is an instructor
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can unpublish courses",
+      });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Check ownership
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only unpublish your own courses",
+      });
+    }
+
+    // Update course status back to draft
+    course.status = "draft";
+
+    // Remove publish step from completed steps
+    const currentCompletedSteps = course.completedSteps || [];
+    course.completedSteps = currentCompletedSteps.filter(
+      (step) => step !== "publish"
+    );
+
+    await course.save();
+
+    console.log("✅ COURSE UNPUBLISHED SUCCESSFULLY:", course._id);
+
+    res.json({
+      success: true,
+      message: "Course unpublished successfully",
+      data: {
+        courseId: course._id,
+        title: course.title,
+        status: course.status,
+        completedSteps: course.completedSteps,
+      },
+    });
+  } catch (error) {
+    console.error("❌ UNPUBLISH COURSE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

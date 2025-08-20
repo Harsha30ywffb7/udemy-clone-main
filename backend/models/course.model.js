@@ -151,9 +151,16 @@ const contentSchema = new mongoose.Schema(
           "react",
           "node",
         ],
-        required: true,
+        required: function () {
+          return this.contentType === "coding_exercise";
+        },
       },
-      instructions: { type: String, required: true },
+      instructions: {
+        type: String,
+        required: function () {
+          return this.contentType === "coding_exercise";
+        },
+      },
       starterCode: { type: String },
       solutionCode: { type: String },
       testCases: [
@@ -169,11 +176,18 @@ const contentSchema = new mongoose.Schema(
 
     // Assignment content
     assignment: {
-      instructions: { type: String, required: true },
+      instructions: {
+        type: String,
+        required: function () {
+          return this.contentType === "assignment";
+        },
+      },
       submissionType: {
         type: String,
         enum: ["file_upload", "text_submission", "url_submission"],
-        required: true,
+        required: function () {
+          return this.contentType === "assignment";
+        },
       },
       allowedFileTypes: [{ type: String }], // e.g., ['pdf', 'docx', 'jpg']
       maxFileSize: { type: Number }, // in bytes
@@ -322,30 +336,6 @@ const courseSchema = new mongoose.Schema(
     promoVideoDuration: {
       type: Number,
       default: 0,
-    },
-
-    // Pricing and offers
-    price: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    originalPrice: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    discount: {
-      percentage: {
-        type: Number,
-        min: 0,
-        max: 100,
-        default: 0,
-      },
-      validUntil: {
-        type: Date,
-        default: null,
-      },
     },
 
     // Instructor information
