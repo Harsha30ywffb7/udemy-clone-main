@@ -10,6 +10,7 @@ const CurriculumList = ({
   currentVideo,
   isContentCompleted,
   handleContentClick,
+  isEnrolled,
 }) => {
   const formatDuration = (seconds) => {
     if (!seconds || seconds === 0) return "0:00";
@@ -53,19 +54,25 @@ const CurriculumList = ({
                   currentVideo &&
                   currentVideo.sectionIndex === sectionIndex &&
                   currentVideo.contentIndex === contentIndex;
+                const locked = !isEnrolled && sectionIndex > 0;
 
                 return (
                   <button
                     key={contentIndex}
-                    onClick={() =>
+                    onClick={() => {
+                      if (locked) return;
                       handleContentClick(
                         content,
                         sectionIndex,
                         contentIndex,
                         section.title
-                      )
-                    }
-                    className={`w-full px-6 py-3 text-left hover:bg-gray-600 flex items-center gap-3 border-l-4 ${
+                      );
+                    }}
+                    className={`w-full px-6 py-3 text-left ${
+                      locked
+                        ? "opacity-60 cursor-not-allowed"
+                        : "hover:bg-gray-600"
+                    } flex items-center gap-3 border-l-4 ${
                       isCurrent
                         ? "border-purple-500 bg-gray-700"
                         : "border-transparent"
@@ -121,6 +128,11 @@ const CurriculumList = ({
                         )}
                       </div>
                     </div>
+                    {locked && (
+                      <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
+                        Locked
+                      </span>
+                    )}
                   </button>
                 );
               })}

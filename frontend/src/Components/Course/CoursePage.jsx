@@ -39,7 +39,6 @@ import { courseService } from "../../services/courseService";
 const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
 
   // Course data
   const [course, setCourse] = useState(null);
@@ -65,6 +64,7 @@ const CoursePage = () => {
   const [completedContent, setCompletedContent] = useState(new Set());
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isVideoMode, setIsVideoMode] = useState(false);
+  const [activeVideoTab, setActiveVideoTab] = useState("overview");
 
   // Load course data
   useEffect(() => {
@@ -156,7 +156,7 @@ const CoursePage = () => {
       const srcCandidate = content.video?.url || "";
       const chosen = isYoutubeUrl(srcCandidate)
         ? FALLBACK_MP4_URL
-        : srcCandidate;
+        : FALLBACK_MP4_URL;
       setCurrentSrc(chosen);
       setVideoLoading(false);
     } else {
@@ -289,32 +289,32 @@ const CoursePage = () => {
   // Video Mode Layout
   if (isVideoMode && currentVideo) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-white text-gray-900">
         {/* Video Mode Header */}
-        <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={exitVideoMode}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-600 hover:text-gray-900"
               >
                 <ArrowBackIcon />
               </button>
               <div>
                 <h1 className="text-lg font-semibold">{course.title}</h1>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-600">
                   {currentVideo.sectionTitle} • {currentVideo.title}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-gray-600">
                 Progress: {Math.round(played * 100)}%
               </div>
               <button
                 onClick={exitVideoMode}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-600 hover:text-gray-900"
               >
                 <CloseIcon />
               </button>
@@ -324,8 +324,9 @@ const CoursePage = () => {
 
         <div className="flex h-[calc(100vh-80px)]">
           {/* Video Player Section */}
-          <div className="flex-1 bg-black relative">
-            <div className="relative w-full h-full">
+          <div className="flex-1 flex flex-col overflow-y-auto">
+            {/* Fixed-height player so tab area size stays constant */}
+            <div className="relative w-full h-[480px] bg-black">
               <VideoSection
                 playerRef={playerRef}
                 url={currentSrc || FALLBACK_SRC}
@@ -444,21 +445,92 @@ const CoursePage = () => {
                 </div>
               )}
 
-              {/* Video Title Overlay */}
-              <div className="absolute top-4 left-4 bg-black/60 rounded-lg p-3">
-                <h3 className="font-semibold">{currentVideo.title}</h3>
-                <p className="text-sm text-gray-300">
-                  {currentVideo.sectionTitle}
-                </p>
+              {/* Title overlay removed for cleaner look */}
+            </div>
+
+            {/* Tabs: Overview / Notes */}
+            <div className="bg-white border-t border-gray-200 text-gray-800">
+              <div className="px-6">
+                <div className="flex gap-6">
+                  <button
+                    onClick={() => setActiveVideoTab("overview")}
+                    className={`py-3 border-b-2 text-sm font-medium ${
+                      activeVideoTab === "overview"
+                        ? "border-gray-900 text-gray-900"
+                        : "border-transparent text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => setActiveVideoTab("notes")}
+                    className={`py-3 border-b-2 text-sm font-medium ${
+                      activeVideoTab === "notes"
+                        ? "border-gray-900 text-gray-900"
+                        : "border-transparent text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Notes
+                  </button>
+                </div>
+              </div>
+
+              <div className="px-6 py-4">
+                {activeVideoTab === "overview" ? (
+                  <div className="text-sm text-gray-700 space-y-2">
+                    <div className="text-gray-900 font-semibold">
+                      {currentVideo.title}
+                    </div>
+                    {currentVideo.sectionTitle && (
+                      <div className="text-gray-600">
+                        {currentVideo.sectionTitle}
+                      </div>
+                    )}
+                    {typeof currentVideo.duration === "number" && (
+                      <div>
+                        Duration: {formatDuration(currentVideo.duration)}
+                      </div>
+                    )}
+                    {currentVideo.description && (
+                      <div className="text-gray-700 whitespace-pre-line">
+                        {currentVideo.description}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {Array.isArray(currentVideo.resources) &&
+                    currentVideo.resources.length > 0 ? (
+                      <ul className="space-y-2">
+                        {currentVideo.resources.map((r, idx) => (
+                          <li key={idx}>
+                            <a
+                              href={r.url || r.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-purple-700 hover:underline"
+                            >
+                              {r.title || r.name || r.url}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-sm text-gray-600">
+                        No downloadable resources for this lecture.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Curriculum Sidebar */}
-          <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
-            <div className="p-4 border-b border-gray-700">
-              <h2 className="text-lg font-semibold mb-2">Course Content</h2>
-              <div className="text-sm text-gray-400">
+          <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold mb-2">Course content</h2>
+              <div className="text-sm text-gray-600">
                 {curriculum.totalLectures} lectures •{" "}
                 {formatDuration(curriculum.totalDuration)}
               </div>
@@ -470,6 +542,7 @@ const CoursePage = () => {
               currentVideo={currentVideo}
               isContentCompleted={isContentCompleted}
               handleContentClick={handleContentClick}
+              isEnrolled={Boolean(course?.isEnrolled)}
             />
           </div>
         </div>
