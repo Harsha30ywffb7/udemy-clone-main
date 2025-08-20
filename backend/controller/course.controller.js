@@ -4,8 +4,117 @@ const Course = require("../models/course.model");
 const Instructor = require("../models/instructor.model");
 const Category = require("../models/category.model");
 const { authenticate } = require("../middlewares/authenticate");
+// Rate a course
+router.post("/:id/rate", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { value } = req.body;
+    if (!value || value < 1 || value > 5) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Rating must be 1-5" });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    // Upsert user rating
+    const existing = course.ratings.find(
+      (r) => String(r.userId) === String(req.user.id)
+    );
+    if (existing) {
+      // adjust sums
+      course.ratingSum =
+        (course.ratingSum || 0) - (existing.value || 0) + value;
+      existing.value = value;
+    } else {
+      course.ratings.push({ userId: req.user.id, value });
+      course.ratingSum = (course.ratingSum || 0) + value;
+      course.totalRatings = (course.totalRatings || 0) + 1;
+    }
+    course.rating =
+      course.totalRatings > 0 ? course.ratingSum / course.totalRatings : 0;
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Rating saved",
+      data: { rating: course.rating, totalRatings: course.totalRatings },
+    });
+  } catch (error) {
+    console.error("Rate course error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 // ==================== API ENDPOINTS ====================
+
+// Home categories (before parameterized routes)
+router.get("/categories", async (req, res) => {
+  try {
+    let categories = await Category.find({ isActive: true, level: 1 })
+      .sort({ sortOrder: 1, title: 1 })
+      .select("title slug icon image")
+      .lean();
+
+    if (!categories || categories.length === 0) {
+      const distinct = await Course.distinct("category", {
+        status: "published",
+      });
+      categories = distinct
+        .filter(Boolean)
+        .map((title) => ({
+          title,
+          slug: title.toLowerCase().replace(/\s+/g, "-"),
+        }));
+    }
+
+    res.json({ success: true, data: categories });
+  } catch (error) {
+    console.error("Get categories error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Search suggestions (before parameterized routes)
+router.get("/search/suggestions", async (req, res) => {
+  try {
+    const { q = "", limit = 8 } = req.query;
+    if (!q || q.trim().length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+    const regex = new RegExp(q.trim(), "i");
+    const courses = await Course.find({
+      status: "published",
+      $or: [
+        { title: regex },
+        { subtitle: regex },
+        { description: regex },
+        { keywords: regex },
+      ],
+    })
+      .select("title subtitle category thumbnailUrl _id")
+      .limit(parseInt(limit))
+      .lean();
+
+    const suggestions = courses.map((c) => ({
+      id: c._id,
+      title: c.title,
+      subtitle: c.subtitle,
+      category: c.category,
+      thumbnail: c.thumbnailUrl,
+    }));
+
+    res.json({ success: true, data: suggestions });
+  } catch (error) {
+    console.error("Search suggestions error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 // Get course basic data (for sidebar and header)
 router.get("/:id/basic", async (req, res) => {

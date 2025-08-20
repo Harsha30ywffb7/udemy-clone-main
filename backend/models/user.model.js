@@ -114,6 +114,9 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
+    // Categories from enrolled courses (for recommendations)
+    enrolledCategories: [{ type: String }],
+
     // Account status
     isActive: {
       type: Boolean,

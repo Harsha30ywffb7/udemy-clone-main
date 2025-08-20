@@ -10,6 +10,8 @@ import Advertisement from "./Advertisement";
 import FeaturedTopics from "./FeaturedTopics";
 import TopCategories from "./TopCategories";
 import CourseSuggestions from "./CourseSuggestions";
+import { courseService } from "../../services/courseService";
+import { useNavigate } from "react-router-dom";
 
 export const LightTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -78,6 +80,8 @@ const LandingPage = () => {
   return (
     <>
       <div>
+        {/* Categories Section - Added below header */}
+        <CategoriesSection />
         {isLoggedIn ? (
           <HeroCarousel />
         ) : (
@@ -123,6 +127,52 @@ const LandingPage = () => {
         </>
       )}
     </>
+  );
+};
+
+// New Categories Section Component (fetches from API)
+const CategoriesSection = () => {
+  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let mounted = true;
+    courseService
+      .getHomeCategories()
+      .then((res) => {
+        if (!mounted) return;
+        const list = res?.data || [];
+        setCategories(list);
+      })
+      .catch(() => {})
+      .finally(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!categories || categories.length === 0) return null;
+
+  return (
+    <div className="bg-white border-b border-t border-gray-200">
+      <div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between py-2">
+          <div className="flex items-center space-x-8 overflow-x-auto scrollbar-hide">
+            {categories.map((cat) => (
+              <button
+                key={cat.slug || cat.title}
+                className="flex-shrink-0 text-[0.8rem] font-[300] text-gray-700 hover:text-purple-600 transition-colors duration-200 whitespace-nowrap px-3 py-2 rounded-md hover:bg-gray-50"
+                onClick={() => {
+                  navigate(`/search?category=${encodeURIComponent(cat.title)}`);
+                }}
+              >
+                {cat.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

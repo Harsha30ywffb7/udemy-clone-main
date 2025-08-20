@@ -1,6 +1,7 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Header } from "../Header/Header";
 import { Landin } from "../LandingPage/Landin";
+import SearchResults from "../Search/SearchResults";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
 import Wishlist from "../Wishlist/Wishlist";
@@ -110,6 +111,7 @@ export const AllRoutes = () => {
 
         {/* Course Routes */}
         <Route path="/course/:id" element={<CoursePage />} />
+        <Route path="/search" element={<SearchResults />} />
 
         {/* User Routes */}
         <Route

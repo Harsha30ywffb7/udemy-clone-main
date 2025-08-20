@@ -57,12 +57,12 @@ const HeroCarousel = () => {
           <h1 className="text-xl font-bold text-gray-900 leading-tight">
             Welcome back, {fullName}
           </h1>
-          <button
+          {/* <button
             className="text-purple-700 text-xs hover:underline"
             onClick={() => navigate("/profile")}
           >
             Add occupation and interests
-          </button>
+          </button> */}
         </div>
       </div>
 

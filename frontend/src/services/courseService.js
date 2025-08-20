@@ -126,6 +126,19 @@ export const courseService = {
     }
   },
 
+  // Rate a course
+  rateCourse: async (courseId, value) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/rate`, {
+        value,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error rating course:", error);
+      throw error;
+    }
+  },
+
   // Get course categories
   getCourseCategories: async (courseId) => {
     try {
@@ -133,6 +146,30 @@ export const courseService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching course categories:", error);
+      throw error;
+    }
+  },
+
+  // Home categories
+  getHomeCategories: async () => {
+    try {
+      const response = await apiClient.get(`/courses/categories`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching home categories:", error);
+      throw error;
+    }
+  },
+
+  // Search suggestions
+  getSearchSuggestions: async (q, limit = 8) => {
+    try {
+      const response = await apiClient.get(`/courses/search/suggestions`, {
+        params: { q, limit },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching search suggestions:", error);
       throw error;
     }
   },

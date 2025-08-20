@@ -360,6 +360,13 @@ const courseSchema = new mongoose.Schema(
       min: 0,
       max: 5,
     },
+    ratingSum: { type: Number, default: 0 },
+    ratings: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        value: { type: Number, min: 1, max: 5 },
+      },
+    ],
     totalRatings: {
       type: Number,
       default: 0,

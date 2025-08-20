@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
+const Course = require("../models/course.model");
 const { authenticate } = require("../middlewares/authenticate");
 
 const router = express.Router();
@@ -390,3 +391,50 @@ router.put("/onboard", authenticate, async (req, res) => {
 });
 
 module.exports = router;
+// Enroll in a course
+router.post("/courses/:courseId/enroll", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId).select(
+      "_id category status"
+    );
+    if (!course || course.status !== "published") {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found or not published" });
+    }
+
+    const already = (user.enrolledCourses || []).some(
+      (c) => String(c.courseId) === String(courseId)
+    );
+    if (already) {
+      return res.json({ success: true, message: "Already enrolled" });
+    }
+
+    user.enrolledCourses = user.enrolledCourses || [];
+    user.enrolledCourses.push({
+      courseId: course._id,
+      progress: 0,
+      lastAccessed: new Date(),
+    });
+
+    // Track enrolled categories for recommendations
+    user.enrolledCategories = Array.from(
+      new Set(
+        [...(user.enrolledCategories || []), course.category].filter(Boolean)
+      )
+    );
+
+    await user.save();
+
+    // increment course student count
+    await Course.findByIdAndUpdate(course._id, { $inc: { totalStudents: 1 } });
+
+    res.json({ success: true, message: "Enrolled successfully" });
+  } catch (error) {
+    console.error("Enroll error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});

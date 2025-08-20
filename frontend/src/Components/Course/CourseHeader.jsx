@@ -1,8 +1,14 @@
 import React from "react";
+import { userService } from "../../services/userService";
 import StarIcon from "@mui/icons-material/Star";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 
 const CourseHeader = ({ course }) => {
+  const isInstructorOwner = Boolean(
+    course?.instructorId &&
+      course?.currentUserId &&
+      String(course.instructorId) === String(course.currentUserId)
+  );
   return (
     <div className="bg-gray-800 text-white">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -55,9 +61,25 @@ const CourseHeader = ({ course }) => {
                     FREE
                   </div>
                 </div>
-                <button className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 font-medium mb-3">
-                  Enroll for Free
-                </button>
+                {!isInstructorOwner && !course?.isEnrolled && (
+                  <button
+                    className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 font-medium mb-3"
+                    onClick={async () => {
+                      try {
+                        const res = await userService.enrollInCourse(
+                          course._id || course.id
+                        );
+                        alert(res.message || "Enrolled");
+                        // naive reload to update UI
+                        window.location.reload();
+                      } catch (e) {
+                        alert("Failed to enroll");
+                      }
+                    }}
+                  >
+                    Enroll for Free
+                  </button>
+                )}
                 <div className="text-center text-sm text-gray-600">
                   30-Day Money-Back Guarantee
                 </div>
