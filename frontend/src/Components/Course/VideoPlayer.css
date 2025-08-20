@@ -1,0 +1,123 @@
+/* Video Player Styles */
+.react-player {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+}
+
+/* Custom Volume Slider */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #8b5cf6;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider::-moz-range-track {
+  background: #4b5563;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  background: #8b5cf6;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Progress Bar */
+.progress-bar {
+  transition: all 0.1s ease;
+}
+
+.progress-bar:hover {
+  height: 6px;
+}
+
+/* Control Button Hover Effects */
+.control-button {
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  transform: scale(1.1);
+}
+
+/* Video Overlay */
+.video-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+}
+
+/* Sidebar Scrollbar */
+.curriculum-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.curriculum-sidebar::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.curriculum-sidebar::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.curriculum-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Content Item Hover Effect */
+.content-item {
+  transition: all 0.2s ease;
+}
+
+.content-item:hover {
+  transform: translateX(4px);
+}
+
+/* Current Video Highlight */
+.current-video {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, transparent 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .curriculum-sidebar {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .video-learning-container {
+    flex-direction: column;
+  }
+  
+  .curriculum-sidebar {
+    width: 100%;
+    height: 300px;
+  }
+  
+  .video-player-section {
+    height: 250px;
+  }
+}

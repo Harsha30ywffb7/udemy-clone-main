@@ -22,25 +22,15 @@ const ProtectedRoute = ({ children }) => {
   const userData = user?.user;
   const token = localStorage.getItem("token");
 
-  console.log("🛡️ PROTECTED ROUTE - Checking authentication...");
-  console.log("🛡️ PROTECTED ROUTE - Token exists:", !!token);
-  console.log("🛡️ PROTECTED ROUTE - User data exists:", !!userData);
-
   // If no token, redirect to login
   if (!token) {
-    console.log("🚫 PROTECTED ROUTE - No token found, redirecting to login");
     return <Navigate to="/login" />;
   }
 
   // If token but no user data, redirect to login (invalid token)
   if (!userData) {
-    console.log(
-      "🚫 PROTECTED ROUTE - Token exists but no user data, redirecting to login"
-    );
     return <Navigate to="/login" />;
   }
-
-  console.log("✅ PROTECTED ROUTE - Authentication verified, allowing access");
   return children;
 };
 
@@ -50,34 +40,20 @@ const InstructorProtectedRoute = ({ children }) => {
   const userData = user?.user;
   const token = localStorage.getItem("token");
 
-  console.log("👨‍🏫 INSTRUCTOR ROUTE - Checking instructor authentication...");
-  console.log("👨‍🏫 INSTRUCTOR ROUTE - Token exists:", !!token);
-  console.log("👨‍🏫 INSTRUCTOR ROUTE - User data exists:", !!userData);
-  console.log("👨‍🏫 INSTRUCTOR ROUTE - User role:", userData?.role);
-
   // If no token, redirect to login
   if (!token) {
-    console.log("🚫 INSTRUCTOR ROUTE - No token found, redirecting to login");
     return <Navigate to="/login" />;
   }
 
   // If token but no user data, redirect to login (invalid token)
   if (!userData) {
-    console.log(
-      "🚫 INSTRUCTOR ROUTE - Token exists but no user data, redirecting to login"
-    );
     return <Navigate to="/login" />;
   }
 
   // If user exists but is not an instructor, redirect to home
   if (userData.role !== "instructor") {
-    console.log(
-      "🚫 INSTRUCTOR ROUTE - User is not an instructor, redirecting to home"
-    );
     return <Navigate to="/" />;
   }
-
-  console.log("✅ INSTRUCTOR ROUTE - Authentication verified, allowing access");
   return children;
 };
 
@@ -133,7 +109,6 @@ export const AllRoutes = () => {
         <Route path="/teach" element={<InstructorRoutes />} />
 
         {/* Course Routes */}
-        <Route path="/courses/:id" element={<CoursePage />} />
         <Route path="/course/:id" element={<CoursePage />} />
 
         {/* User Routes */}
