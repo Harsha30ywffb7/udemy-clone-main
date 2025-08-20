@@ -137,6 +137,31 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         const error = validateField(field, formData[field]);
         if (error) newErrors[field] = error;
       });
+
+      // Validate learning objectives
+      const validLearningObjectives = formData.learningObjectives.filter(
+        (obj) => obj.trim().length > 0
+      );
+      if (validLearningObjectives.length === 0) {
+        newErrors.learningObjectives =
+          "At least one learning objective is required";
+      }
+
+      // Validate requirements
+      const validRequirements = formData.requirements.filter(
+        (req) => req.trim().length > 0
+      );
+      if (validRequirements.length === 0) {
+        newErrors.requirements = "At least one requirement is required";
+      }
+
+      // Validate target audience
+      const validTargetAudience = formData.targetAudience.filter(
+        (aud) => aud.trim().length > 0
+      );
+      if (validTargetAudience.length === 0) {
+        newErrors.targetAudience = "At least one target audience is required";
+      }
     }
 
     setErrors(newErrors);
@@ -463,7 +488,9 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">Category</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Category <span className="text-red-500">*</span>
+              </p>
             </div>
             <div>
               <input
@@ -486,7 +513,8 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         {/* Learning Objectives */}
         <div>
           <label className="block text-sm font-medium mb-2">
-            What will students learn in your course?
+            What will students learn in your course?{" "}
+            <span className="text-red-500">*</span>
           </label>
           <p className="text-xs text-gray-500 mb-3">
             Enter learning objectives that learners can expect to achieve.
@@ -519,6 +547,100 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
           >
             + Add learning objective
           </button>
+          {errors.learningObjectives && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <ErrorIcon style={{ fontSize: 12 }} />
+              {errors.learningObjectives}
+            </p>
+          )}
+        </div>
+
+        {/* Requirements */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Requirements <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-500 mb-3">
+            What should students know before taking this course?
+          </p>
+          {formData.requirements.map((requirement, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={requirement}
+                onChange={(e) =>
+                  updateArrayField("requirements", index, e.target.value)
+                }
+                placeholder="Example: Basic computer skills"
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+                maxLength={200}
+              />
+              {formData.requirements.length > 1 && (
+                <button
+                  onClick={() => removeArrayField("requirements", index)}
+                  className="px-3 py-2 text-gray-500 hover:text-red-500"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => addArrayField("requirements")}
+            className="text-purple-600 text-sm hover:text-purple-700 mt-2"
+          >
+            + Add requirement
+          </button>
+          {errors.requirements && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <ErrorIcon style={{ fontSize: 12 }} />
+              {errors.requirements}
+            </p>
+          )}
+        </div>
+
+        {/* Target Audience */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Who this course is for <span className="text-red-500">*</span>
+          </label>
+          <p className="text-xs text-gray-500 mb-3">
+            Describe who would benefit most from this course.
+          </p>
+          {formData.targetAudience.map((audience, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={audience}
+                onChange={(e) =>
+                  updateArrayField("targetAudience", index, e.target.value)
+                }
+                placeholder="Example: Beginners who want to learn web development"
+                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
+                maxLength={200}
+              />
+              {formData.targetAudience.length > 1 && (
+                <button
+                  onClick={() => removeArrayField("targetAudience", index)}
+                  className="px-3 py-2 text-gray-500 hover:text-red-500"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => addArrayField("targetAudience")}
+            className="text-purple-600 text-sm hover:text-purple-700 mt-2"
+          >
+            + Add target audience
+          </button>
+          {errors.targetAudience && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <ErrorIcon style={{ fontSize: 12 }} />
+              {errors.targetAudience}
+            </p>
+          )}
         </div>
 
         {/* Course Thumbnail */}

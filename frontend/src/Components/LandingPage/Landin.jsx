@@ -113,13 +113,13 @@ const LandingPage = () => {
         </>
       ) : (
         <>
-          <Advertisement />
           <CourseSuggestions />
           <StudentContainer />
           <FeaturedTopics />
           <div className="mb-16">
             <TopCategories />
           </div>
+          <Advertisement />
         </>
       )}
     </>
