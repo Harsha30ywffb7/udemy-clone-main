@@ -226,6 +226,7 @@ const CourseCreation = () => {
         type: courseData.courseType,
         timeCommitment: courseData.timeCommitment,
       });
+      console.log("Course creation result:", result.data);
 
       if (result.success) {
         // Redirect to course creation workflow with the new course ID
