@@ -65,12 +65,10 @@ router.get("/categories", async (req, res) => {
       const distinct = await Course.distinct("category", {
         status: "published",
       });
-      categories = distinct
-        .filter(Boolean)
-        .map((title) => ({
-          title,
-          slug: title.toLowerCase().replace(/\s+/g, "-"),
-        }));
+      categories = distinct.filter(Boolean).map((title) => ({
+        title,
+        slug: title.toLowerCase().replace(/\s+/g, "-"),
+      }));
     }
 
     res.json({ success: true, data: categories });
@@ -497,7 +495,6 @@ router.get("/:id/stats", async (req, res) => {
 // Get instructor's courses
 router.get("/instructor/my-courses", authenticate, async (req, res) => {
   try {
-    console.log("user role state", req.user);
     // Only instructors can access their courses
     if (req.user.role !== "instructor") {
       return res.status(403).json({
@@ -506,17 +503,11 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
       });
     }
 
-    // Fetch real courses from database for the authenticated user
-    console.log(req.user.id);
-
     const courses = await Course.find({
       instructorId: req.user.id,
     }).select(
       "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount sections"
     );
-
-    console.log(courses);
-
     // Function to calculate course completion percentage
     const calculateCompletionPercentage = (course) => {
       const requiredFields = {
@@ -747,7 +738,6 @@ router.get("/", async (req, res) => {
 
     // Fetch courses with pagination
     const allCourses = await Course.find({});
-    console.log("testing 1", allCourses, query, sortObj, page, limit);
     const courses = await Course.find(query)
       .populate("instructorId", "name")
       .sort(sortObj)
@@ -832,20 +822,11 @@ router.post("/", authenticate, async (req, res) => {
       status, // Add status to destructuring
     } = req.body;
 
-    console.log("📝 CREATE COURSE - Request data:", {
-      title,
-      subtitle,
-      description,
-      category,
-      status,
-    });
-
     // Different validation levels based on course status
     const isDraft = !status || status === "draft";
 
     if (isDraft) {
       // Minimal validation for draft courses - only require title
-      console.log("📝 DRAFT COURSE - Applying minimal validation");
       if (!title || title.trim().length === 0) {
         return res.status(400).json({
           success: false,
@@ -854,7 +835,6 @@ router.post("/", authenticate, async (req, res) => {
       }
     } else {
       // Full validation for published courses
-      console.log("📝 PUBLISHED COURSE - Applying full validation");
       if (!title || !subtitle || !description || !category || !thumbnailUrl) {
         return res.status(400).json({
           success: false,
@@ -931,15 +911,7 @@ router.post("/", authenticate, async (req, res) => {
       completedSteps: status === "draft" ? ["landing-page"] : [], // Track completed steps
     });
 
-    console.log("💾 CREATING COURSE:", {
-      title: newCourse.title,
-      status: newCourse.status,
-      instructorId: newCourse.instructorId,
-    });
-
     const savedCourse = await newCourse.save();
-
-    console.log("✅ COURSE CREATED SUCCESSFULLY:", savedCourse._id);
 
     res.status(201).json({
       success: true,
@@ -963,7 +935,6 @@ router.post("/", authenticate, async (req, res) => {
 router.put("/:id/landing-page", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("📝 UPDATE COURSE LANDING PAGE:", id);
 
     // Check if user owns this course or is an instructor
     if (req.user.role !== "instructor") {
@@ -1006,12 +977,6 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
       keywords,
     } = req.body;
 
-    console.log("📝 UPDATING COURSE DATA:", {
-      title,
-      category,
-      status: course.status,
-    });
-
     // Update course fields
     const updateData = {};
     if (title !== undefined) updateData.title = title.trim();
@@ -1052,15 +1017,12 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
     const currentCompletedSteps = course.completedSteps || [];
     if (!currentCompletedSteps.includes("landing-page")) {
       updateData.completedSteps = [...currentCompletedSteps, "landing-page"];
-      console.log("📝 MARKING LANDING PAGE AS COMPLETED");
     }
 
     const updatedCourse = await Course.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     }).select("-passwordHash");
-
-    console.log("✅ COURSE LANDING PAGE UPDATED:", updatedCourse._id);
 
     res.json({
       success: true,
@@ -1075,7 +1037,6 @@ router.put("/:id/landing-page", authenticate, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ UPDATE COURSE LANDING PAGE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1089,8 +1050,6 @@ router.put("/:id/step/:stepName", authenticate, async (req, res) => {
   try {
     const { id, stepName } = req.params;
     const { data } = req.body;
-
-    console.log(`📝 UPDATE COURSE STEP: ${stepName} for course ${id}`);
 
     // Check if user owns this course or is an instructor
     if (req.user.role !== "instructor") {
@@ -1152,7 +1111,6 @@ router.put("/:id/step/:stepName", authenticate, async (req, res) => {
     // Add step to completed steps if not already present
     if (!currentCompletedSteps.includes(stepName)) {
       updateData.completedSteps = [...currentCompletedSteps, stepName];
-      console.log(`📝 MARKING STEP ${stepName.toUpperCase()} AS COMPLETED`);
     }
 
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -1160,11 +1118,6 @@ router.put("/:id/step/:stepName", authenticate, async (req, res) => {
       updateData,
       { new: true, runValidators: false } // Skip validation for step updates
     ).select("-passwordHash");
-
-    console.log(
-      `✅ COURSE STEP ${stepName.toUpperCase()} UPDATED:`,
-      updatedCourse._id
-    );
 
     res.json({
       success: true,
@@ -1179,10 +1132,6 @@ router.put("/:id/step/:stepName", authenticate, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      `❌ UPDATE COURSE STEP ${stepName.toUpperCase()} ERROR:`,
-      error
-    );
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1399,7 +1348,6 @@ router.put("/:id/curriculum", authenticate, async (req, res) => {
     const currentCompletedSteps = course.completedSteps || [];
     if (!currentCompletedSteps.includes("curriculum")) {
       course.completedSteps = [...currentCompletedSteps, "curriculum"];
-      console.log("📝 MARKING CURRICULUM STEP AS COMPLETED");
     }
 
     // Update course statistics
@@ -1687,7 +1635,6 @@ router.get("/:id/analytics/content", authenticate, async (req, res) => {
 router.post("/:id/publish", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("📝 PUBLISH COURSE:", id);
 
     // Check if user owns this course or is an instructor
     if (req.user.role !== "instructor") {
@@ -1779,8 +1726,6 @@ router.post("/:id/publish", authenticate, async (req, res) => {
 
     await course.save();
 
-    console.log("✅ COURSE PUBLISHED SUCCESSFULLY:", course._id);
-
     res.json({
       success: true,
       message: "Course published successfully",
@@ -1792,7 +1737,6 @@ router.post("/:id/publish", authenticate, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ PUBLISH COURSE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -1805,7 +1749,6 @@ router.post("/:id/publish", authenticate, async (req, res) => {
 router.post("/:id/unpublish", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("📝 UNPUBLISH COURSE:", id);
 
     // Check if user owns this course or is an instructor
     if (req.user.role !== "instructor") {
@@ -1842,8 +1785,6 @@ router.post("/:id/unpublish", authenticate, async (req, res) => {
 
     await course.save();
 
-    console.log("✅ COURSE UNPUBLISHED SUCCESSFULLY:", course._id);
-
     res.json({
       success: true,
       message: "Course unpublished successfully",
@@ -1855,7 +1796,6 @@ router.post("/:id/unpublish", authenticate, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ UNPUBLISH COURSE ERROR:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
