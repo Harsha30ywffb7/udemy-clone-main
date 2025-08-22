@@ -34,8 +34,8 @@ const Carousel = ({ data }) => {
         outsideChevron={false}
         chevronWidth={chevronWidth}
       >
-        {data.map((item) => (
-          <CourseCard item={item} key={item.id} />
+        {data.map((course) => (
+          <CourseCard course={course} key={course.id} />
         ))}
       </ItemsCarousel>
     </div>

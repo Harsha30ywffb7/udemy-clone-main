@@ -11,34 +11,15 @@ export const App = () => {
   useEffect(() => {
     const initializeApp = async () => {
       const token = localStorage.getItem("token");
-      console.log("🚀 APP INITIALIZATION - Checking for stored token...");
 
       if (token) {
-        console.log(
-          "✅ TOKEN FOUND in localStorage:",
-          token.substring(0, 20) + "..."
-        );
-        console.log(
-          "🔄 TOKEN PERSISTENCE - Token will persist until explicit logout"
-        );
-
         // If token exists but no user data in store, fetch user data
         if (!user?.user || !user?.token) {
-          console.log(
-            "📡 TOKEN EXISTS but no user data in store - fetching user data..."
-          );
           await dispatch(fetchUserData(token));
-        } else {
-          console.log(
-            "✅ USER ALREADY AUTHENTICATED and in store - skipping fetch"
-          );
         }
-      } else {
-        console.log("❌ NO TOKEN found in localStorage - proceeding as guest");
       }
 
       // Mark app as initialized after auth check
-      console.log("✅ APP INITIALIZATION COMPLETE");
       setIsAppInitialized(true);
     };
 
@@ -50,27 +31,25 @@ export const App = () => {
     const handleStorageChange = (e) => {
       if (e.key === "token") {
         if (e.newValue === null) {
+          console.log("Token was CLEARED from localStorage!");
           console.log(
-            "🚨 STORAGE EVENT - Token was CLEARED from localStorage!"
-          );
-          console.log(
-            "🚨 STORAGE EVENT - Old value was:",
+            " Old value was:",
             e.oldValue ? e.oldValue.substring(0, 20) + "..." : "null"
           );
         } else if (e.oldValue === null) {
-          console.log("🚨 STORAGE EVENT - Token was SET in localStorage!");
+          console.log("Token was SET in localStorage!");
           console.log(
-            "🚨 STORAGE EVENT - New value is:",
+            "New value is:",
             e.newValue ? e.newValue.substring(0, 20) + "..." : "null"
           );
         } else {
-          console.log("🚨 STORAGE EVENT - Token was CHANGED in localStorage!");
+          console.log("Token was CHANGED in localStorage!");
           console.log(
-            "🚨 STORAGE EVENT - Old value:",
+            " Old value:",
             e.oldValue ? e.oldValue.substring(0, 20) + "..." : "null"
           );
           console.log(
-            "🚨 STORAGE EVENT - New value:",
+            "New value:",
             e.newValue ? e.newValue.substring(0, 20) + "..." : "null"
           );
         }
@@ -91,7 +70,7 @@ export const App = () => {
         <div className="text-center">
           <div className="animate-spin w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-6"></div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Loading Udemy Clone
+            Loading Vidyara
           </h2>
           <p className="text-gray-600 text-lg mb-1">
             Initializing your session...

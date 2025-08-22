@@ -42,15 +42,7 @@ export const isInstructor = (user) => {
  */
 export const clearAuth = () => {
   const token = localStorage.getItem("token");
-  console.log(
-    "🧹 CLEAR AUTH UTILITY - EXPLICIT LOGOUT - Clearing authentication data"
-  );
-  console.log(
-    "🧹 CLEAR AUTH UTILITY - Token being cleared:",
-    token ? token.substring(0, 20) + "..." : "No token found"
-  );
   localStorage.removeItem("token");
-  console.log("🧹 CLEAR AUTH UTILITY - Token cleared from localStorage");
 };
 
 /**

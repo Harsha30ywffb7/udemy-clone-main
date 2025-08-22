@@ -294,23 +294,16 @@ const coursesData = [
 
 async function seedDatabase() {
   try {
-    console.log("🌱 Starting database seeding process...");
-
     await connect();
-    console.log("✅ Connected to database");
 
     // Clear existing data
     await Course.deleteMany({});
-    console.log("🗑️  Cleared existing courses");
 
     await User.deleteMany({});
-    console.log("🗑️  Cleared existing users");
 
     await Instructor.deleteMany({});
-    console.log("🗑️  Cleared existing instructor profiles");
 
     // Create sample instructors
-    console.log("📝 Creating sample instructors...");
 
     const sampleInstructors = [
       {
@@ -370,7 +363,6 @@ async function seedDatabase() {
     ];
 
     const instructors = await User.insertMany(sampleInstructors);
-    console.log(`✅ Created ${instructors.length} instructors`);
 
     // Create instructor profiles
     for (const instructor of instructors) {
@@ -394,9 +386,6 @@ async function seedDatabase() {
         },
       });
     }
-    console.log("✅ Created instructor profiles");
-
-    console.log(`📚 Creating courses and assigning to instructors...`);
 
     // Assign courses to instructors randomly
     const coursesToInsert = coursesData.map((courseData, index) => {
@@ -413,7 +402,6 @@ async function seedDatabase() {
 
     // Insert courses
     const insertedCourses = await Course.insertMany(coursesToInsert);
-    console.log(`✅ Successfully inserted ${insertedCourses.length} courses`);
 
     // Update instructor course counts
     for (const instructor of instructors) {
@@ -425,15 +413,9 @@ async function seedDatabase() {
       });
     }
 
-    console.log("🎉 Database seeding completed successfully!");
-    console.log("\n📊 Summary:");
-    console.log(`   - ${instructors.length} instructors`);
-    console.log(`   - ${insertedCourses.length} courses`);
-    console.log(`   - All courses are published and active`);
-
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
+    console.error("Error seeding database:", error);
     process.exit(1);
   }
 }

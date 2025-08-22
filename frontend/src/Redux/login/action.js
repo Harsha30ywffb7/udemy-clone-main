@@ -5,6 +5,7 @@ export const AUTH_LOADING = "AUTH_LOADING";
 export const AUTH_ERROR = "AUTH_ERROR";
 export const CLEAR_ERROR = "CLEAR_ERROR";
 export const LOGOUT = "LOGOUT";
+export const UPDATE_USER = "UPDATE_USER";
 
 export const auth = (user) => ({ type: AUTH, payload: user });
 export const authLoading = (status) => ({
@@ -128,14 +129,11 @@ export const authFunction = (data, URL) => async (dispatch) => {
       dispatch(auth({ user, token }));
       dispatch(authLoading(false));
       dispatch(clearError());
-
-      console.log("Authentication successful:", { user, token });
     } else {
       dispatch(autheError(result.message));
       dispatch(authLoading(false));
     }
   } catch (error) {
-    console.log("Authentication error:", error);
     const errorMessage = getUserFriendlyErrorMessage(error, isLogin);
     dispatch(autheError(errorMessage));
     dispatch(authLoading(false));
@@ -144,17 +142,10 @@ export const authFunction = (data, URL) => async (dispatch) => {
 
 // Logout function
 export const logoutUser = () => (dispatch) => {
-  console.log("🚪 LOGOUT ACTION - Starting explicit logout process...");
   const token = localStorage.getItem("token");
-  console.log(
-    "🚪 LOGOUT ACTION - Current token:",
-    token ? token.substring(0, 20) + "..." : "No token found"
-  );
 
   // Dispatch logout action - this will clear the token in the reducer
   dispatch(logout());
-
-  console.log("🚪 LOGOUT ACTION - Explicit logout completed successfully");
 };
 
 // Function to fetch user data using stored token
@@ -164,15 +155,12 @@ export const fetchUserData = (token) => async (dispatch) => {
     return;
   }
 
-  console.log("Fetching user data with token:", token);
   dispatch(authLoading(true));
 
   try {
     const result = await authService.getProfile();
 
     if (result.success) {
-      console.log("Profile data fetched successfully:", result.data);
-
       // Ensure token is stored in localStorage
       localStorage.setItem("token", token);
 
@@ -181,29 +169,10 @@ export const fetchUserData = (token) => async (dispatch) => {
       dispatch(authLoading(false));
       dispatch(clearError());
     } else {
-      console.log(
-        "❌ FETCH USER DATA - Failed to fetch profile:",
-        result.message
-      );
-      console.log("❌ FETCH USER DATA - Server returned error response");
-      console.log(
-        "🔄 KEEPING TOKEN - Not clearing token, only clear on explicit logout"
-      );
-
       dispatch(autheError(result.message || "Failed to fetch user profile"));
       dispatch(authLoading(false));
     }
   } catch (error) {
-    console.log("❌ FETCH USER DATA - Profile fetch error:", error.message);
-    console.log("❌ FETCH USER DATA - Error status:", error.response?.status);
-    console.log(
-      "❌ FETCH USER DATA - Is network error?",
-      error.code === "ERR_NETWORK"
-    );
-    console.log(
-      "🔄 KEEPING TOKEN - Not clearing token, only clear on explicit logout"
-    );
-
     // Never clear token for any errors - only clear on explicit logout
     const errorMessage =
       error.code === "ERR_NETWORK"

@@ -56,7 +56,6 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
   useEffect(() => {
     const hasFormChanges = hasObjectChanged(formData, lastSavedDataRef.current);
     setHasChanges(hasFormChanges);
-    console.log("🔄 FORM CHANGES DETECTED:", hasFormChanges);
   }, [formData]);
 
   // Categories and levels data
@@ -119,12 +118,10 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
 
     if (isDraftSave) {
       // Minimal validation for draft - only require title
-      console.log("📝 FRONTEND - Applying minimal validation for draft");
       const error = validateField("title", formData.title);
       if (error) newErrors.title = error;
     } else {
       // Full validation for published courses
-      console.log("📝 FRONTEND - Applying full validation for publish");
       const fields = [
         "title",
         "subtitle",
@@ -233,22 +230,15 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
 
   // Save course landing page with smart logic
   const handleSave = async () => {
-    console.log("💾 SAVE INITIATED - Checking form validity and changes...");
-
     // Use draft validation (minimal requirements)
     if (!validateForm(true)) {
-      console.log("❌ SAVE BLOCKED - Form validation failed");
       return;
     }
 
     // Check if there are actual changes to save
     if (!hasChanges && !isNewCourse) {
-      console.log("🔄 NO CHANGES DETECTED - Skipping API call");
-      alert("No changes to save!");
       return;
     }
-
-    console.log("📡 SAVE PROCEEDING - Changes detected or new course");
 
     setSaving(true);
     try {
@@ -256,7 +246,7 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
 
       if (isNewCourse || !courseId) {
         // Create new draft course
-        console.log("🆕 CREATING NEW DRAFT COURSE...");
+
         const coursePayload = {
           ...formData,
           status: "draft",
@@ -266,8 +256,6 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         const response = await courseService.createCourse(coursePayload);
         savedCourse = response.data || response;
 
-        console.log("✅ NEW COURSE CREATED:", savedCourse);
-
         // Update refs and state
         lastSavedDataRef.current = { ...formData };
         setHasChanges(false);
@@ -276,10 +264,6 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         // Navigate to the edit page with the new course ID
         const newCourseId =
           savedCourse._id || savedCourse.id || savedCourse.courseId;
-        console.log(
-          "🔀 REDIRECTING TO CREATE PAGE:",
-          `/course/create/${newCourseId}`
-        );
 
         if (onSave) onSave(formData, newCourseId);
 
@@ -290,29 +274,25 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         );
       } else {
         // Update existing course
-        console.log("🔄 UPDATING EXISTING COURSE:", courseId);
+
         const response = await courseService.updateCourseLandingPageEnhanced(
           courseId,
           formData
         );
         savedCourse = response.data || response;
 
-        console.log("✅ COURSE UPDATED:", savedCourse);
-
         // Update refs and state
         lastSavedDataRef.current = { ...formData };
         setHasChanges(false);
 
         if (onSave) onSave(formData, courseId);
-        alert("Course landing page updated successfully!");
       }
     } catch (error) {
-      console.error("❌ SAVE ERROR:", error);
+      console.error("SAVE ERROR:", error);
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "Failed to save course";
-      alert(`Error: ${errorMessage}. Please try again.`);
     } finally {
       setSaving(false);
     }
