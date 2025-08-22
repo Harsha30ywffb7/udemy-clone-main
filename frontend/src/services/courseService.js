@@ -4,8 +4,6 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
 
-console.log("API Base URL:", API_BASE_URL, import.meta.env.VITE_API_BASE_URL);
-
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -262,9 +260,6 @@ export const courseService = {
   // Update course step
   updateCourseStep: async (courseId, stepName, data) => {
     try {
-      console.log(
-        `📡 UPDATING COURSE STEP: ${stepName} for course ${courseId}`
-      );
       const response = await apiClient.put(
         `/courses/${courseId}/step/${stepName}`,
         { data }
@@ -279,7 +274,6 @@ export const courseService = {
   // Update course landing page (enhanced)
   updateCourseLandingPageEnhanced: async (courseId, landingPageData) => {
     try {
-      console.log(`📡 UPDATING COURSE LANDING PAGE: ${courseId}`);
       const response = await apiClient.put(
         `/courses/${courseId}/landing-page`,
         landingPageData

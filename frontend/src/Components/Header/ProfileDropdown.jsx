@@ -44,8 +44,6 @@ const ProfileDropdown = ({ user }) => {
   };
 
   const handleLogout = () => {
-    console.log("ProfileDropdown: Starting logout process");
-
     // Dispatch logout action to clear Redux state and localStorage
     dispatch(logoutUser());
 

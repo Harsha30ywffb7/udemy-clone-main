@@ -1,33 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { courseService } from "../../services/courseService";
+import CourseCard from "../ProdCard/CourseCard";
 
 const useQuery = () => new URLSearchParams(useLocation().search);
-console.log("came to this page");
-
-const Card = ({ course }) => {
-  return (
-    <div className="bg-white border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-      <img
-        src={course.thumbnail}
-        alt={course.title}
-        className="w-full h-40 object-cover"
-      />
-      <div className="p-4">
-        <div className="font-semibold text-gray-900 line-clamp-2">
-          {course.title}
-        </div>
-        <div className="text-sm text-gray-600 mt-1 line-clamp-2">
-          {course.headline || course.desc}
-        </div>
-        <div className="text-xs text-gray-500 mt-2">
-          {course.totalLectures || 0} lectures •{" "}
-          {course.duration ? `${Math.round(course.duration / 60)} mins` : ""}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const SearchResults = () => {
   const q = useQuery();
@@ -79,7 +55,7 @@ const SearchResults = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {items.map((c) => (
             <button key={c.id} onClick={() => navigate(`/course/${c.id}`)}>
-              <Card course={c} />
+              <CourseCard course={c} />
             </button>
           ))}
           {items.length === 0 && (

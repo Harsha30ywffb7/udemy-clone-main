@@ -141,7 +141,6 @@ const CourseCreation = () => {
     };
 
     const field = stepKey[currentStep];
-    console.log("Selected value:", value, field);
 
     // Clear error when selecting an option
     setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -155,10 +154,8 @@ const CourseCreation = () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
-    console.log("Current step after selection:", currentStep);
 
     if (currentStep === steps.length) {
-      console.log("Final step reached, handle course creation");
       // Final step reached, handle course creation
       handleCreateCourse();
     }
@@ -226,7 +223,6 @@ const CourseCreation = () => {
         type: courseData.courseType,
         timeCommitment: courseData.timeCommitment,
       });
-      console.log("Course creation result:", result.data);
 
       if (result.success) {
         // Redirect to course creation workflow with the new course ID

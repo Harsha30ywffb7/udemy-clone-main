@@ -5,19 +5,9 @@ import CurriculumList from "./CurriculumList";
 import CourseHeader from "./CourseHeader";
 import CourseMetaBlocks from "./CourseMetaBlocks";
 
-import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
-import SlideshowIcon from "@mui/icons-material/Slideshow";
-import ArticleIcon from "@mui/icons-material/Article";
-import HelpIcon from "@mui/icons-material/Help";
-import CodeIcon from "@mui/icons-material/Code";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import DescriptionIcon from "@mui/icons-material/Description";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
-import StarIcon from "@mui/icons-material/Star";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LanguageIcon from "@mui/icons-material/Language";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
@@ -92,7 +82,6 @@ const CoursePage = () => {
       } catch (error) {
         console.error("ERROR LOADING COURSE DATA:", error);
       } finally {
-        console.log("Finished loading, setting loading to false");
         setLoading(false);
       }
     };
@@ -146,7 +135,6 @@ const CoursePage = () => {
         contentIndex,
         sectionTitle,
       };
-      console.log("videoData", videoData);
 
       setCurrentVideo(videoData);
       setIsVideoMode(true);

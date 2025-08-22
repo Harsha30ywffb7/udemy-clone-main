@@ -146,9 +146,7 @@ export const createAutoSave = (saveFunction, delay = 2000) => {
     clearTimeout(timeoutId);
 
     if (hasObjectChanged(formData, lastSavedData)) {
-      console.log("🔄 AUTO-SAVE - Changes detected, scheduling save...");
       timeoutId = setTimeout(() => {
-        console.log("💾 AUTO-SAVE - Executing save...");
         saveFunction(formData);
       }, delay);
     }

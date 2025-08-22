@@ -103,7 +103,6 @@ const FileUploader = ({
 
   const handleFileSelect = async (file) => {
     if (file.size > maxSize) {
-      alert(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
       return;
     }
 
@@ -819,13 +818,12 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
       if (courseId) {
         await courseService.updateCourseCurriculum(courseId, { sections });
       }
-      alert("Curriculum saved successfully!");
+
       if (onSave) {
         onSave({ sections }); // Notify parent of successful save with data
       }
     } catch (error) {
       console.error("Error saving curriculum:", error);
-      alert("Failed to save curriculum. Please try again.");
     } finally {
       setSaving(false);
     }

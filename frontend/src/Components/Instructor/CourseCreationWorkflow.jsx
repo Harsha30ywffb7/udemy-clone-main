@@ -43,36 +43,18 @@ const CourseCreationWorkflow = () => {
   const isCreateMode = location.pathname.includes("/create/");
   const isEditMode = location.pathname.includes("/edit/");
 
-  console.log("🎯 WORKFLOW INITIALIZED:", {
-    courseId,
-    currentStep,
-    isCreateMode,
-    isEditMode,
-    pathname: location.pathname,
-  });
-
   // Load existing course data if editing or continuing creation
   useEffect(() => {
     if (courseId && (isCreateMode || isEditMode)) {
-      console.log(
-        "📥 LOADING COURSE DATA for ID:",
-        courseId,
-        "Mode:",
-        isCreateMode ? "CREATE" : "EDIT"
-      );
       loadCourseData();
-    } else {
-      console.log("🆕 NEW COURSE WORKFLOW - No courseId provided");
     }
   }, [courseId, isCreateMode, isEditMode]);
 
   const loadCourseData = async () => {
     setLoading(true);
     try {
-      console.log("📡 FETCHING COURSE DATA...");
       const response = await courseService.getCourseForEdit(courseId);
       if (response.success) {
-        console.log("✅ COURSE DATA LOADED:", response.data);
         setCourseData(response.data);
 
         // Determine completed steps based on data
@@ -81,13 +63,11 @@ const CourseCreationWorkflow = () => {
         // Check landing page completion
         if (response.data.title && response.data.title.trim()) {
           completed.add("landing-page");
-          console.log("✅ LANDING PAGE STEP MARKED AS COMPLETED");
         }
 
         // Check curriculum completion
         if (response.data.sections && response.data.sections.length > 0) {
           completed.add("curriculum");
-          console.log("✅ CURRICULUM STEP MARKED AS COMPLETED");
         }
 
         // Check if course has completedSteps from backend
@@ -97,34 +77,19 @@ const CourseCreationWorkflow = () => {
         ) {
           response.data.completedSteps.forEach((step) => {
             completed.add(step);
-            console.log(
-              `✅ STEP ${step.toUpperCase()} MARKED AS COMPLETED FROM BACKEND`
-            );
           });
         }
 
         setCompletedSteps(completed);
       }
     } catch (error) {
-      console.error("❌ ERROR LOADING COURSE DATA:", error);
-      // If course not found and we're in create mode, that's expected for new courses
-      if (isCreateMode) {
-        console.log(
-          "📝 CREATE MODE - Course not found is expected for new drafts"
-        );
-      }
+      console.error("ERROR LOADING COURSE DATA:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleStepComplete = (stepId, data, newCourseId = null) => {
-    console.log("🎯 STEP COMPLETED:", {
-      stepId,
-      newCourseId,
-      mode: isCreateMode ? "CREATE" : "EDIT",
-    });
-
     setCompletedSteps((prev) => new Set([...prev, stepId]));
 
     if (stepId === "landing-page") {
@@ -133,16 +98,11 @@ const CourseCreationWorkflow = () => {
       // Handle navigation based on mode and whether a new course was created
       if (newCourseId && isCreateMode) {
         // New course created, redirect will be handled by CourseLandingPage component
-        console.log(
-          "🔀 NEW COURSE CREATED - Redirect handled by CourseLandingPage"
-        );
       } else if (isEditMode) {
         // Editing existing course, auto-advance to curriculum
-        console.log("🔀 EDIT MODE - Auto-advancing to curriculum");
         setCurrentStep("curriculum");
       } else if (isCreateMode && !newCourseId) {
         // Continue creation flow, auto-advance to curriculum
-        console.log("🔀 CREATE MODE - Auto-advancing to curriculum");
         setCurrentStep("curriculum");
       }
     } else if (stepId === "curriculum") {
@@ -150,15 +110,11 @@ const CourseCreationWorkflow = () => {
       if (data && data.sections) {
         setCourseData((prev) => ({ ...prev, sections: data.sections }));
       }
-      console.log(
-        "✅ CURRICULUM STEP COMPLETED - Next button should now be enabled"
-      );
     } else if (stepId === "publish") {
       // Update course data with publish information
       if (data && data.status) {
         setCourseData((prev) => ({ ...prev, status: data.status }));
       }
-      console.log("✅ PUBLISH STEP COMPLETED - Course published successfully");
     }
   };
 

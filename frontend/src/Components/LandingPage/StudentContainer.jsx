@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { courseService } from "../../services/courseService";
 import CourseCard from "../ProdCard/CourseCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Carousel from "./Carousel";
 import { faAngleLeft, faAngleRight } from "@fortawesome/free-solid-svg-icons";
 import ItemsCarousel from "react-items-carousel";
 import { Skeleton } from "@mui/material";
@@ -54,36 +55,7 @@ const CoursesSection = ({
         {title}{" "}
         {highlight && <span className="text-[#8710d8]">"{highlight}"</span>}
       </h2>
-      <div className="relative">
-        <ItemsCarousel
-          requestToChangeActive={setActiveIndex}
-          activeItemIndex={activeIndex}
-          numberOfCards={5}
-          gutter={16}
-          leftChevron={
-            <Arrow direction="left">
-              <FontAwesomeIcon
-                icon={faAngleLeft}
-                className="text-white text-[1.8rem]"
-              />
-            </Arrow>
-          }
-          rightChevron={
-            <Arrow direction="right">
-              <FontAwesomeIcon
-                icon={faAngleRight}
-                className="text-white text-[1.8rem]"
-              />
-            </Arrow>
-          }
-          outsideChevron
-          chevronWidth={chevronWidth}
-        >
-          {data.map((item, index) => (
-            <CourseCard key={index} item={item} />
-          ))}
-        </ItemsCarousel>
-      </div>
+      <Carousel data={data} />
     </div>
   );
 };

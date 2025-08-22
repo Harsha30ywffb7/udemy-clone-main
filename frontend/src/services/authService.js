@@ -28,16 +28,7 @@ authClient.interceptors.request.use(
 authClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error("🔥 AUTH API ERROR:", error.response?.data || error.message);
-    console.log("🔥 AUTH API ERROR - Status:", error.response?.status);
-    console.log("🔥 AUTH API ERROR - URL:", error.config?.url);
-
-    // Never automatically clear tokens - only clear on explicit logout
-    if (error.response?.status === 401) {
-      console.log("🚨 AUTH API - 401 Unauthorized response detected");
-      console.log("🔄 AUTH API - Keeping token, only clear on explicit logout");
-    }
-
+    console.error("AUTH API ERROR:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
@@ -105,17 +96,7 @@ export const authService = {
   // Get User Profile
   getProfile: async () => {
     try {
-      console.log("📡 AUTH SERVICE - Starting profile fetch...");
-      console.log(
-        "📡 AUTH SERVICE - API URL:",
-        `${API_BASE_URL}/users/profile`
-      );
-
       const response = await authClient.get("/users/profile");
-
-      console.log("✅ AUTH SERVICE - Profile fetch successful");
-      console.log("✅ AUTH SERVICE - Response status:", response.status);
-
       return {
         success: true,
         data: response.data,
@@ -123,12 +104,6 @@ export const authService = {
       };
     } catch (error) {
       console.error("❌ AUTH SERVICE - Profile fetch error:", error);
-      console.log("❌ AUTH SERVICE - Error status:", error.response?.status);
-      console.log("❌ AUTH SERVICE - Error message:", error.message);
-      console.log(
-        "❌ AUTH SERVICE - Network error?",
-        error.code === "ERR_NETWORK"
-      );
 
       return {
         success: false,
@@ -270,9 +245,7 @@ export const authService = {
       // Continue with local logout even if API fails
     } finally {
       // Token clearing is handled by Redux actions, not here
-      console.log(
-        "🔄 AUTH SERVICE - Logout API called, token clearing handled by Redux"
-      );
+
       return {
         success: true,
         message: "Logged out successfully",

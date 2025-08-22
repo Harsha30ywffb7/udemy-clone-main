@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 
 const HeroCarousel = () => {
   const { user } = useSelector((store) => store.auth);
-  console.log("HeroCarousel user state:", user);
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 

@@ -55,8 +55,6 @@ const LandingPage = () => {
     localStorage.getItem("token")
   );
 
-  console.log("LandingPage - isLoggedIn:", isLoggedIn, "user:", user);
-
   // Simulate loading completion - now properly triggers re-render
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -65,17 +63,6 @@ const LandingPage = () => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // Log authentication state changes for debugging
-  useEffect(() => {
-    console.log("LandingPage - Auth state changed:", {
-      hasUser: !!user?.user,
-      hasToken: !!user?.token,
-      hasLocalStorageToken: !!localStorage.getItem("token"),
-      isLoggedIn,
-      loading,
-    });
-  }, [user, isLoggedIn, loading]);
 
   return (
     <>
@@ -133,24 +120,51 @@ const LandingPage = () => {
 // New Categories Section Component (fetches from API)
 const CategoriesSection = () => {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
-    courseService
-      .getHomeCategories()
-      .then((res) => {
+
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await courseService.getHomeCategories();
+
         if (!mounted) return;
-        const list = res?.data || [];
-        setCategories(list);
-      })
-      .catch(() => {})
-      .finally(() => {});
+
+        const categoriesData = response?.data || [];
+
+        if (Array.isArray(categoriesData)) {
+          setCategories(categoriesData);
+        } else {
+          setCategories([]);
+        }
+      } catch (err) {
+        if (!mounted) return;
+        console.error("Error fetching categories:", err);
+        setError("Failed to load categories");
+        setCategories([]);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchCategories();
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, []); // ✅ Empty dependency array - only run once
 
+  // Don't render if loading or error
+  if (loading) return null;
+  if (error) return null;
   if (!categories || categories.length === 0) return null;
 
   return (
@@ -160,7 +174,7 @@ const CategoriesSection = () => {
           <div className="flex items-center space-x-8 overflow-x-auto scrollbar-hide">
             {categories.map((cat) => (
               <button
-                key={cat.slug || cat.title}
+                key={cat.slug || cat.title || cat.id}
                 className="flex-shrink-0 text-[0.8rem] font-[300] text-gray-700 hover:text-purple-600 transition-colors duration-200 whitespace-nowrap px-3 py-2 rounded-md hover:bg-gray-50"
                 onClick={() => {
                   navigate(`/search?category=${encodeURIComponent(cat.title)}`);

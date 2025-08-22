@@ -66,10 +66,7 @@ const PublishStep = ({ courseId, courseData, onPublish, onBack }) => {
   };
 
   const handlePublish = async () => {
-    console.log("🚀 PUBLISHING COURSE:", courseId);
-
     if (!validateCourse()) {
-      console.log("❌ VALIDATION FAILED:", validationErrors);
       return;
     }
 
@@ -78,11 +75,6 @@ const PublishStep = ({ courseId, courseData, onPublish, onBack }) => {
       const response = await instructorService.publishCourse(courseId);
 
       if (response.success) {
-        console.log("✅ COURSE PUBLISHED SUCCESSFULLY");
-        alert(
-          "Course published successfully! Students can now enroll in your course."
-        );
-
         if (onPublish) {
           onPublish({ status: "published" });
         }
@@ -90,17 +82,13 @@ const PublishStep = ({ courseId, courseData, onPublish, onBack }) => {
         // Redirect to instructor courses page
         navigate("/instructor/courses");
       } else {
-        console.error("❌ PUBLISH FAILED:", response.message);
-        alert(`Failed to publish course: ${response.message}`);
-
         // If there are validation errors from backend, show them
         if (response.errors && Array.isArray(response.errors)) {
           setValidationErrors(response.errors);
         }
       }
     } catch (error) {
-      console.error("❌ PUBLISH ERROR:", error);
-      alert("An error occurred while publishing the course. Please try again.");
+      console.error("PUBLISH ERROR:", error);
     } finally {
       setPublishing(false);
     }

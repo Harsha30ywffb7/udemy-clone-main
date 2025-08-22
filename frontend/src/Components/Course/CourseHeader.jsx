@@ -69,11 +69,10 @@ const CourseHeader = ({ course }) => {
                         const res = await userService.enrollInCourse(
                           course._id || course.id
                         );
-                        alert(res.message || "Enrolled");
                         // naive reload to update UI
                         window.location.reload();
                       } catch (e) {
-                        alert("Failed to enroll");
+                        console.error(e);
                       }
                     }}
                   >
