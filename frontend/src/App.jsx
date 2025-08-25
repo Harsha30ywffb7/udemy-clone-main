@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Toaster } from "react-hot-toast";
 import { fetchUserData } from "./Redux/login/action";
 import { AllRoutes } from "./Components/Routes/router";
 
@@ -11,20 +12,18 @@ export const App = () => {
   useEffect(() => {
     const initializeApp = async () => {
       const token = localStorage.getItem("token");
-
       if (token) {
         // If token exists but no user data in store, fetch user data
         if (!user?.user || !user?.token) {
           await dispatch(fetchUserData(token));
         }
       }
-
       // Mark app as initialized after auth check
       setIsAppInitialized(true);
     };
 
     initializeApp();
-  }, [dispatch]);
+  }, [dispatch, user?.user, user?.token]);
 
   // Listen for storage changes (token being cleared from other tabs/sources)
   useEffect(() => {
@@ -86,6 +85,30 @@ export const App = () => {
   return (
     <div className="main-cont">
       <AllRoutes />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: "#4ade80",
+              secondary: "#fff",
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: "#ef4444",
+              secondary: "#fff",
+            },
+          },
+        }}
+      />
     </div>
   );
 };

@@ -7,7 +7,7 @@ import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
 import ErrorIcon from "@mui/icons-material/Error";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { courseService } from "../../services/courseService";
-import { uploadImageToCloudinary } from "../../utils/cloudinary";
+import { uploadService } from "../../services/uploadService";
 import { hasObjectChanged } from "../../utils/formUtils";
 
 const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
@@ -198,9 +198,20 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
 
     setImageUploading(true);
     try {
-      const result = await uploadImageToCloudinary(file);
-      if (result.success) {
-        handleInputChange("thumbnailUrl", result.url);
+      if (courseId) {
+        // Update existing course thumbnail
+        const result = await uploadService.uploadCourseThumbnail(
+          courseId,
+          file
+        );
+        if (result.success) {
+          handleInputChange("thumbnailUrl", result.data.thumbnailUrl);
+          setErrors((prev) => ({ ...prev, thumbnailUrl: "" }));
+        }
+      } else {
+        // For new courses, we'll handle the upload when the course is created
+        // For now, we'll store the file temporarily
+        handleInputChange("thumbnailFile", file);
         setErrors((prev) => ({ ...prev, thumbnailUrl: "" }));
       }
     } catch (error) {

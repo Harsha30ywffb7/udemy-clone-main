@@ -1,6 +1,7 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Header } from "../Header/Header";
-import { Landin } from "../LandingPage/Landin";
+import Landin from "../LandingPage/Landin";
+import ExplorePaths from "../Explore/ExplorePaths";
 import SearchResults from "../Search/SearchResults";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
@@ -16,6 +17,7 @@ import { useLocation } from "react-router-dom";
 import Footer from "../Footer/Footer";
 import CoursePage from "../Course/CoursePage";
 import ProfilePage from "../Login_Signup/ProfilePage";
+import MyLearning from "../Learning/MyLearning";
 
 // General Protected Route Component for authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -98,85 +100,97 @@ export const AllRoutes = () => {
   const isInstructorPage = location.pathname.startsWith("/instructor");
   const isCourseCreatePage = location.pathname.includes("/course/create");
   const isProfilePage = location.pathname.includes("/profile");
+  const isCoursePage = location.pathname.match(/^\/course\/[^\/]+$/);
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {!isProfilePage && !isCourseCreatePage && <Header />}
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Landin />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/teach" element={<InstructorRoutes />} />
+      <div className="flex-1 min-h-[90vh]">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Landin />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/teach" element={<InstructorRoutes />} />
 
-        {/* Course Routes */}
-        <Route path="/course/:id" element={<CoursePage />} />
-        <Route path="/search" element={<SearchResults />} />
+          {/* Course Routes */}
+          <Route path="/course/:id" element={<CoursePage />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/explore" element={<ExplorePaths />} />
 
-        {/* User Routes */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/edit"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/wishlist"
-          element={
-            <ProtectedRoute>
-              <Wishlist />
-            </ProtectedRoute>
-          }
-        />
+          {/* User Routes */}
+          <Route
+            path="/learning"
+            element={
+              <ProtectedRoute>
+                <MyLearning />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/edit"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Wishlist />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Instructor Routes - Organized and Clean */}
-        <Route
-          path="/instructor/onboard"
-          element={<InstructorOnboardingRoute />}
-        />
-        <Route
-          path="/instructor/courses"
-          element={<InstructorCoursesRoute />}
-        />
+          {/* Instructor Routes - Organized and Clean */}
+          <Route
+            path="/instructor/onboard"
+            element={<InstructorOnboardingRoute />}
+          />
+          <Route
+            path="/instructor/courses"
+            element={<InstructorCoursesRoute />}
+          />
 
-        {/* Course Creation Flow */}
-        <Route path="/course/create" element={<CourseCreationRoute />} />
-        <Route
-          path="/course/create/:courseId"
-          element={<CourseCreationWorkflowRoute />}
-        />
-        <Route
-          path="/course/edit/:courseId"
-          element={<CourseCreationWorkflowRoute />}
-        />
+          {/* Course Creation Flow */}
+          <Route path="/course/create" element={<CourseCreationRoute />} />
+          <Route
+            path="/course/create/:courseId"
+            element={<CourseCreationWorkflowRoute />}
+          />
+          <Route
+            path="/course/edit/:courseId"
+            element={<CourseCreationWorkflowRoute />}
+          />
 
-        {/* Legacy Routes - Keep for backward compatibility */}
-        <Route
-          path="/instructor/course/create"
-          element={<CourseCreationWorkflowRoute />}
-        />
-        <Route
-          path="/instructor/course/edit/:courseId"
-          element={<CourseCreationWorkflowRoute />}
-        />
+          {/* Legacy Routes - Keep for backward compatibility */}
+          <Route
+            path="/instructor/course/create"
+            element={<CourseCreationWorkflowRoute />}
+          />
+          <Route
+            path="/instructor/course/edit/:courseId"
+            element={<CourseCreationWorkflowRoute />}
+          />
 
-        {/* Legacy Course Edit Route */}
-        <Route
-          path="/instructor/course/:courseId/edit"
-          element={<CourseEditRoute />}
-        />
-      </Routes>
-      {!isProfilePage && <Footer />}
-    </>
+          {/* Legacy Course Edit Route */}
+          <Route
+            path="/instructor/course/:courseId/edit"
+            element={<CourseEditRoute />}
+          />
+        </Routes>
+      </div>
+      {!isProfilePage && !isCoursePage && <Footer />}
+    </div>
   );
 };

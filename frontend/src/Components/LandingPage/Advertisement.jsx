@@ -1,5 +1,3 @@
-import React from "react";
-import { Link } from "react-router-dom";
 import LinkButton from "../../share/UIElements/LinkButton.jsx";
 
 const Advertisement = () => {
@@ -34,7 +32,7 @@ const Advertisement = () => {
       </div>
 
       {/* Company Logo Section */}
-      <div className="mt-16 font-normal leading-relaxed text-2xl text-gray-900">
+      {/* <div className="mt-16 font-normal leading-relaxed text-2xl text-gray-900">
         <section className="bg-gray-50 border-0 py-8 mt-12">
           <div className="flex flex-col justify-center items-center mb-[-1.6rem]">
             <h3 className="font-['var(--suisse-works-alternative)'] font-bold text-2xl leading-tight tracking-tight m-0 mb-2">
@@ -87,7 +85,7 @@ const Advertisement = () => {
             </Link>
           </div>
         </section>
-      </div>
+      </div> */}
 
       {/* Second Advertisement Section - Vidhyara Business */}
       <div className="m-0 mt-16 font-normal leading-relaxed text-2xl text-gray-900">

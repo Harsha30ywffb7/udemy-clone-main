@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutUser } from "../../Redux/login/action";
+import ProfileImage from "./ProfileImage";
 
 const ProfileDropdown = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,12 +36,11 @@ const ProfileDropdown = ({ user }) => {
     },
   ];
 
-  const getAvatarText = (fullName) => {
-    if (!fullName) return "U";
-    const names = fullName.toUpperCase().split(" ");
-    return names.length > 1
-      ? names[0][0] + names[names.length - 1][0]
-      : fullName.toUpperCase().slice(0, 2);
+  const getFullName = (user) => {
+    if (!user) return "User";
+    const firstName = user.name?.first || "";
+    const lastName = user.name?.last || "";
+    return `${firstName} ${lastName}`.trim() || "User";
   };
 
   const handleLogout = () => {
@@ -79,17 +79,16 @@ const ProfileDropdown = ({ user }) => {
     setIsOpen(!isOpen);
   };
 
-  const fullName = user?.fullName || "User";
+  const fullName = getFullName(user);
   const email = user?.email || "";
-  const avatarText = getAvatarText(fullName);
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
       <div
-        className="w-8 h-8 bg-gray-800 text-white rounded-full flex items-center justify-center font-bold text-sm cursor-pointer transition-all duration-200 z-[999999]"
+        className="cursor-pointer transition-all duration-200 z-[999999]"
         onClick={handleProfileClick}
       >
-        {avatarText}
+        <ProfileImage size="sm" user={user} />
       </div>
 
       {isOpen && (
@@ -97,9 +96,7 @@ const ProfileDropdown = ({ user }) => {
           {/* Profile Section */}
           <div className="flex border-b border-gray-300 p-4 cursor-pointer transition-colors duration-300 hover:bg-purple-50">
             <div className="w-[30%] flex items-center">
-              <div className="w-16 h-16 bg-gray-800 text-white rounded-full flex items-center justify-center font-bold text-xl">
-                {avatarText}
-              </div>
+              <ProfileImage size="lg" user={user} />
             </div>
             <div className="w-[70%] leading-tight pl-3">
               <p className="text-gray-800 font-bold text-base m-0">

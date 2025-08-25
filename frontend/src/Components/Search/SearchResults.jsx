@@ -24,10 +24,7 @@ const SearchResults = () => {
         const res = await courseService.getAllCourses(params);
         // Handle various response shapes gracefully
         const courses =
-          res?.data?.courses || // when service returns axios body
-          res?.courses || // if service already unwraps to data
-          res?.data?.data?.courses || // defensive for nested data
-          [];
+          res?.data?.courses || res?.courses || res?.data?.data?.courses || [];
         setItems(courses);
       } finally {
         setLoading(false);
@@ -38,25 +35,26 @@ const SearchResults = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <h1 className="text-2xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-2">
         {category
           ? `Category: ${category}`
           : query
-          ? `Results for "${query}"`
+          ? `Searched for: ${query}`
           : "Courses"}
       </h1>
+      {query && (
+        <p className="text-sm text-gray-600 mb-4">Showing related courses</p>
+      )}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-64 bg-gray-100 animate-pulse rounded" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {items.map((c) => (
-            <button key={c.id} onClick={() => navigate(`/course/${c.id}`)}>
-              <CourseCard course={c} />
-            </button>
+            <CourseCard key={c.id || c._id} course={c} />
           ))}
           {items.length === 0 && (
             <div className="text-gray-600">No courses found.</div>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import ProfileImage from "../Header/ProfileImage";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'photo' | 'privacy'
@@ -104,10 +105,35 @@ export default function ProfilePage() {
   const handlePhotoUpload = async () => {
     if (!photoFile) return;
     setIsUploading(true);
-    // TODO: integrate real upload endpoint
-    setTimeout(() => {
+
+    try {
+      const formData = new FormData();
+      formData.append("profilePicture", photoFile);
+
+      const response = await axios.post(
+        `${API_BASE_URL}/users/upload-avatar`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Update local state with new image
+        setPhotoPreview(null);
+        setPhotoFile(null);
+        // You might want to update the user context/Redux store here
+        console.log("Profile picture uploaded successfully");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert(error.response?.data?.message || "Failed to upload image");
+    } finally {
       setIsUploading(false);
-    }, 1200);
+    }
   };
 
   const formatBiographyForDisplay = (text) => {

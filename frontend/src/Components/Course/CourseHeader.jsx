@@ -1,89 +1,191 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { userService } from "../../services/userService";
 import StarIcon from "@mui/icons-material/Star";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PeopleIcon from "@mui/icons-material/People";
+import LanguageIcon from "@mui/icons-material/Language";
+import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import EditIcon from "@mui/icons-material/Edit";
+import toast from "react-hot-toast";
 
-const CourseHeader = ({ course }) => {
+const CourseHeader = ({ course, onEnroll, enrollmentLoading = false }) => {
+  const navigate = useNavigate();
+
   const isInstructorOwner = Boolean(
     course?.instructorId &&
       course?.currentUserId &&
       String(course.instructorId) === String(course.currentUserId)
   );
+
+  const handleEnroll = () => {
+    if (onEnroll) {
+      onEnroll();
+    }
+  };
+
+  const handleEditCourse = () => {
+    navigate(`/course/edit/${course._id || course.id}`);
+  };
+
   return (
-    <div className="bg-gray-800 text-white">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex gap-8">
+    <div className="bg-[#fafafa] border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          {/* Main Course Info */}
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-            <p className="text-lg text-gray-300 mb-6">{course.headline}</p>
-            <div className="flex items-center gap-6 mb-6">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 leading-tight">
+                {course.title}
+              </h1>
+              <p className="text-base text-gray-600 mb-4 leading-relaxed">
+                {course.headline ||
+                  course.subtitle ||
+                  "Master the fundamentals and advance your skills with this comprehensive course."}
+              </p>
+            </div>
+
+            {/* Course Stats */}
+            <div className="flex flex-wrap items-center gap-4 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-yellow-400 font-bold">
-                  {course.rating || 4.5}
+                <span className="text-yellow-500 font-bold text-base">
+                  {course.rating ? course.rating.toFixed(1) : "No ratings"}
                 </span>
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <StarIcon key={star} className="text-yellow-400 text-sm" />
-                  ))}
-                </div>
-                <span className="text-purple-300">
+                {course.rating > 0 && (
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon
+                        key={star}
+                        className={`text-sm ${
+                          star <= course.rating
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+                <span className="text-gray-600 ml-2 text-sm">
                   ({course.total_ratings?.toLocaleString() || "0"} ratings)
                 </span>
               </div>
-              <div className="text-gray-300">
-                {course.total_students?.toLocaleString() || "0"} students
+
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <PeopleIcon className="text-gray-500 text-sm" />
+                <span>
+                  {course.total_students?.toLocaleString() || "0"} students
+                  enrolled
+                </span>
+              </div>
+
+              {course.totalDuration && (
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
+                  <AccessTimeIcon className="text-gray-500 text-sm" />
+                  <span>{Math.round(course.totalDuration / 3600)} hours</span>
+                </div>
+              )}
+            </div>
+
+            {/* Course Details Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <LanguageIcon className="text-gray-500 text-base" />
+                <div>
+                  <p className="text-xs text-gray-500">Language</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {course.language || "English"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <SignalCellularAltIcon className="text-gray-500 text-base" />
+                <div>
+                  <p className="text-xs text-gray-500">Level</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {course.level || "Beginner"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <CalendarTodayIcon className="text-gray-500 text-base" />
+                <div>
+                  <p className="text-xs text-gray-500">Last Updated</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {course.updatedAt
+                      ? new Date(course.updatedAt).toLocaleDateString()
+                      : "Recently"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <AccessTimeIcon className="text-gray-500 text-base" />
+                <div>
+                  <p className="text-xs text-gray-500">Duration</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {course.totalDuration
+                      ? `${Math.round(course.totalDuration / 3600)}h`
+                      : "Flexible"}
+                  </p>
+                </div>
               </div>
             </div>
+
+            {/* Instructor Info */}
+            {course.instructor && (
+              <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                <img
+                  src={
+                    course.instructor.avatar ||
+                    `https://ui-avatars.com/api/?name=${course.instructor.name}&background=6366f1&color=fff`
+                  }
+                  alt={course.instructor.name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-xs text-gray-500">Created by</p>
+                  <p className="font-medium text-gray-900 text-sm">
+                    {course.instructor.name}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="w-80 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="relative">
-                <img
-                  src={course.thumbnailUrl || course.thumbnail}
-                  alt={course.title}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    e.target.src = `https://via.placeholder.com/320x180/6366f1/ffffff?text=${encodeURIComponent(
-                      course.title.substring(0, 20)
-                    )}`;
-                  }}
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                  <button className="bg-white bg-opacity-90 rounded-full p-4 hover:bg-opacity-100 transition-all">
-                    <PlayCircleOutlineIcon className="text-gray-800 text-4xl" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="text-center mb-4">
-                  <div className="text-3xl font-bold text-green-600 mb-2">
-                    FREE
-                  </div>
-                </div>
-                {!isInstructorOwner && !course?.isEnrolled && (
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3 lg:flex-shrink-0">
+            {/* Show Edit button for instructor, Enroll button for students */}
+            {isInstructorOwner ? (
+              <button
+                className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors"
+                onClick={handleEditCourse}
+              >
+                <EditIcon className="text-[0.8rem]" />
+                Edit Course
+              </button>
+            ) : (
+              <>
+                {!course?.isEnrolled && (
                   <button
-                    className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 font-medium mb-3"
-                    onClick={async () => {
-                      try {
-                        const res = await userService.enrollInCourse(
-                          course._id || course.id
-                        );
-                        // naive reload to update UI
-                        window.location.reload();
-                      } catch (e) {
-                        console.error(e);
-                      }
-                    }}
+                    className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    onClick={handleEnroll}
+                    disabled={enrollmentLoading}
                   >
-                    Enroll for Free
+                    {enrollmentLoading ? "Enrolling..." : "Enroll Now"}
                   </button>
                 )}
-                <div className="text-center text-sm text-gray-600">
-                  30-Day Money-Back Guarantee
-                </div>
-              </div>
-            </div>
+
+                {course?.isEnrolled && (
+                  <div className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-medium text-center">
+                    ✓ Enrolled
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

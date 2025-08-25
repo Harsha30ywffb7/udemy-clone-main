@@ -13,30 +13,7 @@ import CourseSuggestions from "./CourseSuggestions";
 import { courseService } from "../../services/courseService";
 import { useNavigate } from "react-router-dom";
 
-export const LightTooltip = styled(({ className, ...props }) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: "#ffffff !important",
-    padding: "0 !important",
-    color: "#1c1d1f !important",
-    boxShadow:
-      "0 2px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.08) !important",
-    border: "1px solid #e5e5e5 !important",
-    borderRadius: "4px !important",
-    fontSize: "14px !important",
-    fontWeight: "400 !important",
-    lineHeight: "1.4 !important",
-    maxWidth: "320px !important",
-    zIndex: "9999 !important",
-    position: "relative !important",
-  },
-  [`& .${tooltipClasses.popper}`]: {
-    zIndex: "9999 !important",
-  },
-}));
-
-export const Landin = () => {
+const Landin = () => {
   return (
     <>
       <LandingPage />
@@ -105,6 +82,7 @@ const LandingPage = () => {
       ) : (
         <>
           <CourseSuggestions />
+          <PersonalizedExplore />
           <StudentContainer />
           <FeaturedTopics />
           <div className="mb-16">
@@ -211,4 +189,149 @@ const SkeltonLoading = () => {
   );
 };
 
-export default LandingPage;
+// Personalized explore section based on user behavior
+const PersonalizedExplore = () => {
+  const navigate = useNavigate();
+  const { user } = useSelector((store) => store.auth);
+  const [exploreBlocks, setExploreBlocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const generateExploreBlocks = async () => {
+      setLoading(true);
+      const blocks = [];
+
+      // Check if user is logged in
+      if (user?.user) {
+        // Block 1: Continue learning (if enrolled in courses)
+        if (user.user.enrolledCourses && user.user.enrolledCourses.length > 0) {
+          blocks.push({
+            title: "Continue learning",
+            description: "Jump back into your recent topics.",
+            action: () => navigate("/learning"),
+          });
+        }
+
+        // Block 2: Based on enrolled categories
+        if (
+          user.user.enrolledCategories &&
+          user.user.enrolledCategories.length > 0
+        ) {
+          const recentCategory =
+            user.user.enrolledCategories[
+              user.user.enrolledCategories.length - 1
+            ];
+          blocks.push({
+            title: `More ${recentCategory} courses`,
+            description: "Explore similar topics to what you're learning.",
+            action: () =>
+              navigate(
+                `/search?category=${encodeURIComponent(recentCategory)}`
+              ),
+          });
+        }
+
+        // Block 3: Based on wishlist
+        if (user.user.wishlist && user.user.wishlist.length > 0) {
+          blocks.push({
+            title: "From your wishlist",
+            description: "Courses you've saved for later.",
+            action: () => navigate("/wishlist"),
+          });
+        }
+      }
+
+      // If not enough personalized blocks, add trending/popular
+      if (blocks.length < 3) {
+        try {
+          const response = await courseService.getAllCourses({ limit: 1 });
+          if (response.success && response.data?.courses?.length > 0) {
+            const popularCategory = response.data.courses[0].category;
+            blocks.push({
+              title: `Popular in ${popularCategory}`,
+              description: "Trending courses in this category.",
+              action: () =>
+                navigate(
+                  `/search?category=${encodeURIComponent(popularCategory)}`
+                ),
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching popular courses:", error);
+        }
+      }
+
+      // Fallback blocks if still not enough
+      while (blocks.length < 3) {
+        const fallbackBlocks = [
+          {
+            title: "Trending this week",
+            description: "Most popular courses right now.",
+            action: () => navigate("/search?q=trending"),
+          },
+          {
+            title: "New courses",
+            description: "Fresh content just added.",
+            action: () => navigate("/search?q=new"),
+          },
+          {
+            title: "Free courses",
+            description: "Learn without spending a dime.",
+            action: () => navigate("/search?q=free"),
+          },
+        ];
+
+        const fallbackIndex = blocks.length;
+        if (fallbackIndex < fallbackBlocks.length) {
+          blocks.push(fallbackBlocks[fallbackIndex]);
+        }
+      }
+
+      setExploreBlocks(blocks);
+      setLoading(false);
+    };
+
+    generateExploreBlocks();
+  }, [user, navigate]);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-[1340px] mx-auto px-6 py-10">
+        <h2 className="text-2xl font-bold mb-4">Explore for you</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-md border border-gray-200 bg-white"
+            >
+              <Skeleton variant="text" width="60%" height={24} />
+              <Skeleton variant="text" width="80%" height={16} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[1340px] mx-auto px-6 py-10">
+      <h2 className="text-2xl font-bold mb-4">Explore for you</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {exploreBlocks.map((block, index) => (
+          <button
+            key={`${block.title}-${index}`}
+            onClick={block.action}
+            className="text-left p-4 rounded-md border border-gray-200 bg-white hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="text-lg font-semibold">{block.title}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              {block.description}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Landin;

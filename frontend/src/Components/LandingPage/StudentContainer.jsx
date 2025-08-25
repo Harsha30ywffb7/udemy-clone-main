@@ -3,8 +3,6 @@ import { courseService } from "../../services/courseService";
 import CourseCard from "../ProdCard/CourseCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Carousel from "./Carousel";
-import { faAngleLeft, faAngleRight } from "@fortawesome/free-solid-svg-icons";
-import ItemsCarousel from "react-items-carousel";
 import { Skeleton } from "@mui/material";
 
 const Arrow = ({ direction, children }) => (
@@ -85,40 +83,43 @@ const StudentContainer = () => {
         ]);
 
         if (studentsViewing.success && studentsViewing.data?.courses) {
-          // Transform API data to match CourseCard component expectations
-          const transformedStudentsViewing = studentsViewing.data.courses.map(
-            (course) => ({
-              id: course.id,
-              img: course.thumbnail,
-              title: course.title,
-              desc: course.headline,
-              rateScore: course.rating?.toFixed(1) || "4.5",
-              reviewerNum: course.totalRatings || 0,
-              price: course.originalPrice || course.price,
-              onSale: course.originalPrice > course.price,
-              onSalePrice: course.price,
-              mark: course.totalStudents > 100000 ? "Bestseller" : "",
-            })
-          );
+          const transformedStudentsViewing = studentsViewing.data.courses;
+          //   .map(
+          //   (course) => ({
+          //     id: course.id,
+          //     img: course.thumbnail,
+          //     title: course.title,
+          //     desc: course.headline,
+          //     rateScore: course.rating?.toFixed(1) || "4.5",
+          //     reviewerNum: course.totalRatings || 0,
+          //     price: course.originalPrice || course.price,
+          //     onSale: course.originalPrice > course.price,
+          //     onSalePrice: course.price,
+          //     mark: course.totalStudents > 100000 ? "Bestseller" : "",
+          //   })
+          // );
+          console.log("transformedStudentsViewing", transformedStudentsViewing);
           setStudentsViewingCourses(transformedStudentsViewing);
         }
 
         if (recommended.success && recommended.data?.courses) {
           // Transform API data for recommended courses
-          const transformedRecommended = recommended.data.courses.map(
-            (course) => ({
-              id: course.id,
-              img: course.thumbnail,
-              title: course.title,
-              desc: course.headline,
-              rateScore: course.rating?.toFixed(1) || "4.5",
-              reviewerNum: course.totalRatings || 0,
-              price: course.originalPrice || course.price,
-              onSale: course.originalPrice > course.price,
-              onSalePrice: course.price,
-              mark: course.totalStudents > 100000 ? "Bestseller" : "",
-            })
-          );
+          const transformedRecommended = recommended.data.courses;
+          console.log("transformedRecommended", transformedRecommended);
+          // .map(
+          //   (course) => ({
+          //     id: course.id,
+          //     img: course.thumbnail,
+          //     title: course.title,
+          //     desc: course.headline,
+          //     rateScore: course.rating?.toFixed(1) || "4.5",
+          //     reviewerNum: course.totalRatings || 0,
+          //     price: course.originalPrice || course.price,
+          //     onSale: course.originalPrice > course.price,
+          //     onSalePrice: course.price,
+          //     mark: course.totalStudents > 100000 ? "Bestseller" : "",
+          //   })
+          // );
           setRecommendedCourses(transformedRecommended);
         }
       } catch (error) {

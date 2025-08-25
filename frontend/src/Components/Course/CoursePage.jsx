@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import VideoSection from "./VideoSection";
 import CurriculumList from "./CurriculumList";
 import CourseHeader from "./CourseHeader";
-import CourseMetaBlocks from "./CourseMetaBlocks";
+import ReactPlayer from "react-player";
+import CourseRating from "./CourseRating";
 
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -18,6 +19,15 @@ import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import SettingsIcon from "@mui/icons-material/Settings";
+import DownloadIcon from "@mui/icons-material/Download";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import AddIcon from "@mui/icons-material/Add";
+import UploadIcon from "@mui/icons-material/Upload";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PeopleIcon from "@mui/icons-material/People";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LockIcon from "@mui/icons-material/Lock";
+import toast from "react-hot-toast";
 import {
   FALLBACK_MP4_URL,
   isYoutubeUrl,
@@ -25,10 +35,14 @@ import {
   formatDuration,
 } from "./constants";
 import { courseService } from "../../services/courseService";
+import { uploadService } from "../../services/uploadService";
+import { userService } from "../../services/userService";
+import { useSelector } from "react-redux";
 
 const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
 
   // Course data
   const [course, setCourse] = useState(null);
@@ -45,7 +59,6 @@ const CoursePage = () => {
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
-  const [videoLoading, setVideoLoading] = useState(false);
   const [currentSrc, setCurrentSrc] = useState("");
   const FALLBACK_SRC = FALLBACK_MP4_URL;
 
@@ -56,18 +69,75 @@ const CoursePage = () => {
   const [isVideoMode, setIsVideoMode] = useState(false);
   const [activeVideoTab, setActiveVideoTab] = useState("overview");
 
+  // Authentication and enrollment state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false);
+
+  // Instructor functionality
+  const [isInstructor, setIsInstructor] = useState(false);
+  const [showNoteUpload, setShowNoteUpload] = useState(false);
+  const [newNote, setNewNote] = useState({
+    title: "",
+    topic: "",
+    description: "",
+    file: null,
+  });
+
   // Load course data
   useEffect(() => {
     const loadCourseData = async () => {
       setLoading(true);
 
       try {
+        // Check authentication state
+        const token = user.token;
+        const userData = user.user;
+        console.log("token", token, userData);
+        const isLoggedIn = !!token && !!userData;
+        setIsLoggedIn(isLoggedIn);
+
+        if (isLoggedIn) {
+          const currentUser = userData;
+          setCurrentUser(currentUser);
+
+          // Check if user is enrolled
+
+          if (currentUser.enrolledCourses) {
+            const isEnrolled = currentUser.enrolledCourses.some(
+              (enrollment) => String(enrollment.courseId) === String(id)
+            );
+            setIsEnrolled(isEnrolled);
+            // Update course object with enrollment status
+            setCourse((prev) => ({ ...prev, isEnrolled }));
+          }
+        }
+
         // Load course basic data
         const courseResponse = await courseService.getCourseBasic(id);
         if (courseResponse.success) {
           setCourse(courseResponse.data);
+
+          // Check if current user is instructor
+          console.log(isLoggedIn, userData);
+
+          if (isLoggedIn && userData) {
+            console.log(
+              "currentUsercu;rrentUsercurrentUsercu;rrentUser",
+              userData.role
+            );
+            if (userData.role === "instructor") {
+              setIsInstructor(true);
+            }
+          }
+
           setLoading(false);
         }
+        console.log(
+          "setIsInstructorsetIsInstructorsetIsInstructor",
+          isInstructor
+        );
 
         // Load curriculum
         const curriculumResponse = await courseService.getCourseCurriculum(id);
@@ -88,6 +158,41 @@ const CoursePage = () => {
 
     loadCourseData();
   }, [id]);
+
+  const handleEnroll = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please login to enroll in this course");
+      return;
+    }
+
+    setEnrollmentLoading(true);
+    try {
+      const response = await userService.enrollInCourse(id);
+      if (response.success) {
+        toast.success("Successfully enrolled in the course!");
+        setIsEnrolled(true);
+
+        // Update course object with enrollment status
+        setCourse((prev) => ({ ...prev, isEnrolled: true }));
+
+        // Update local user data
+        const updatedUser = { ...currentUser };
+        updatedUser.enrolledCourses = updatedUser.enrolledCourses || [];
+        updatedUser.enrolledCourses.push({
+          courseId: id,
+          progress: 0,
+          lastAccessed: new Date(),
+        });
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Enrollment error:", error);
+      toast.error(error.message || "Failed to enroll. Please try again.");
+    } finally {
+      setEnrollmentLoading(false);
+    }
+  };
 
   // Keyboard shortcuts for video player
   useEffect(() => {
@@ -128,6 +233,22 @@ const CoursePage = () => {
     contentIndex,
     sectionTitle
   ) => {
+    // Check if user is enrolled for premium content (skip first section which is usually free)
+    if (sectionIndex > 0 && !isEnrolled && !isInstructor) {
+      toast.error("Please enroll in this course to access all content", {
+        duration: 4000,
+        icon: "🔒",
+      });
+      return;
+    }
+
+    // Check if user is logged in for premium content
+    const token = localStorage.getItem("token");
+    if (!token && sectionIndex > 0) {
+      toast.error("Please login to access this content");
+      return;
+    }
+
     if (content.contentType === "video" && content.video?.url) {
       const videoData = {
         ...content,
@@ -138,17 +259,15 @@ const CoursePage = () => {
 
       setCurrentVideo(videoData);
       setIsVideoMode(true);
-      // don't auto-play to avoid browser autoplay blocks; show overlay instead
       setPlaying(false);
       setPlayed(0);
       const srcCandidate = content.video?.url || "";
       const chosen = isYoutubeUrl(srcCandidate)
-        ? FALLBACK_MP4_URL
+        ? srcCandidate
         : FALLBACK_MP4_URL;
       setCurrentSrc(chosen);
-      setVideoLoading(false);
     } else {
-      alert(
+      toast.info(
         `${content.contentType.replace("_", " ").toUpperCase()}: ${
           content.title
         }\n\nThis content type will be implemented in future updates.`
@@ -162,11 +281,19 @@ const CoursePage = () => {
     setCurrentVideo(null);
     setPlaying(false);
     setPlayed(0);
-    setVideoLoading(false);
   };
 
   // Toggle section expansion
   const toggleSection = (sectionIndex) => {
+    // Check if user is enrolled (skip first section which is usually free)
+    if (sectionIndex > 0 && !isEnrolled && !isInstructor) {
+      toast.error("Please enroll in this course to access all sections", {
+        duration: 4000,
+        icon: "🔒",
+      });
+      return;
+    }
+
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(sectionIndex)) {
       newExpanded.delete(sectionIndex);
@@ -180,14 +307,10 @@ const CoursePage = () => {
   const handlePlayPause = () => {
     const next = !playing;
     setPlaying(next);
-    setVideoLoading(next);
   };
 
   const handleProgress = (state) => {
     setPlayed(state.played);
-    if (state.playedSeconds && state.playedSeconds > 0) {
-      setVideoLoading(false);
-    }
     if (
       playerRef.current &&
       typeof playerRef.current.getDuration === "function"
@@ -244,13 +367,127 @@ const CoursePage = () => {
     return completedContent.has(contentId);
   };
 
+  // Handle rating submission
+  const handleRatingSubmit = (ratingData) => {
+    if (course) {
+      setCourse((prev) => ({
+        ...prev,
+        rating: ratingData.rating,
+        total_ratings: ratingData.totalRatings,
+      }));
+    }
+  };
+
+  // Handle file upload for notes
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        toast.error("File size must be less than 10MB");
+        e.target.value = null;
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Please upload PDF, DOC, DOCX, or TXT files only");
+        e.target.value = null;
+        return;
+      }
+
+      setNewNote((prev) => ({ ...prev, file }));
+      toast.success("File selected successfully");
+    }
+  };
+
+  // Handle note upload
+  const handleNoteUpload = async (e) => {
+    e.preventDefault();
+
+    if (!newNote.title || !newNote.topic) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      console.log("Uploading note with data:", newNote);
+      const noteData = {
+        title: newNote.title,
+        topic: newNote.topic,
+        description: newNote.description,
+        file: newNote.file,
+      };
+
+      const result = await uploadService.uploadCourseNote(id, noteData);
+      console.log("Upload result:", result);
+
+      // Reset form
+      setNewNote({
+        title: "",
+        topic: "",
+        description: "",
+        file: null,
+      });
+      setShowNoteUpload(false);
+
+      // Add to course notes array so it appears in the UI immediately
+      setCourse((prevCourse) => {
+        console.log("Previous course state:", prevCourse);
+        const updatedCourse = {
+          ...prevCourse,
+          notes: [...(prevCourse.notes || []), result.data],
+        };
+        console.log("Updated course state:", updatedCourse);
+        return updatedCourse;
+      });
+
+      // Add to current video notes if in video mode
+      if (currentVideo) {
+        currentVideo.notes = currentVideo.notes || [];
+        currentVideo.notes.push(result.data);
+      }
+
+      toast.success("Note uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading note:", error);
+      toast.error(error.message || "Failed to upload note. Please try again.");
+    }
+  };
+
+  // Handle note deletion
+  const handleDeleteNote = async (noteId) => {
+    try {
+      await uploadService.deleteCourseNote(id, noteId);
+
+      // Remove from course notes array
+      setCourse((prevCourse) => ({
+        ...prevCourse,
+        notes: prevCourse.notes.filter((note) => note._id !== noteId),
+      }));
+
+      toast.success("Note deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast.error(error.message || "Failed to delete note. Please try again.");
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-          <p className="mt-4">Loading course...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading course...</p>
         </div>
       </div>
     );
@@ -259,13 +496,15 @@ const CoursePage = () => {
   // Error state
   if (!course || !curriculum) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <h2 className="text-2xl font-bold mb-4">Course not found</h2>
-          <p className="text-gray-400">Unable to load course content.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4 text-gray-900">
+            Course not found
+          </h2>
+          <p className="text-gray-600 mb-4">Unable to load course content.</p>
           <button
             onClick={() => navigate("/")}
-            className="mt-4 bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700"
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
             Back to Home
           </button>
@@ -274,35 +513,49 @@ const CoursePage = () => {
     );
   }
 
-  // Video Mode Layout
+  // Video Mode Layout - Clean white design with independent scrolling
   if (isVideoMode && currentVideo) {
     return (
-      <div className="min-h-screen bg-white text-gray-900">
-        {/* Video Mode Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="min-h-screen bg-white">
+        {/* Video Mode Header - Fixed with better design */}
+        <div className="bg-gray-50 border-b border-gray-200 px-8 py-6 sticky top-0 z-10 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <button
                 onClick={exitVideoMode}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <ArrowBackIcon />
               </button>
-              <div>
-                <h1 className="text-lg font-semibold">{course.title}</h1>
-                <p className="text-sm text-gray-600">
-                  {currentVideo.sectionTitle} • {currentVideo.title}
-                </p>
+              <div className="flex items-center gap-4">
+                {course.thumbnailUrl && (
+                  <img
+                    src={course.thumbnailUrl}
+                    alt={course.title}
+                    className="w-12 h-12 rounded-lg object-cover shadow-sm"
+                  />
+                )}
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    {course.title}
+                  </h1>
+                  <p className="text-sm text-gray-600">
+                    {currentVideo.sectionTitle} • {currentVideo.title}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-600">
-                Progress: {Math.round(played * 100)}%
-              </div>
+            <div className="flex items-center gap-6">
+              {/* <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">
+                  Progress: {Math.round(played * 100)}%
+                </span>
+              </div> */}
               <button
                 onClick={exitVideoMode}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <CloseIcon />
               </button>
@@ -311,41 +564,52 @@ const CoursePage = () => {
         </div>
 
         <div className="flex h-[calc(100vh-80px)]">
-          {/* Video Player Section */}
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            {/* Fixed-height player so tab area size stays constant */}
-            <div className="relative w-full h-[480px] bg-black">
-              <VideoSection
-                playerRef={playerRef}
-                url={currentSrc || FALLBACK_SRC}
-                playing={playing}
-                volume={muted ? 0 : volume}
-                onProgress={handleProgress}
-                onEnded={() =>
-                  markAsCompleted(
-                    currentVideo.sectionIndex,
-                    currentVideo.contentIndex
-                  )
-                }
-                onError={(error) => {
-                  console.error("Video playback error:", error);
-                  setVideoLoading(false);
-                }}
-                onPlay={() => setVideoLoading(false)}
-                style={{ position: "absolute", top: 0, left: 0 }}
-              />
-
-              {/* Loading Overlay */}
-              {videoLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-full p-6">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          {/* Left Side - Video and Tabs - Independent scroll */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Video Player - Fixed at top of left side */}
+            <div className="relative w-full h-[480px] bg-black flex-shrink-0">
+              {/* Check if content is locked for non-enrolled users */}
+              {!course.isEnrolled &&
+              !currentVideo.isFree &&
+              !currentVideo.isPreview ? (
+                <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
+                  <div className="text-center text-white p-8">
+                    <LockIcon className="text-6xl mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-xl font-bold mb-2">Content Locked</h3>
+                    <p className="text-gray-300 mb-6 max-w-md">
+                      Enroll in this course to access all videos and content.
+                      Start learning today!
+                    </p>
+                    <button
+                      onClick={handleEnroll}
+                      className="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    >
+                      Enroll Now - FREE
+                    </button>
                   </div>
                 </div>
+              ) : (
+                <VideoSection
+                  playerRef={playerRef}
+                  url={currentSrc || FALLBACK_SRC}
+                  playing={playing}
+                  volume={muted ? 0 : volume}
+                  onProgress={handleProgress}
+                  onEnded={() =>
+                    markAsCompleted(
+                      currentVideo.sectionIndex,
+                      currentVideo.contentIndex
+                    )
+                  }
+                  onError={(error) => {
+                    console.error("Video playback error:", error);
+                  }}
+                  style={{ position: "absolute", top: 0, left: 0 }}
+                />
               )}
 
               {/* Click to Play Overlay */}
-              {!playing && !videoLoading && (
+              {!playing && (
                 <div
                   className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
                   onClick={handlePlayPause}
@@ -365,7 +629,7 @@ const CoursePage = () => {
                     onClick={handleSeek}
                   >
                     <div
-                      className="h-full bg-purple-500 rounded-full transition-all duration-200"
+                      className="h-full bg-gray-300 rounded-full transition-all duration-200"
                       style={{ width: `${played * 100}%` }}
                     />
                   </div>
@@ -373,23 +637,20 @@ const CoursePage = () => {
                   {/* Controls */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      {/* Keyboard shortcuts hint */}
                       <div className="text-xs text-gray-400 hidden md:block">
                         Space: Play/Pause • F: Fullscreen • M: Mute
                       </div>
-                      {/* Play/Pause */}
                       <button
                         onClick={handlePlayPause}
-                        className="text-white hover:text-purple-400 text-2xl transition-colors duration-200 hover:scale-110"
+                        className="text-white hover:text-gray-300 text-2xl transition-colors duration-200 hover:scale-110"
                       >
                         {playing ? <PauseIcon /> : <PlayArrowIcon />}
                       </button>
 
-                      {/* Volume */}
                       <div className="flex items-center gap-2">
                         <button
                           onClick={toggleMute}
-                          className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110"
+                          className="text-white hover:text-gray-300 transition-colors duration-200 hover:scale-110"
                         >
                           {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
                         </button>
@@ -400,11 +661,10 @@ const CoursePage = () => {
                           step={0.1}
                           value={muted ? 0 : volume}
                           onChange={handleVolumeChange}
-                          className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer"
+                          className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-gray-300 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-gray-300 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer"
                         />
                       </div>
 
-                      {/* Time */}
                       <div className="text-sm text-gray-300">
                         {formatDuration(played * duration)} /{" "}
                         {formatDuration(duration)}
@@ -412,15 +672,13 @@ const CoursePage = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      {/* Settings */}
-                      <button className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110">
+                      <button className="text-white hover:text-gray-300 transition-colors duration-200 hover:scale-110">
                         <SettingsIcon />
                       </button>
 
-                      {/* Fullscreen */}
                       <button
                         onClick={toggleFullscreen}
-                        className="text-white hover:text-purple-400 transition-colors duration-200 hover:scale-110"
+                        className="text-white hover:text-gray-300 transition-colors duration-200 hover:scale-110"
                       >
                         {isFullscreen ? (
                           <FullscreenExitIcon />
@@ -432,17 +690,16 @@ const CoursePage = () => {
                   </div>
                 </div>
               )}
-
-              {/* Title overlay removed for cleaner look */}
             </div>
 
-            {/* Tabs: Overview / Notes */}
-            <div className="bg-white border-t border-gray-200 text-gray-800">
-              <div className="px-6">
-                <div className="flex gap-6">
+            {/* Tabs Section - Scrollable content area */}
+            <div className="bg-white border-t border-gray-200">
+              {/* Tab Navigation - Fixed */}
+              <div className="px-6 border-b border-gray-200">
+                <div className="flex gap-8">
                   <button
                     onClick={() => setActiveVideoTab("overview")}
-                    className={`py-3 border-b-2 text-sm font-medium ${
+                    className={`py-4 border-b-2 text-sm font-medium ${
                       activeVideoTab === "overview"
                         ? "border-gray-900 text-gray-900"
                         : "border-transparent text-gray-600 hover:text-gray-900"
@@ -452,7 +709,7 @@ const CoursePage = () => {
                   </button>
                   <button
                     onClick={() => setActiveVideoTab("notes")}
-                    className={`py-3 border-b-2 text-sm font-medium ${
+                    className={`py-4 border-b-2 text-sm font-medium ${
                       activeVideoTab === "notes"
                         ? "border-gray-900 text-gray-900"
                         : "border-transparent text-gray-600 hover:text-gray-900"
@@ -463,61 +720,131 @@ const CoursePage = () => {
                 </div>
               </div>
 
-              <div className="px-6 py-4">
+              {/* Tab Content - Scrollable */}
+              <div className="px-6 py-6">
                 {activeVideoTab === "overview" ? (
-                  <div className="text-sm text-gray-700 space-y-2">
-                    <div className="text-gray-900 font-semibold">
-                      {currentVideo.title}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {currentVideo.title}
+                      </h3>
+                      {currentVideo.sectionTitle && (
+                        <p className="text-gray-600 mb-3">
+                          {currentVideo.sectionTitle}
+                        </p>
+                      )}
+                      {typeof currentVideo.duration === "number" && (
+                        <p className="text-sm text-gray-500 mb-3">
+                          Duration: {formatDuration(currentVideo.duration)}
+                        </p>
+                      )}
                     </div>
-                    {currentVideo.sectionTitle && (
-                      <div className="text-gray-600">
-                        {currentVideo.sectionTitle}
-                      </div>
-                    )}
-                    {typeof currentVideo.duration === "number" && (
-                      <div>
-                        Duration: {formatDuration(currentVideo.duration)}
-                      </div>
-                    )}
+
                     {currentVideo.description && (
-                      <div className="text-gray-700 whitespace-pre-line">
+                      <div className="text-gray-700 leading-relaxed">
                         {currentVideo.description}
+                      </div>
+                    )}
+
+                    {/* {Array.isArray(course.notes) && course.notes.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                          Course Notes
+                        </h4>
+                        <div className="space-y-3">
+                          {course.notes.map((note, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            >
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900 text-sm">
+                                  {note.title}
+                                </h4>
+                                <p className="text-xs text-gray-600">
+                                  {note.topic}
+                                </p>
+                                {note.description && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {note.description}
+                                  </p>
+                                )}
+                              </div>
+                              {note.fileUrl && (
+                                <a
+                                  href={note.fileUrl}
+                                  download={note.fileName}
+                                  className="text-blue-600 hover:text-blue-700 p-2"
+                                >
+                                  <DownloadIcon className="text-lg" />
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )} */}
+                  </div>
+                ) : activeVideoTab === "notes" ? (
+                  <div className="space-y-4">
+                    {Array.isArray(course.notes) && course.notes.length > 0 ? (
+                      <div className="space-y-3">
+                        {course.notes.map((note, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                          >
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">
+                                {note.title}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {note.topic}
+                              </p>
+                              {note.description && (
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {note.description}
+                                </p>
+                              )}
+                            </div>
+                            {note.fileUrl && (
+                              <a
+                                href={note.fileUrl}
+                                download={note.fileName}
+                                className="text-blue-600 hover:text-blue-700 p-2"
+                              >
+                                <DownloadIcon className="text-xl" />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">
+                        <p className="text-base">No course notes available</p>
+                        <p className="text-xs mt-1">
+                          Course notes will appear here when available.
+                        </p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div>
-                    {Array.isArray(currentVideo.resources) &&
-                    currentVideo.resources.length > 0 ? (
-                      <ul className="space-y-2">
-                        {currentVideo.resources.map((r, idx) => (
-                          <li key={idx}>
-                            <a
-                              href={r.url || r.href}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-purple-700 hover:underline"
-                            >
-                              {r.title || r.name || r.url}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="text-sm text-gray-600">
-                        No downloadable resources for this lecture.
-                      </div>
-                    )}
+                    <p className="text-gray-500 text-center py-8">
+                      Select a video from the course content to start learning
+                    </p>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Curriculum Sidebar */}
+          {/* Right Side - Course Content Sidebar - Independent scroll */}
           <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold mb-2">Course content</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                Course content
+              </h2>
               <div className="text-sm text-gray-600">
                 {curriculum.totalLectures} lectures •{" "}
                 {formatDuration(curriculum.totalDuration)}
@@ -530,7 +857,7 @@ const CoursePage = () => {
               currentVideo={currentVideo}
               isContentCompleted={isContentCompleted}
               handleContentClick={handleContentClick}
-              isEnrolled={Boolean(course?.isEnrolled)}
+              isEnrolled={Boolean(isEnrolled)}
             />
           </div>
         </div>
@@ -538,81 +865,109 @@ const CoursePage = () => {
     );
   }
 
-  // Regular Course Page Layout
+  // Regular Course Page Layout - Compact design
   return (
-    <div className="bg-gray-900 min-h-screen">
-      <CourseHeader course={course} />
+    <div className="bg-[#fafafa] min-h-screen">
+      <CourseHeader
+        course={{ ...course, isEnrolled: isEnrolled }}
+        onEnroll={handleEnroll}
+        enrollmentLoading={enrollmentLoading}
+      />
 
       {/* Course Body */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex gap-8">
+      <div className="bg-[#fafafa]">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
-            <div className="flex-1 max-w-4xl">
+            <div className="lg:col-span-2 space-y-6">
               {/* What You'll Learn */}
-              <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-6">
-                  What you'll learn from Course
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-900">
+                  What you'll learn
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {course.learningObjectives?.map((objective, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <CheckCircleIcon className="text-gray-700 text-sm flex-shrink-0 mt-0.5" />
-                      <span className="text-sm text-gray-700">{objective}</span>
+                      <CheckCircleIcon className="text-gray-900 text-base flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 text-sm leading-relaxed">
+                        {objective}
+                      </span>
                     </div>
                   )) || (
-                    <div className="col-span-2 text-gray-500">
-                      Learning objectives not available
+                    <div className="col-span-2 text-gray-500 text-center py-4">
+                      <p className="text-base">
+                        Learning objectives not available
+                      </p>
+                      <p className="text-xs mt-1">
+                        This course will help you master the fundamentals and
+                        advance your skills.
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Course Content */}
-              <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold">Course content</h2>
-                  <div className="text-sm text-gray-600">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Course content
+                  </h2>
+                  <div className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded">
                     {curriculum?.totalLectures || 0} lectures •{" "}
                     {formatDuration(curriculum?.totalDuration || 0)}
                   </div>
                 </div>
 
                 {/* Sections List */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {curriculum?.sections?.map((section, sectionIndex) => (
                     <div
                       key={sectionIndex}
-                      className="border border-gray-200 rounded"
+                      className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
                     >
                       {/* Section Header */}
                       <button
                         onClick={() => toggleSection(sectionIndex)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between"
+                        className={`w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center justify-between transition-colors ${
+                          sectionIndex > 0 && !isEnrolled && !isInstructor
+                            ? "opacity-60"
+                            : ""
+                        }`}
                       >
-                        <div>
-                          <h3 className="font-semibold">{section.title}</h3>
-                          <p className="text-sm text-gray-600">
-                            {section.content?.length || 0} lectures •{" "}
-                            {formatDuration(
-                              section.content?.reduce(
-                                (total, content) =>
-                                  total + (content.duration || 0),
-                                0
-                              ) || 0
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-base">
+                              {section.title}
+                            </h3>
+                            <p className="text-gray-600 text-sm mt-1">
+                              {section.content?.length || 0} lectures •{" "}
+                              {formatDuration(
+                                section.content?.reduce(
+                                  (total, content) =>
+                                    total + (content.duration || 0),
+                                  0
+                                ) || 0
+                              )}
+                            </p>
+                          </div>
+                          {sectionIndex > 0 &&
+                            !isEnrolled &&
+                            currentUser.type &&
+                            !isInstructor && (
+                              <LockIcon className="text-gray-500 text-lg" />
                             )}
-                          </p>
                         </div>
                         {expandedSections.has(sectionIndex) ? (
-                          <KeyboardArrowUpIcon />
+                          <KeyboardArrowUpIcon className="text-gray-500 text-base" />
                         ) : (
-                          <KeyboardArrowDownIcon />
+                          <KeyboardArrowDownIcon className="text-gray-500 text-base" />
                         )}
                       </button>
 
                       {/* Section Content */}
                       {expandedSections.has(sectionIndex) && (
-                        <div className="border-t border-gray-200 bg-gray-50">
+                        <div className="border-t border-gray-200 bg-white">
                           {section.content?.map((content, contentIndex) => {
                             const IconComponent = getContentIcon(
                               content.contentType
@@ -629,55 +984,41 @@ const CoursePage = () => {
                                     section.title
                                   )
                                 }
-                                className="w-full px-6 py-3 text-left hover:bg-gray-100 flex items-center gap-3 border-b border-gray-200 last:border-b-0"
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0 transition-colors"
                               >
                                 <IconComponent
                                   className={
                                     content.contentType === "video"
-                                      ? "text-blue-600"
+                                      ? "text-gray-900"
                                       : "text-gray-600"
                                   }
-                                  style={{ fontSize: 20 }}
+                                  style={{ fontSize: 18 }}
                                 />
 
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900 truncate">
+                                  <p className="font-medium text-gray-900 text-sm truncate">
                                     {content.title}
                                   </p>
-                                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                                    <span className="capitalize">
+                                  <div className="flex items-center gap-2 text-xs text-gray-600 mt-1">
+                                    <span className="capitalize bg-gray-100 px-2 py-1 rounded">
                                       {content.contentType.replace("_", " ")}
                                     </span>
                                     {content.duration > 0 && (
-                                      <>
-                                        <span>•</span>
-                                        <span>
-                                          {formatDuration(content.duration)}
-                                        </span>
-                                      </>
-                                    )}
-                                    {content.isPreview && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="text-green-600">
-                                          Preview
-                                        </span>
-                                      </>
-                                    )}
-                                    {content.isFree && (
-                                      <>
-                                        <span>•</span>
-                                        <span className="text-blue-600">
-                                          Free
-                                        </span>
-                                      </>
+                                      <span className="flex items-center gap-1">
+                                        <AccessTimeIcon className="text-xs" />
+                                        {formatDuration(content.duration)}
+                                      </span>
                                     )}
                                   </div>
                                 </div>
 
-                                {content.contentType === "video" && (
-                                  <PlayCircleOutlineIcon className="text-purple-600" />
-                                )}
+                                {sectionIndex > 0 &&
+                                !isEnrolled &&
+                                !isInstructor ? (
+                                  <LockIcon className="text-gray-500 text-lg" />
+                                ) : content.contentType === "video" ? (
+                                  <PlayCircleOutlineIcon className="text-gray-900 text-lg" />
+                                ) : null}
                               </button>
                             );
                           })}
@@ -689,74 +1030,354 @@ const CoursePage = () => {
               </div>
 
               {/* Requirements */}
-              <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-6">Requirements</h2>
-                <ul className="space-y-2">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-900">
+                  Requirements
+                </h2>
+                <ul className="space-y-3">
                   {course.requirements?.map((requirement, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-gray-700 text-sm leading-relaxed">
                         {requirement}
                       </span>
                     </li>
                   )) || (
-                    <li className="text-gray-500">No specific requirements</li>
+                    <li className="text-gray-500 text-center py-4">
+                      <p className="text-base">No specific requirements</p>
+                      <p className="text-xs mt-1">
+                        This course is designed for beginners and intermediate
+                        learners.
+                      </p>
+                    </li>
                   )}
                 </ul>
               </div>
 
               {/* Description */}
-              <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-6">Description</h2>
-                <div
-                  className={`${
-                    !isDescriptionExpanded ? "max-h-96 overflow-hidden" : ""
-                  }`}
-                >
-                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-900">
+                  Description
+                </h2>
+                <div className="relative">
+                  <div
+                    className={`text-gray-700 leading-relaxed whitespace-pre-line text-sm ${
+                      !isDescriptionExpanded ? "line-clamp-3" : ""
+                    }`}
+                  >
                     {course.description || "Course description not available."}
                   </div>
-                </div>
-                <button
-                  onClick={() =>
-                    setIsDescriptionExpanded(!isDescriptionExpanded)
-                  }
-                  className="text-purple-600 font-bold text-sm mt-4 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded"
-                >
-                  <span>
-                    {isDescriptionExpanded ? "Show Less" : "Show More"}
-                  </span>
-                  {isDescriptionExpanded ? (
-                    <KeyboardArrowUpIcon className="text-xs" />
-                  ) : (
-                    <KeyboardArrowDownIcon className="text-xs" />
+                  {course.description && course.description.length > 150 && (
+                    <button
+                      onClick={() =>
+                        setIsDescriptionExpanded(!isDescriptionExpanded)
+                      }
+                      className="text-gray-900 font-medium text-sm mt-2 flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded transition-colors"
+                    >
+                      <span>
+                        {isDescriptionExpanded ? "Show Less" : "Read More"}
+                      </span>
+                      {isDescriptionExpanded ? (
+                        <KeyboardArrowUpIcon className="text-sm" />
+                      ) : (
+                        <KeyboardArrowDownIcon className="text-sm" />
+                      )}
+                    </button>
                   )}
-                </button>
+                </div>
               </div>
 
               {/* Who this course is for */}
-              <div className="border border-gray-200 rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-900">
                   Who this course is for
                 </h2>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {course.targetAudience?.map((audience, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-2 flex-shrink-0"></div>
-                      <span className="text-sm text-gray-700">{audience}</span>
+                      <span className="text-gray-700 text-sm leading-relaxed">
+                        {audience}
+                      </span>
                     </li>
                   )) || (
-                    <li className="text-gray-500">
-                      Target audience not specified
+                    <li className="text-gray-500 text-center py-4">
+                      <p className="text-base">Target audience not specified</p>
+                      <p className="text-xs mt-1">
+                        This course is suitable for anyone interested in
+                        learning this subject.
+                      </p>
                     </li>
                   )}
                 </ul>
               </div>
+
+              {/* Course Notes - Only for Instructors */}
+              {isInstructor && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Course Notes
+                    </h2>
+                    {isInstructor && !showNoteUpload && (
+                      <button
+                        onClick={() => setShowNoteUpload(true)}
+                        className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        <AddIcon className="text-sm" />
+                        Add Note
+                      </button>
+                    )}
+                  </div>
+
+                  {showNoteUpload && (
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                      <h4 className="font-medium text-gray-900 mb-3">
+                        Upload New Note
+                      </h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Title *
+                          </label>
+                          <input
+                            type="text"
+                            value={newNote.title}
+                            onChange={(e) =>
+                              setNewNote((prev) => ({
+                                ...prev,
+                                title: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter note title"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Topic *
+                          </label>
+                          <input
+                            type="text"
+                            value={newNote.topic}
+                            onChange={(e) =>
+                              setNewNote((prev) => ({
+                                ...prev,
+                                topic: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter topic"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Description
+                          </label>
+                          <textarea
+                            value={newNote.description}
+                            onChange={(e) =>
+                              setNewNote((prev) => ({
+                                ...prev,
+                                description: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows="3"
+                            placeholder="Enter description (optional)"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            File (PDF, DOC, etc.)
+                          </label>
+                          <input
+                            type="file"
+                            onChange={handleFileChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            accept=".pdf,.doc,.docx,.txt"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleNoteUpload}
+                            className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                          >
+                            <UploadIcon className="text-sm" />
+                            Upload Note
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowNoteUpload(false);
+                              setNewNote({
+                                title: "",
+                                topic: "",
+                                description: "",
+                                file: null,
+                              });
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes List */}
+                  <div className="space-y-4">
+                    {console.log(
+                      "Rendering notes section, course.notes:",
+                      course.notes
+                    )}
+                    {Array.isArray(course.notes) && course.notes.length > 0 ? (
+                      course.notes.map((note, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">
+                              {note.title}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {note.topic}
+                            </p>
+                            {note.description && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                {note.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {note.isDownloadable && note.fileUrl && (
+                              <a
+                                href={note.fileUrl}
+                                download={note.fileName}
+                                className="text-blue-600 hover:text-blue-700 p-2"
+                              >
+                                <DownloadIcon className="text-xl" />
+                              </a>
+                            )}
+                            {isInstructor && (
+                              <button
+                                onClick={() =>
+                                  handleDeleteNote(note._id || idx)
+                                }
+                                className="text-red-600 hover:text-red-700 p-2"
+                                title="Delete note"
+                              >
+                                <DeleteIcon className="text-xl" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-center py-8">
+                        <p className="text-base">No notes added yet</p>
+                        <p className="text-xs mt-1">
+                          Add notes to help your students with additional
+                          resources and materials.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Right Sidebar */}
-            <div className="w-80 flex-shrink-0">
-              {/* Sticky sidebar content can go here */}
+            {/* Right Sidebar - Additional Info */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                {/* Course Stats Card */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <h3 className="text-base font-bold text-gray-900 mb-3">
+                    Course Statistics
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">
+                        Total Students
+                      </span>
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {course.total_students?.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">
+                        Average Rating
+                      </span>
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {course.rating
+                          ? `${course.rating.toFixed(1)}/5`
+                          : "No ratings"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">
+                        Total Reviews
+                      </span>
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {course.total_ratings?.toLocaleString() || "0"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">
+                        Last Updated
+                      </span>
+                      <span className="font-semibold text-gray-900 text-sm">
+                        {course.updatedAt
+                          ? new Date(course.updatedAt).toLocaleDateString()
+                          : "Recently"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rating Component - Only show for enrolled students who are not instructors */}
+                {isEnrolled && !isInstructor && (
+                  <CourseRating
+                    courseId={id}
+                    currentRating={course.rating}
+                    onRatingSubmit={handleRatingSubmit}
+                  />
+                )}
+
+                {/* Category Info */}
+                {course.category && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 className="text-base font-bold text-gray-900 mb-3">
+                      Category
+                    </h3>
+                    <div className="bg-gray-100 px-3 py-2 rounded">
+                      <span className="text-gray-700 font-medium text-sm">
+                        {course.category}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {course.keywords && course.keywords.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <h3 className="text-base font-bold text-gray-900 mb-3">
+                      Tags
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {course.keywords.slice(0, 6).map((keyword, index) => (
+                        <span
+                          key={index}
+                          className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs"
+                        >
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

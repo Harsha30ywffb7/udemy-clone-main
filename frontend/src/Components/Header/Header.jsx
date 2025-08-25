@@ -3,9 +3,8 @@ import LanguageIcon from "@mui/icons-material/Language";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import Badge from "@mui/material/Badge";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUserData } from "../../Redux/login/action";
 import ProfileDropdown from "./ProfileDropdown";
 import { courseService } from "../../services/courseService";
 
@@ -19,18 +18,12 @@ export const Header = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // Only fetch user data if we have a token but no user data
-    if (token && !user.user && !user.loading) {
-      dispatch(fetchUserData(token));
-    }
-
     // Redirect from login page if already logged in
     if (token && user.user && window.location.pathname === "/login") {
       navigate("/");
     }
-  }, [dispatch, navigate, user.user, user.loading]);
-
-  console.log("user in header", user.user);
+  }, [navigate, user.user]);
+  console.log("user in header", user);
 
   const isInstructorPage = location.pathname.startsWith("/instructor");
   const isLoggedIn = !!user?.user;
@@ -38,6 +31,10 @@ export const Header = () => {
 
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [splitSuggestions, setSplitSuggestions] = useState({
+    related: [],
+    courses: [],
+  });
   const suggestionsCacheRef = useRef(new Map());
   const [open, setOpen] = useState(false);
   const debounceRef = useRef(null);
@@ -64,6 +61,10 @@ export const Header = () => {
         const res = await courseService.getSearchSuggestions(q, 8);
         const data = res?.data || [];
         setSuggestions(data);
+        // naive split: items with subtitle are treated as related queries, others as direct courses
+        const related = data.filter((d) => !!d.subtitle);
+        const courses = data.filter((d) => !d.subtitle);
+        setSplitSuggestions({ related, courses });
         suggestionsCacheRef.current.set(q, data);
         if (!suggestionsCacheRef.current.has("")) {
           suggestionsCacheRef.current.set("", data);
@@ -106,13 +107,7 @@ export const Header = () => {
             className="h-8"
           />
         </Link>
-        {!isInstructorPage && (
-          <nav>
-            <button className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100">
-              Explore
-            </button>
-          </nav>
-        )}
+
         {!isInstructorPage && (
           <form
             onSubmit={goToSearchResults}
@@ -133,38 +128,79 @@ export const Header = () => {
             {open && (
               <div className="absolute left-0 top-12 w-full bg-white border border-gray-200 shadow-xl rounded-md z-50 p-3">
                 <div className="text-xs font-semibold text-gray-500 px-2 pb-2">
-                  Popular on Vidhyara
+                  Search suggestions
                 </div>
 
-                <ul>
-                  {suggestions.map((s) => (
-                    <li key={s.id}>
-                      <button
-                        className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
-                        onMouseDown={() => goToCourse(s.id)}
-                      >
-                        <span className="text-gray-500">
-                          <SearchIcon fontSize="small" />
-                        </span>
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-900 line-clamp-1">
-                            {s.title}
-                          </div>
-                          {s.subtitle && (
-                            <div className="text-xs text-gray-500 line-clamp-1">
-                              {s.subtitle}
+                {/* Related terms */}
+                {splitSuggestions.related.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
+                      Related
+                    </div>
+                    <ul>
+                      {splitSuggestions.related.map((s) => (
+                        <li key={`r-${s.id}`}>
+                          <button
+                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
+                            onMouseDown={() =>
+                              navigate(
+                                `/search?q=${encodeURIComponent(s.title)}`
+                              )
+                            }
+                          >
+                            <span className="text-gray-500">
+                              <SearchIcon fontSize="small" />
+                            </span>
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-900 line-clamp-1">
+                                {s.title}
+                              </div>
+                              {s.subtitle && (
+                                <div className="text-xs text-gray-500 line-clamp-1">
+                                  {s.subtitle}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                  {suggestions.length === 0 && (
-                    <li className="px-2 py-2 text-sm text-gray-500">
-                      No results
-                    </li>
-                  )}
-                </ul>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Direct courses */}
+                {splitSuggestions.courses.length > 0 && (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
+                      Courses
+                    </div>
+                    <ul>
+                      {splitSuggestions.courses.map((s) => (
+                        <li key={`c-${s.id}`}>
+                          <button
+                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
+                            onMouseDown={() => goToCourse(s.id)}
+                          >
+                            <span className="text-gray-500">
+                              <SearchIcon fontSize="small" />
+                            </span>
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-900 line-clamp-1">
+                                {s.title}
+                              </div>
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {suggestions.length === 0 && (
+                  <div className="px-2 py-2 text-sm text-gray-500">
+                    No results
+                  </div>
+                )}
               </div>
             )}
           </form>
@@ -193,7 +229,7 @@ export const Header = () => {
 
           {isLoggedIn && !isInstructorPage && (
             <Link
-              to="#"
+              to="/learning"
               className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
             >
               My learning

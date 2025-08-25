@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-
+import ReactPlayer from "react-player";
+import { FALLBACK_MP4_URL } from "./constants";
 const VideoSection = ({
   playerRef,
   url,
@@ -95,13 +96,14 @@ const VideoSection = ({
   }, [envKey, url]);
 
   return (
-    <video
+    <ReactPlayer
       ref={localRef}
       src={url}
       controls
       playsInline
-      style={style}
-      className="w-full h-full"
+      style={{ ...style, width: "100%", height: "100%" }}
+      width="100%"
+      height="100%"
     />
   );
 };

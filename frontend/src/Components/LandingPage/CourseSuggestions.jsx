@@ -89,16 +89,7 @@ const CourseSuggestions = () => {
 
       if (response.success && response.data) {
         // Transform API data to match CourseCard component expectations
-        const transformedCourses = (response.data.courses || []).map(
-          (course) => ({
-            id: course.id,
-            img: course.thumbnail,
-            title: course.title,
-            desc: course.headline,
-            rateScore: course.rating?.toFixed(1) || "4.5",
-            reviewerNum: course.totalRatings || 0,
-          })
-        );
+        const transformedCourses = response.data.courses || [];
         setCourses(transformedCourses);
       } else {
         throw new Error("Failed to fetch courses");

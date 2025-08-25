@@ -1,59 +1,93 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CourseCard from "../ProdCard/CourseCard";
-import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
+// Removed local search UI in favor of global header search
+import { useSelector } from "react-redux";
+import axios from "axios";
 
 const Wishlist = () => {
-  const [activeTab, setActiveTab] = useState("allcourses");
+  const [activeTab, setActiveTab] = useState("wishlist");
+  const [wishlistCourses, setWishlistCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useSelector((store) => store.auth).user;
+  console.log("user in wishlist", user);
 
   const tabs = [
-    { id: "allcourses", label: "All courses" },
     { id: "mylists", label: "My Lists" },
     { id: "wishlist", label: "Wishlist" },
-    { id: "archived", label: "Archived" },
-    { id: "learningtools", label: "Learning tools" },
+    // { id: "archived", label: "Archived" },
+    // { id: "learningtools", label: "Learning tools" },
   ];
+
+  // Fetch wishlist courses when tab is active
+  useEffect(() => {
+    if (activeTab === "wishlist" && user?.wishlist?.length > 0) {
+      fetchWishlistCourses();
+    } else if (activeTab === "wishlist") {
+      setWishlistCourses([]);
+      setLoading(false);
+    }
+  }, [activeTab, user?.wishlist]);
+
+  const fetchWishlistCourses = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token || !user?.wishlist?.length) {
+        setWishlistCourses([]);
+        return;
+      }
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/wishlist/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log("response in wishlist", response.data);
+      setWishlistCourses(response.data.wishlist || []);
+    } catch (error) {
+      console.error("Error fetching wishlist courses:", error);
+      setWishlistCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="w-full">
-      {/* Header Tabs */}
-      <div className="overflow-hidden border border-gray-300 bg-black text-gray-300 h-[150px]">
-        <h1 className="ml-[340px] mt-[50px] text-white text-2xl font-semibold">
-          My learning
-        </h1>
-        <div className="ml-[300px] flex space-x-4 mt-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-lg transition duration-300 ${
-                activeTab === tab.id
-                  ? "border-b-4 border-gray-300"
-                  : "hover:border-b-4 hover:border-gray-300"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Cleaner header to match app */}
+      <div className="max-w-7xl mx-auto px-6 pt-8">
+        <h1 className="text-2xl font-bold mb-2">Wishlist</h1>
+        <p className="text-sm text-gray-600">
+          Save courses to revisit later. Add or remove with the heart icon.
+        </p>
       </div>
 
       {/* Tab Content */}
-      <div className="border border-gray-300 border-t-0 p-4">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {activeTab === "allcourses" && (
           <div>
-            <h3 className="text-xl font-semibold">London</h3>
+            <h3 className="text-xl font-semibold">All Courses</h3>
             <p className="text-gray-600">
-              London is the capital city of England.
+              View all your enrolled courses here.
             </p>
           </div>
         )}
         {activeTab === "mylists" && <div>No lists yet.</div>}
-        {activeTab === "wishlist" && <Wishcard />}
+        {activeTab === "wishlist" && (
+          <Wishcard
+            wishlist={wishlistCourses}
+            loading={loading}
+            onRefresh={fetchWishlistCourses}
+            userWishlist={user?.wishlist || []}
+          />
+        )}
         {activeTab === "archived" && (
           <div>
-            <h3 className="text-xl font-semibold">Tokyo</h3>
-            <p className="text-gray-600">Tokyo is the capital of Japan.</p>
+            <h3 className="text-xl font-semibold">Archived Courses</h3>
+            <p className="text-gray-600">
+              Your archived courses will appear here.
+            </p>
           </div>
         )}
         {activeTab === "learningtools" && (
@@ -64,36 +98,58 @@ const Wishlist = () => {
         )}
       </div>
 
-      {/* Search Bar */}
-      <Box
-        component="form"
-        sx={{
-          "& > :not(style)": { m: 1, width: "25ch" },
-        }}
-        noValidate
-        autoComplete="off"
-      >
-        <TextField
-          id="outlined-basic"
-          label="Search my courses"
-          variant="outlined"
-        />
-      </Box>
+      {/* Removed local search bar to avoid duplication with global header search */}
     </div>
   );
 };
 
 export default Wishlist;
 
-const Wishcard = () => {
+const Wishcard = ({ wishlist, loading, onRefresh, userWishlist }) => {
+  if (loading) {
+    return (
+      <div className="mt-6 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+        <p className="text-gray-600 mt-2">Loading wishlist...</p>
+      </div>
+    );
+  }
+
+  if (!userWishlist || userWishlist.length === 0) {
+    return (
+      <div className="mt-6 text-center">
+        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+          Your Wishlist is Empty
+        </h3>
+        <p className="text-gray-600">
+          Start adding courses to your wishlist by clicking the heart icon on
+          any course card.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        <CourseCard />
-        <CourseCard />
-        <CourseCard />
-        <CourseCard />
-        <CourseCard />
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-semibold">
+          Wishlisted Courses ({userWishlist.length})
+        </h3>
+        <button
+          onClick={onRefresh}
+          className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+        >
+          Refresh
+        </button>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {wishlist.map((course) => (
+          <CourseCard
+            key={course._id || course.id}
+            course={course}
+            onWishlistToggled={onRefresh}
+          />
+        ))}
       </div>
     </div>
   );

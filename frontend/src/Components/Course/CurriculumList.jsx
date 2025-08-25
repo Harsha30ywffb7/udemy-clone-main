@@ -20,16 +20,16 @@ const CurriculumList = ({
   };
 
   return (
-    <div className="divide-y divide-gray-700">
+    <div className="divide-y divide-gray-200">
       {curriculum.sections.map((section, sectionIndex) => (
-        <div key={sectionIndex} className="bg-gray-800">
+        <div key={sectionIndex} className="bg-white">
           <button
             onClick={() => toggleSection(sectionIndex)}
-            className="w-full px-4 py-3 text-left hover:bg-gray-700 flex items-center justify-between"
+            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between"
           >
             <div>
-              <h3 className="font-medium">{section.title}</h3>
-              <p className="text-sm text-gray-400">
+              <h3 className="font-medium text-gray-900">{section.title}</h3>
+              <p className="text-sm text-gray-600">
                 {section.content?.length || 0} lectures •{" "}
                 {formatDuration(
                   section.content?.reduce(
@@ -43,7 +43,7 @@ const CurriculumList = ({
           </button>
 
           {expandedSections.has(sectionIndex) && (
-            <div className="bg-gray-750">
+            <div className="bg-white">
               {section.content?.map((content, contentIndex) => {
                 const IconComponent = getContentIcon(content.contentType);
                 const isCompleted = isContentCompleted(
@@ -71,25 +71,25 @@ const CurriculumList = ({
                     className={`w-full px-6 py-3 text-left ${
                       locked
                         ? "opacity-60 cursor-not-allowed"
-                        : "hover:bg-gray-600"
+                        : "hover:bg-gray-50"
                     } flex items-center gap-3 border-l-4 ${
                       isCurrent
-                        ? "border-purple-500 bg-gray-700"
+                        ? "border-blue-500 bg-blue-50"
                         : "border-transparent"
                     }`}
                   >
                     <div className="flex-shrink-0">
                       {isCompleted ? (
                         <CheckCircleIcon
-                          className="text-green-500"
+                          className="text-green-600"
                           style={{ fontSize: 20 }}
                         />
                       ) : (
                         <IconComponent
                           className={
                             content.contentType === "video"
-                              ? "text-blue-400"
-                              : "text-gray-400"
+                              ? "text-blue-600"
+                              : "text-gray-600"
                           }
                           style={{ fontSize: 20 }}
                         />
@@ -98,12 +98,12 @@ const CurriculumList = ({
                     <div className="flex-1 min-w-0">
                       <p
                         className={`font-medium truncate ${
-                          isCurrent ? "text-purple-300" : "text-white"
+                          isCurrent ? "text-blue-600" : "text-gray-900"
                         }`}
                       >
                         {content.title}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
                         <span className="capitalize">
                           {content.contentType.replace("_", " ")}
                         </span>
@@ -117,19 +117,19 @@ const CurriculumList = ({
                         {content.isPreview && (
                           <>
                             <span>•</span>
-                            <span className="text-green-400">Preview</span>
+                            <span className="text-green-600">Preview</span>
                           </>
                         )}
                         {content.isFree && (
                           <>
                             <span>•</span>
-                            <span className="text-blue-400">Free</span>
+                            <span className="text-blue-600">Free</span>
                           </>
                         )}
                       </div>
                     </div>
                     {locked && (
-                      <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
+                      <span className="text-xs px-2 py-1 rounded bg-gray-200 text-gray-600">
                         Locked
                       </span>
                     )}
