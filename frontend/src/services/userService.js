@@ -45,6 +45,7 @@ export const userService = {
   getProfile: async () => {
     try {
       const response = await userClient.get("/users/profile");
+      console.log("response", response);
       return {
         success: true,
         data: response.data,
@@ -136,7 +137,9 @@ export const userService = {
   // Enroll in course
   enrollInCourse: async (courseId) => {
     try {
-      const response = await userClient.post(`/courses/${courseId}/enroll`);
+      const response = await userClient.post(
+        `/users/courses/${courseId}/enroll`
+      );
       return {
         success: true,
         data: response.data,

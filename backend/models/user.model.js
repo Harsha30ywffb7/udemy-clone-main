@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    profilePicture: {
+      type: String,
+      default: null,
+    },
 
     // Rich user profile (general fields, not only instructors)
     userProfile: {
@@ -116,6 +120,8 @@ const userSchema = new mongoose.Schema(
 
     // Categories from enrolled courses (for recommendations)
     enrolledCategories: [{ type: String }],
+
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
 
     // Account status
     isActive: {

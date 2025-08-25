@@ -29,6 +29,11 @@ authClient.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("AUTH API ERROR:", error.response?.data || error.message);
+    if (error?.response?.status === 401) {
+      try {
+        localStorage.removeItem("token");
+      } catch {}
+    }
     return Promise.reject(error);
   }
 );

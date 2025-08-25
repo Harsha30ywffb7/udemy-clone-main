@@ -98,6 +98,28 @@ export const courseService = {
     }
   },
 
+  // Rate a course
+  rateCourse: async (courseId, ratingData) => {
+    try {
+      const response = await apiClient.post(`/courses/${courseId}/rate`, ratingData);
+      return response.data;
+    } catch (error) {
+      console.error("Error rating course:", error);
+      throw error;
+    }
+  },
+
+  // Get user's rating for a course
+  getUserRating: async (courseId) => {
+    try {
+      const response = await apiClient.get(`/courses/${courseId}/my-rating`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      throw error;
+    }
+  },
+
   // Get recommended courses
   getRecommendedCourses: async (courseId, limit = 6) => {
     try {
@@ -120,19 +142,6 @@ export const courseService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching related topics:", error);
-      throw error;
-    }
-  },
-
-  // Rate a course
-  rateCourse: async (courseId, value) => {
-    try {
-      const response = await apiClient.post(`/courses/${courseId}/rate`, {
-        value,
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error rating course:", error);
       throw error;
     }
   },

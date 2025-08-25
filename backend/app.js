@@ -1,10 +1,17 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const app = express();
 
 const connect = require("./config/db");
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 const PORT = process.env.PORT || 5000;
 
 const userController = require("./controller/user.controller");

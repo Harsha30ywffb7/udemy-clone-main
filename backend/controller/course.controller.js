@@ -1,18 +1,37 @@
+require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const Course = require("../models/course.model");
 const Instructor = require("../models/instructor.model");
 const Category = require("../models/category.model");
 const { authenticate } = require("../middlewares/authenticate");
-// Rate a course
+const {
+  notesUpload,
+  thumbnailUpload,
+  carouselUpload,
+  handleUploadError,
+} = require("../middlewares/upload");
+const { deleteFromCloudinary } = require("../config/cloudinary");
+const fs = require("fs");
+const path = require("path"); // Added for path.join
+// Rate a course (students only)
 router.post("/:id/rate", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { value } = req.body;
+    const { value, comment } = req.body;
+
+    // Only students can rate courses
+    if (req.user.role !== "student") {
+      return res.status(403).json({
+        success: false,
+        message: "Only students can rate courses",
+      });
+    }
+
     if (!value || value < 1 || value > 5) {
       return res
         .status(400)
-        .json({ success: false, message: "Rating must be 1-5" });
+        .json({ success: false, message: "Rating must be between 1-5" });
     }
 
     const course = await Course.findById(id);
@@ -22,28 +41,71 @@ router.post("/:id/rate", authenticate, async (req, res) => {
         .json({ success: false, message: "Course not found" });
     }
 
+    // Check if user is enrolled in the course by checking user's enrolledCourses
+    const User = require("../models/user.model");
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isEnrolled =
+      user.enrolledCourses &&
+      user.enrolledCourses.some(
+        (enrollment) => String(enrollment.courseId) === String(id)
+      );
+
+    if (!isEnrolled) {
+      return res.status(403).json({
+        success: false,
+        message: "You must be enrolled in the course to rate it",
+      });
+    }
+
     // Upsert user rating
-    const existing = course.ratings.find(
-      (r) => String(r.userId) === String(req.user.id)
+    const existingRatingIndex = course.ratings.findIndex(
+      (r) => String(r.userId) === String(user._id)
     );
-    if (existing) {
-      // adjust sums
-      course.ratingSum =
-        (course.ratingSum || 0) - (existing.value || 0) + value;
-      existing.value = value;
+
+    if (existingRatingIndex !== -1) {
+      // Update existing rating
+      const oldValue = course.ratings[existingRatingIndex].value;
+      course.ratingSum = (course.ratingSum || 0) - oldValue + value;
+      course.ratings[existingRatingIndex] = {
+        userId: user._id,
+        value,
+        comment: comment || "",
+        createdAt: new Date(),
+      };
     } else {
-      course.ratings.push({ userId: req.user.id, value });
+      // Add new rating
+      course.ratings.push({
+        userId: user._id,
+        value,
+        comment: comment || "",
+        createdAt: new Date(),
+      });
       course.ratingSum = (course.ratingSum || 0) + value;
       course.totalRatings = (course.totalRatings || 0) + 1;
     }
+
+    // Calculate average rating
     course.rating =
       course.totalRatings > 0 ? course.ratingSum / course.totalRatings : 0;
     await course.save();
 
     res.json({
       success: true,
-      message: "Rating saved",
-      data: { rating: course.rating, totalRatings: course.totalRatings },
+      message: "Rating saved successfully",
+      data: {
+        rating: course.rating,
+        totalRatings: course.totalRatings,
+        userRating: value,
+        comment: comment || "",
+      },
     });
   } catch (error) {
     console.error("Rate course error:", error);
@@ -51,7 +113,37 @@ router.post("/:id/rate", authenticate, async (req, res) => {
   }
 });
 
-// ==================== API ENDPOINTS ====================
+// Get user's rating for a course
+router.get("/:id/my-rating", authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Find user's rating
+    const userRating = course.ratings.find(
+      (r) => String(r.userId) === String(req.user.userId)
+    );
+
+    res.json({
+      success: true,
+      data: userRating || null,
+    });
+  } catch (error) {
+    console.error("Get user rating error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get user rating",
+      error: error.message,
+    });
+  }
+});
 
 // Home categories (before parameterized routes)
 router.get("/categories", async (req, res) => {
@@ -130,7 +222,34 @@ router.get("/:id/basic", async (req, res) => {
       });
     }
 
+    // Get current user ID from token if authenticated
+    let currentUserId = null;
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.replace("Bearer ", "");
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        currentUserId = decoded.userId;
+      } catch (error) {
+        // Token is invalid or expired, but we still return course data
+        console.log("Invalid token for course basic data");
+      }
+    }
+
+    // Process notes to include full URLs
+    const processedNotes = (course.notes || []).map((note) => {
+      if (note.fileUrl && note.fileUrl.startsWith("/uploads/")) {
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        return {
+          ...note,
+          fileUrl: `${baseUrl}${note.fileUrl}`,
+        };
+      }
+      return note;
+    });
+
     const basicData = {
+      _id: course._id,
       title: course.title,
       headline: course.subtitle,
       description: course.description,
@@ -146,6 +265,14 @@ router.get("/:id/basic", async (req, res) => {
       learningObjectives: course.learningObjectives || [],
       requirements: course.requirements || [],
       targetAudience: course.targetAudience || [],
+      notes: processedNotes,
+      instructorId: course.instructorId?._id,
+      currentUserId: currentUserId,
+      instructor: {
+        name: course.instructorId?.name
+          ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
+          : "Unknown Instructor",
+      },
       visible_instructors: [
         {
           title: course.instructorId?.name
@@ -745,37 +872,10 @@ router.get("/", async (req, res) => {
       .limit(parseInt(limit))
       .lean();
 
-    // Transform data to match frontend expectations
-    const transformedCourses = courses.map((course) => ({
-      id: course._id,
-      title: course.title,
-      headline: course.subtitle,
-      desc: course.description,
-      instructor: {
-        name: course.instructorId?.name
-          ? `${course.instructorId.name.first} ${course.instructorId.name.last}`
-          : "Unknown Instructor",
-      },
-      rating: course.rating || 0,
-      rateScore: course.rating || 0,
-      totalRatings: course.totalRatings || 0,
-      reviewerNum: course.totalRatings || 0,
-      totalStudents: course.totalStudents || 0,
-      price: course.price || 0,
-      originalPrice: course.originalPrice || course.price,
-      img: course.thumbnailUrl,
-      thumbnail: course.thumbnailUrl,
-      category: course.category,
-      level: course.level,
-      createdAt: course.createdAt,
-      duration: course.duration,
-      totalLectures: course.totalLectures,
-    }));
-
     res.json({
       success: true,
       data: {
-        courses: transformedCourses,
+        courses: courses,
         pagination: {
           currentPage: parseInt(page),
           totalPages: Math.ceil(totalCourses / limit),
@@ -1799,6 +1899,412 @@ router.post("/:id/unpublish", authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+const { docUpload } = require("../middlewares/upload");
+// Notes API endpoints
+// Add note to course content
+router.post(
+  "/:id/notes",
+  authenticate,
+  docUpload,
+  handleUploadError,
+  async (req, res) => {
+    try {
+      console.log("control comes to api");
+      const { id } = req.params;
+      const { title, topic, description, contentIndex, sectionIndex } =
+        req.body;
+
+      // Validate required fields
+      if (!title || !topic) {
+        return res.status(400).json({
+          success: false,
+          message: "Title and topic are required",
+        });
+      }
+
+      // Check if user is instructor
+      if (req.user.role !== "instructor") {
+        return res.status(403).json({
+          success: false,
+          message: "Only instructors can add notes",
+        });
+      }
+
+      const course = await Course.findById(id);
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      // Check ownership
+      if (course.instructorId.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only add notes to your own courses",
+        });
+      }
+
+      let fileUrl = null;
+      let fileName = null;
+      let fileSize = null;
+
+      console.log("file data", req.file);
+
+      // Handle file upload if file exists
+      if (req.file) {
+        try {
+          // File already uploaded directly to Cloudinary via multer-storage-cloudinary
+          fileUrl = req.file.path; // Cloudinary URL
+          fileName = req.file.originalname;
+          fileSize = req.file.size;
+        } catch (uploadError) {
+          console.error("File upload error:", uploadError);
+          throw uploadError;
+        }
+      }
+
+      // Create note data
+      const noteData = {
+        title,
+        topic,
+        description: description || "",
+        fileUrl,
+        fileName,
+        fileSize,
+        isDownloadable: true,
+        createdAt: new Date(),
+      };
+
+      // Add note to specific content if sectionIndex and contentIndex provided
+      if (sectionIndex !== undefined && contentIndex !== undefined && false) {
+      } else {
+        // Add note to course level (general notes)
+        if (!course.notes) {
+          course.notes = [];
+        }
+        console.log("Before adding note, course.notes:", course.notes);
+        course.notes.push(noteData);
+        console.log("After adding note, course.notes:", course.notes);
+      }
+
+      console.log("Saving course with notes:");
+      await course.save();
+      console.log("Course saved successfully", course);
+
+      res.json({
+        success: true,
+        message: "Note added successfully",
+        data: noteData,
+      });
+    } catch (error) {
+      console.error("Add note error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to add note",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Get notes for course content
+router.get("/:id/notes", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sectionIndex, contentIndex } = req.query;
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    let notes = [];
+
+    // Get notes for specific content if sectionIndex and contentIndex provided
+    if (sectionIndex !== undefined && contentIndex !== undefined) {
+      if (
+        course.sections[sectionIndex] &&
+        course.sections[sectionIndex].content[contentIndex]
+      ) {
+        notes = course.sections[sectionIndex].content[contentIndex].notes || [];
+      }
+    } else {
+      // Get course level notes
+      notes = course.notes || [];
+    }
+
+    res.json({
+      success: true,
+      data: notes,
+    });
+  } catch (error) {
+    console.error("Get notes error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get notes",
+      error: error.message,
+    });
+  }
+});
+
+// Delete note
+router.delete("/:id/notes/:noteId", authenticate, async (req, res) => {
+  try {
+    const { id, noteId } = req.params;
+    const { sectionIndex, contentIndex } = req.query;
+
+    // Check if user is instructor
+    if (req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only instructors can delete notes",
+      });
+    }
+
+    const course = await Course.findById(id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    // Check ownership
+    if (course.instructorId.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete notes from your own courses",
+      });
+    }
+
+    let noteDeleted = false;
+    let filePath = null;
+
+    // Delete note from specific content if sectionIndex and contentIndex provided
+    if (sectionIndex !== undefined && contentIndex !== undefined) {
+      if (
+        course.sections[sectionIndex] &&
+        course.sections[sectionIndex].content[contentIndex]
+      ) {
+        const content = course.sections[sectionIndex].content[contentIndex];
+        const noteIndex = content.notes.findIndex(
+          (note) => note._id.toString() === noteId
+        );
+
+        if (noteIndex !== -1) {
+          filePath = content.notes[noteIndex].fileUrl;
+          content.notes.splice(noteIndex, 1);
+          noteDeleted = true;
+        }
+      }
+    } else {
+      // Delete from course level notes
+      const noteIndex = course.notes.findIndex(
+        (note) => note._id.toString() === noteId
+      );
+
+      if (noteIndex !== -1) {
+        filePath = course.notes[noteIndex].fileUrl;
+        course.notes.splice(noteIndex, 1);
+        noteDeleted = true;
+      }
+    }
+
+    if (!noteDeleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Note not found",
+      });
+    }
+
+    // Delete local file if it exists
+    if (filePath && filePath.startsWith("/uploads/")) {
+      try {
+        const fullPath = path.join(__dirname, "..", filePath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      } catch (fileError) {
+        console.error("Failed to delete local file:", fileError);
+        // Continue with note deletion even if file deletion fails
+      }
+    }
+
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Note deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete note error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete note",
+      error: error.message,
+    });
+  }
+});
+
+// Upload course thumbnail
+router.post(
+  "/:id/thumbnail",
+  authenticate,
+  thumbnailUpload,
+  handleUploadError,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Check if user is instructor
+      if (req.user.role !== "instructor") {
+        return res.status(403).json({
+          success: false,
+          message: "Only instructors can upload course thumbnails",
+        });
+      }
+
+      const course = await Course.findById(id);
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found",
+        });
+      }
+
+      // Check ownership
+      if (course.instructorId.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only upload thumbnails to your own courses",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No image file provided",
+        });
+      }
+
+      // Delete old thumbnail if exists
+      if (course.thumbnailUrl && course.cloudinaryPublicId) {
+        try {
+          await deleteFromCloudinary(course.cloudinaryPublicId);
+        } catch (error) {
+          console.error("Failed to delete old thumbnail:", error);
+        }
+      }
+
+      // Update course with new thumbnail
+      course.thumbnailUrl = req.file.path;
+      course.cloudinaryPublicId = req.file.filename;
+      await course.save();
+
+      res.json({
+        success: true,
+        message: "Thumbnail uploaded successfully",
+        data: {
+          thumbnailUrl: req.file.path,
+          publicId: req.file.filename,
+        },
+      });
+    } catch (error) {
+      console.error("Upload thumbnail error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload thumbnail",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Upload carousel image
+router.post(
+  "/carousel/upload",
+  authenticate,
+  carouselUpload,
+  handleUploadError,
+  async (req, res) => {
+    try {
+      // Check if user is admin or instructor
+      if (req.user.role !== "admin" && req.user.role !== "instructor") {
+        return res.status(403).json({
+          success: false,
+          message: "Only admins and instructors can upload carousel images",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No image file provided",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Carousel image uploaded successfully",
+        data: {
+          imageUrl: req.file.path,
+          publicId: req.file.filename,
+          size: req.file.size,
+          format: req.file.mimetype,
+        },
+      });
+    } catch (error) {
+      console.error("Upload carousel image error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload carousel image",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Delete carousel image
+router.delete("/carousel/:publicId", authenticate, async (req, res) => {
+  try {
+    const { publicId } = req.params;
+
+    // Check if user is admin or instructor
+    if (req.user.role !== "admin" && req.user.role !== "instructor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admins and instructors can delete carousel images",
+      });
+    }
+
+    const result = await deleteFromCloudinary(publicId);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: "Carousel image deleted successfully",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to delete carousel image",
+        error: result.error,
+      });
+    }
+  } catch (error) {
+    console.error("Delete carousel image error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete carousel image",
       error: error.message,
     });
   }

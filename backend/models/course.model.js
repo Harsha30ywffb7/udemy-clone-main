@@ -211,6 +211,21 @@ const contentSchema = new mongoose.Schema(
       },
     ],
 
+    // Notes for instructors
+    notes: [
+      {
+        title: { type: String, required: true },
+        topic: { type: String, required: true },
+        fileUrl: { type: String },
+        fileName: { type: String },
+        fileSize: { type: Number }, // in bytes
+        cloudinaryPublicId: { type: String }, // Cloudinary public ID for file management
+        description: { type: String },
+        isDownloadable: { type: Boolean, default: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
     // Completion tracking
     completionCriteria: {
       type: String,
@@ -365,6 +380,21 @@ const courseSchema = new mongoose.Schema(
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         value: { type: Number, min: 1, max: 5 },
+        comment: { type: String, maxlength: 500 },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    notes: [
+      {
+        title: { type: String, required: true },
+        topic: { type: String, required: true },
+        fileUrl: { type: String },
+        fileName: { type: String },
+        fileSize: { type: Number }, // in bytes
+        cloudinaryPublicId: { type: String }, // Cloudinary public ID for file management
+        description: { type: String },
+        isDownloadable: { type: Boolean, default: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     totalRatings: {

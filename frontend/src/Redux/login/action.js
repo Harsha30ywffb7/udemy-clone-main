@@ -159,6 +159,7 @@ export const fetchUserData = (token) => async (dispatch) => {
 
   try {
     const result = await authService.getProfile();
+    console.log("reached this line");
 
     if (result.success) {
       // Ensure token is stored in localStorage

@@ -2,9 +2,20 @@ require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const { authenticate } = require("../middlewares/authenticate");
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
 
 const router = express.Router();
 
@@ -256,20 +267,14 @@ router.post("/login", async (req, res) => {
 // Get user profile
 router.get("/profile", authenticate, async (req, res) => {
   try {
-    console.log("Profile request - req.user:", req.user);
-    console.log("Profile request - req.user.id:", req.user.id);
-    console.log("Profile request - req.user._id:", req.user._id);
-
     // The authenticated user object IS the user, so just return it
     // No need to query again since authenticate middleware already fetched the user
     const user = req.user;
 
     if (!user) {
-      console.log("Profile request - No user in req.user");
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("Profile request - User found:", user.email);
     res.json({ user });
   } catch (error) {
     console.error("Get profile error:", error);
@@ -280,6 +285,7 @@ router.get("/profile", authenticate, async (req, res) => {
 // Update user profile
 router.put("/profile", authenticate, async (req, res) => {
   try {
+    console.log("reached profile page");
     const userId = req.user.userId;
     const { fullName, bio, profileImage, learningGoals } = req.body;
 
@@ -390,11 +396,124 @@ router.put("/onboard", authenticate, async (req, res) => {
   }
 });
 
-module.exports = router;
+// Wishlist endpoints
+router.post("/wishlist/:courseId", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { courseId } = req.params;
+
+    // Check if course exists
+    const course = await Course.findById(courseId).select("_id status");
+    if (!course || course.status !== "published") {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found or not published",
+      });
+    }
+
+    // Check if already in wishlist
+    if (user.wishlist && user.wishlist.includes(courseId)) {
+      return res.json({
+        success: true,
+        message: "Course already in wishlist",
+      });
+    }
+
+    // Add to wishlist
+    user.wishlist = user.wishlist || [];
+    user.wishlist.push(courseId);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Added to wishlist successfully",
+    });
+  } catch (error) {
+    console.error("Add to wishlist error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+router.delete("/wishlist/:courseId", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { courseId } = req.params;
+
+    // Remove from wishlist
+    user.wishlist = user.wishlist || [];
+    user.wishlist = user.wishlist.filter(
+      (id) => String(id) !== String(courseId)
+    );
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Removed from wishlist successfully",
+    });
+  } catch (error) {
+    console.error("Remove from wishlist error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+router.get("/wishlist", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Get wishlist with course details
+    const wishlistCourses = await Course.find({
+      _id: { $in: user.wishlist || [] },
+      status: "published",
+    }).select(
+      "_id title subtitle description thumbnailUrl category rating totalStudents totalLectures duration"
+    );
+
+    res.json({
+      success: true,
+      wishlist: wishlistCourses,
+    });
+  } catch (error) {
+    console.error("Get wishlist error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+router.get("/wishlist/check/:courseId", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { courseId } = req.params;
+
+    const isInWishlist =
+      user.wishlist &&
+      user.wishlist.some((id) => String(id) === String(courseId));
+
+    res.json({
+      success: true,
+      isInWishlist,
+    });
+  } catch (error) {
+    console.error("Check wishlist error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
 // Enroll in a course
 router.post("/courses/:courseId/enroll", authenticate, async (req, res) => {
   try {
     const user = req.user;
+    console.log("hits api");
     const { courseId } = req.params;
 
     const course = await Course.findById(courseId).select(
@@ -438,3 +557,122 @@ router.post("/courses/:courseId/enroll", authenticate, async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
+
+// Get enrolled courses
+router.get("/enrolled-courses", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { page = 1, limit = 10 } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    // Get enrolled course IDs from user
+    const enrolledCourseIds = (user.enrolledCourses || []).map(
+      (e) => e.courseId
+    );
+
+    if (enrolledCourseIds.length === 0) {
+      return res.json({
+        success: true,
+        courses: [],
+        total: 0,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      });
+    }
+
+    // Fetch course details
+    const courses = await Course.find({
+      _id: { $in: enrolledCourseIds },
+      status: "published",
+    })
+      .select(
+        "_id title subtitle description thumbnailUrl category rating totalStudents totalLectures duration instructorId"
+      )
+      .populate("instructorId", "name")
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      courses,
+      total: enrolledCourseIds.length,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
+  } catch (error) {
+    console.error("Get enrolled courses error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Upload profile picture
+router.post(
+  "/upload-avatar",
+  authenticate,
+  upload.single("profilePicture"),
+  async (req, res) => {
+    try {
+      const user = req.user;
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No image file provided",
+        });
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+      ];
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          message: "Only JPEG, PNG, and GIF images are allowed",
+        });
+      }
+
+      // Validate file size (max 5MB)
+      if (req.file.size > 5 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: "Image size must be less than 5MB",
+        });
+      }
+
+      // Generate unique filename
+      const fileExtension = req.file.originalname.split(".").pop();
+      const fileName = `profile_${user._id}_${Date.now()}.${fileExtension}`;
+      const filePath = path.join(__dirname, "../uploads", fileName);
+
+      // Save file
+      fs.writeFileSync(filePath, req.file.buffer);
+
+      // Update user profile with image URL
+      const imageUrl = `/uploads/${fileName}`;
+      user.profilePicture = imageUrl;
+      await user.save();
+
+      res.json({
+        success: true,
+        message: "Profile picture uploaded successfully",
+        data: {
+          imageUrl,
+          fileName,
+        },
+      });
+    } catch (error) {
+      console.error("Upload profile picture error:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
+    }
+  }
+);
+
+module.exports = router;
