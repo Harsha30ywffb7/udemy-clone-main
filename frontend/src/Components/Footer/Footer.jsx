@@ -7,16 +7,28 @@ const Footer = () => {
       <div className="max-w-[134rem] mx-auto px-[2.4rem]">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+            <Link
+              to="/about"
+              className="text-white hover:text-gray-300 text-sm"
+            >
               About us
             </Link>
-            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+            <Link
+              to="/contact"
+              className="text-white hover:text-gray-300 text-sm"
+            >
               Contact us
             </Link>
-            <Link to="/" className="text-white hover:text-gray-300 text-sm">
-              Help and support
+            <Link
+              to="/terms"
+              className="text-white hover:text-gray-300 text-sm"
+            >
+              Terms and conditions
             </Link>
-            <Link to="/" className="text-white hover:text-gray-300 text-sm">
+            <Link
+              to="/privacy"
+              className="text-white hover:text-gray-300 text-sm"
+            >
               Privacy policy
             </Link>
           </div>

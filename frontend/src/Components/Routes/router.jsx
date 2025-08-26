@@ -18,6 +18,10 @@ import Footer from "../Footer/Footer";
 import CoursePage from "../Course/CoursePage";
 import ProfilePage from "../Login_Signup/ProfilePage";
 import MyLearning from "../Learning/MyLearning";
+import AboutPage from "../StaticPages/AboutPage";
+import ContactPage from "../StaticPages/ContactPage";
+import TermsPage from "../StaticPages/TermsPage";
+import PrivacyPage from "../StaticPages/PrivacyPage";
 
 // General Protected Route Component for authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -101,10 +105,15 @@ export const AllRoutes = () => {
   const isCourseCreatePage = location.pathname.includes("/course/create");
   const isProfilePage = location.pathname.includes("/profile");
   const isCoursePage = location.pathname.match(/^\/course\/[^\/]+$/);
+  const isStaticFooterPage = ["/about", "/contact", "/terms", "/privacy"].some(
+    (p) => location.pathname === p
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isProfilePage && !isCourseCreatePage && <Header />}
+      {!isProfilePage && !isCourseCreatePage && !isStaticFooterPage && (
+        <Header />
+      )}
       <div className="flex-1 min-h-[90vh]">
         <Routes>
           {/* Public Routes */}
@@ -117,6 +126,12 @@ export const AllRoutes = () => {
           <Route path="/course/:id" element={<CoursePage />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/explore" element={<ExplorePaths />} />
+
+          {/* Static Pages */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
 
           {/* User Routes */}
           <Route
@@ -190,7 +205,7 @@ export const AllRoutes = () => {
           />
         </Routes>
       </div>
-      {!isProfilePage && !isCoursePage && <Footer />}
+      {!isProfilePage && !isCoursePage && !isStaticFooterPage && <Footer />}
     </div>
   );
 };
