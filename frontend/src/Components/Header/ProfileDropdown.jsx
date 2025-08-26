@@ -84,12 +84,15 @@ const ProfileDropdown = ({ user }) => {
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
-      <div
-        className="cursor-pointer transition-all duration-200 z-[999999]"
+      <button
+        type="button"
+        className="cursor-pointer transition-all duration-200 z-[999999] rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
         onClick={handleProfileClick}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
       >
         <ProfileImage size="sm" user={user} />
-      </div>
+      </button>
 
       {isOpen && (
         <div className="absolute top-full right-0 w-[270px] bg-white border border-gray-200 rounded shadow-lg z-[999999] mt-2 text-gray-800 font-normal text-sm leading-tight">

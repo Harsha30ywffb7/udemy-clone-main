@@ -121,10 +121,6 @@ const CourseSuggestions = () => {
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           A broad selection of courses
         </h2>
-        <p className="text-lg text-gray-600 mb-8">
-          Choose from over 210,000 online video courses with new additions
-          published every month
-        </p>
 
         {/* Course Category Tabs */}
         <div className="flex flex-wrap gap-2 mb-8">

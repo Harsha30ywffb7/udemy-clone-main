@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
 const ProfileImage = ({
@@ -18,16 +18,17 @@ const ProfileImage = ({
     "2xl": "w-20 h-20 text-2xl",
   };
 
-  const getInitials = (name) => {
-    if (!name) return "?";
+  const getInitial = (name) => {
+    if (!name) return "U";
     const firstName = name.first || "";
-    const lastName = name.last || "";
-    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+    const initial = firstName.charAt(0) || "U";
+    return initial.toUpperCase();
   };
 
+  const [showFallback, setShowFallback] = useState(false);
   const profilePicture = currentUser?.profilePicture || currentUser?.avatarUrl;
 
-  if (profilePicture) {
+  if (profilePicture && !showFallback) {
     return (
       <img
         src={profilePicture}
@@ -37,10 +38,7 @@ const ProfileImage = ({
         className={`${sizeClasses[size]} ${
           showBorder ? "border-2 border-gray-200" : ""
         } rounded-full object-cover ${className}`}
-        onError={(e) => {
-          e.target.style.display = "none";
-          e.target.nextSibling.style.display = "flex";
-        }}
+        onError={() => setShowFallback(true)}
       />
     );
   }
@@ -49,9 +47,9 @@ const ProfileImage = ({
     <div
       className={`${sizeClasses[size]} ${
         showBorder ? "border-2 border-gray-200" : ""
-      } rounded-full bg-gray-300 flex items-center justify-center font-semibold text-gray-600 ${className}`}
+      } rounded-full bg-black flex items-center justify-center font-semibold text-white ${className}`}
     >
-      {getInitials(currentUser?.name)}
+      {getInitial(currentUser?.name)}
     </div>
   );
 };

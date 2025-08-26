@@ -100,118 +100,123 @@ export const Header = () => {
   return (
     <header className="max-w-full">
       <div className="flex items-center justify-between px-6 h-[72px] bg-white flex-nowrap">
-        <Link to="/" className="flex-shrink-0 pr-3 text-purple-700">
-          <img
-            src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-            alt="Vidhyara Logo"
-            className="h-8"
-          />
-        </Link>
-
-        {!isInstructorPage && (
-          <form
-            onSubmit={goToSearchResults}
-            className="relative flex items-center flex-4 max-w-[800px] min-w-[400px] mx-4 border border-gray-900 rounded-full px-3 bg-white h-12"
-          >
-            <button className="bg-transparent text-gray-900 border-none text-xs mr-2">
-              <SearchIcon />
-            </button>
-            <input
-              type="text"
-              placeholder="Search for anything"
-              className="bg-transparent border-none w-full h-full text-sm focus:outline-none"
-              value={query}
-              onChange={onChangeQuery}
-              onFocus={onFocus}
-              onBlur={onBlur}
+        <div className="flex items-center gap-8 flex-1 min-w-0">
+          <Link to="/" className="flex-shrink-0 text-purple-700 cursor-pointer">
+            <img
+              src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
+              alt="Vidhyara Logo"
+              className="h-8"
             />
-            {open && (
-              <div className="absolute left-0 top-12 w-full bg-white border border-gray-200 shadow-xl rounded-md z-50 p-3">
-                <div className="text-xs font-semibold text-gray-500 px-2 pb-2">
-                  Search suggestions
-                </div>
+          </Link>
 
-                {/* Related terms */}
-                {splitSuggestions.related.length > 0 && (
-                  <div className="mb-2">
-                    <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
-                      Related
-                    </div>
-                    <ul>
-                      {splitSuggestions.related.map((s) => (
-                        <li key={`r-${s.id}`}>
-                          <button
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
-                            onMouseDown={() =>
-                              navigate(
-                                `/search?q=${encodeURIComponent(s.title)}`
-                              )
-                            }
-                          >
-                            <span className="text-gray-500">
-                              <SearchIcon fontSize="small" />
-                            </span>
-                            <div className="flex-1">
-                              <div className="text-sm text-gray-900 line-clamp-1">
-                                {s.title}
-                              </div>
-                              {s.subtitle && (
-                                <div className="text-xs text-gray-500 line-clamp-1">
-                                  {s.subtitle}
+          {!isInstructorPage && (
+            <form
+              onSubmit={goToSearchResults}
+              className="relative flex items-center w-[520px] max-w-full border border-gray-900 rounded-full px-3 bg-white h-10"
+            >
+              <button
+                className="bg-transparent text-gray-900 border-none text-xs mr-2"
+                type="button"
+              >
+                <SearchIcon />
+              </button>
+              <input
+                type="text"
+                placeholder="Search for anything"
+                className="bg-transparent border-none w-full h-full text-sm focus:outline-none"
+                value={query}
+                onChange={onChangeQuery}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+              {open && (
+                <div className="absolute left-0 top-10 w-full bg-white border border-gray-200 shadow-xl rounded-md z-50 p-3">
+                  <div className="text-xs font-semibold text-gray-500 px-2 pb-2">
+                    Search suggestions
+                  </div>
+
+                  {/* Related terms */}
+                  {splitSuggestions.related.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
+                        Related
+                      </div>
+                      <ul>
+                        {splitSuggestions.related.map((s) => (
+                          <li key={`r-${s.id}`}>
+                            <button
+                              className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
+                              onMouseDown={() =>
+                                navigate(
+                                  `/search?q=${encodeURIComponent(s.title)}`
+                                )
+                              }
+                            >
+                              <span className="text-gray-500">
+                                <SearchIcon fontSize="small" />
+                              </span>
+                              <div className="flex-1">
+                                <div className="text-sm text-gray-900 line-clamp-1">
+                                  {s.title}
                                 </div>
-                              )}
-                            </div>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Direct courses */}
-                {splitSuggestions.courses.length > 0 && (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
-                      Courses
-                    </div>
-                    <ul>
-                      {splitSuggestions.courses.map((s) => (
-                        <li key={`c-${s.id}`}>
-                          <button
-                            className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
-                            onMouseDown={() => goToCourse(s.id)}
-                          >
-                            <span className="text-gray-500">
-                              <SearchIcon fontSize="small" />
-                            </span>
-                            <div className="flex-1">
-                              <div className="text-sm text-gray-900 line-clamp-1">
-                                {s.title}
+                                {s.subtitle && (
+                                  <div className="text-xs text-gray-500 line-clamp-1">
+                                    {s.subtitle}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                {suggestions.length === 0 && (
-                  <div className="px-2 py-2 text-sm text-gray-500">
-                    No results
-                  </div>
-                )}
-              </div>
-            )}
-          </form>
-        )}
+                  {/* Direct courses */}
+                  {splitSuggestions.courses.length > 0 && (
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500 px-2 pb-1">
+                        Courses
+                      </div>
+                      <ul>
+                        {splitSuggestions.courses.map((s) => (
+                          <li key={`c-${s.id}`}>
+                            <button
+                              className="w-full flex items-center gap-3 px-2 py-2 hover:bg-gray-50 rounded text-left"
+                              onMouseDown={() => goToCourse(s.id)}
+                            >
+                              <span className="text-gray-500">
+                                <SearchIcon fontSize="small" />
+                              </span>
+                              <div className="flex-1">
+                                <div className="text-sm text-gray-900 line-clamp-1">
+                                  {s.title}
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-        <div className="flex items-center gap-2">
+                  {suggestions.length === 0 && (
+                    <div className="px-2 py-2 text-sm text-gray-500">
+                      No results
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
           {/* Show Teach button only for instructors */}
           {isLoggedIn && isInstructor && !isInstructorPage && (
             <Link
               to="/instructor/courses"
-              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100 cursor-pointer"
             >
               Teach
             </Link>
@@ -221,7 +226,7 @@ export const Header = () => {
           {!user?.user && (
             <Link
               to="/instructor-signup"
-              className="text-[#1c1d1f] hover:text-[#5624d0] text-sm font-medium"
+              className="text-[#1c1d1f] hover:text-[#5624d0] text-sm font-medium cursor-pointer"
             >
               Teach on Vidhyara
             </Link>
@@ -230,15 +235,15 @@ export const Header = () => {
           {isLoggedIn && !isInstructorPage && (
             <Link
               to="/learning"
-              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100"
+              className="text-[13px] font-light text-gray-800 px-3 py-2 rounded hover:bg-purple-100 cursor-pointer"
             >
               My learning
             </Link>
           )}
 
           {isLoggedIn && !isInstructorPage && (
-            <Link to="/wishlist">
-              <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100">
+            <Link to="/wishlist" className="cursor-pointer">
+              <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100 cursor-pointer">
                 <Badge color="secondary" badgeContent={wishlist?.length || 0}>
                   <FavoriteBorderOutlinedIcon />
                 </Badge>
@@ -247,9 +252,7 @@ export const Header = () => {
           )}
 
           {isLoggedIn ? (
-            <div className="bg-gray-900 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold dropdown-container">
-              <ProfileDropdown user={user.user} />
-            </div>
+            <ProfileDropdown user={user.user} />
           ) : (
             <>
               <Link to="/login">
