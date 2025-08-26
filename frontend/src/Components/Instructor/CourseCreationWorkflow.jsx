@@ -183,49 +183,21 @@ const CourseCreationWorkflow = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header with mode indicator */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {isCreateMode ? "Create New Course" : "Edit Course"}
-            </h1>
-            {courseData?.title && (
-              <p className="text-sm text-gray-600 mt-1">{courseData.title}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                isCreateMode
-                  ? "bg-green-100 text-green-800"
-                  : "bg-blue-100 text-blue-800"
-              }`}
-            >
-              {isCreateMode ? "CREATE MODE" : "EDIT MODE"}
-            </span>
-            {courseData?.status && (
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  courseData.status === "draft"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : courseData.status === "published"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {courseData.status.toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+        <div className="max-w-7xl mx-auto flex items-center justify-between"></div>
       </div>
 
       {/* Progress Header */}
       <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+        <div className=" mx-auto px-10 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">
-              {courseId ? "Edit Course" : "Create New Course"}
-            </h1>
+            <div>
+              <h1 className="text-xl font-semibold">
+                {courseId ? "Edit Course" : "Create New Course"}
+              </h1>
+              {courseData?.title && (
+                <p className="text-sm text-gray-600 mt-1">{courseData.title}</p>
+              )}
+            </div>
 
             {/* Step Progress */}
             <div className="flex items-center space-x-8">
@@ -279,6 +251,22 @@ const CourseCreationWorkflow = () => {
                   </div>
                 );
               })}
+            </div>
+
+            <div className="flex items-center gap-4">
+              {courseData?.status && (
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    courseData.status === "draft"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : courseData.status === "published"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {courseData.status.toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
