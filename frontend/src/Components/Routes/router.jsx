@@ -17,6 +17,7 @@ import { useLocation } from "react-router-dom";
 import Footer from "../Footer/Footer";
 import CoursePage from "../Course/CoursePage";
 import ProfilePage from "../Login_Signup/ProfilePage";
+import PublicProfile from "../Login_Signup/PublicProfile";
 import MyLearning from "../Learning/MyLearning";
 import AboutPage from "../StaticPages/AboutPage";
 import ContactPage from "../StaticPages/ContactPage";
@@ -103,7 +104,7 @@ export const AllRoutes = () => {
   const location = useLocation();
   const isInstructorPage = location.pathname.startsWith("/instructor");
   const isCourseCreatePage = location.pathname.includes("/course/create");
-  const isProfilePage = location.pathname.includes("/profile");
+  const isProfilePage = location.pathname.startsWith("/profile");
   const isCoursePage = location.pathname.match(/^\/course\/[^\/]+$/);
   const isStaticFooterPage = ["/about", "/contact", "/terms", "/privacy"].some(
     (p) => location.pathname === p
@@ -142,14 +143,7 @@ export const AllRoutes = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/profile/:id" element={<PublicProfile />} />
           <Route
             path="/profile/edit"
             element={

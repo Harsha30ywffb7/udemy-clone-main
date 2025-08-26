@@ -6,7 +6,6 @@ import Badge from "@mui/material/Badge";
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileDropdown from "./ProfileDropdown";
-import { courseService } from "../../services/courseService";
 
 export const Header = () => {
   const { user } = useSelector((store) => store.auth);
@@ -103,8 +102,8 @@ export const Header = () => {
         <div className="flex items-center gap-8 flex-1 min-w-0">
           <Link to="/" className="flex-shrink-0 text-purple-700 cursor-pointer">
             <img
-              src="https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg"
-              alt="Vidhyara Logo"
+              src="/images/vidhyaraLogo.png"
+              alt="Vidhyara"
               className="h-8"
             />
           </Link>
@@ -225,7 +224,7 @@ export const Header = () => {
           {/* Show Teach on Vidhyara for non-logged in users */}
           {!user?.user && (
             <Link
-              to="/instructor-signup"
+              to="/teach"
               className="text-[#1c1d1f] hover:text-[#5624d0] text-sm font-medium cursor-pointer"
             >
               Teach on Vidhyara
@@ -263,11 +262,6 @@ export const Header = () => {
               <Link to="/signup">
                 <button className="px-4 py-2 border border-gray-900 bg-gray-900 text-white font-semibold text-sm">
                   Sign up
-                </button>
-              </Link>
-              <Link to="#">
-                <button className="px-3 py-2 border border-gray-900">
-                  <LanguageIcon />
                 </button>
               </Link>
             </>

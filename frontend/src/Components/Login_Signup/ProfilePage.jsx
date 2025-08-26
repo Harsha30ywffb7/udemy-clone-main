@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import ProfileImage from "../Header/ProfileImage";
+import Toast from "../UI/Toast";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'photo' | 'privacy'
@@ -14,7 +15,6 @@ export default function ProfilePage() {
     lastName: "",
     headline: "",
     biography: "",
-    biographyMarkdown: "", // Store markdown separately
     website: "",
     facebook: "",
     instagram: "",
@@ -54,12 +54,7 @@ export default function ProfilePage() {
           firstName: user?.name?.first || "",
           lastName: user?.name?.last || "",
           headline: user?.userProfile?.headline || "",
-          biography:
-            user?.userProfile?.biography?.format === "markdown" ||
-            !user?.userProfile?.biography?.format
-              ? user?.userProfile?.biography?.content || ""
-              : user?.bio || "",
-          biographyMarkdown: user?.userProfile?.biography?.content || "",
+          biography: user?.userProfile?.biography?.content || user?.bio || "",
           website: user?.socialLinks?.website || "",
           facebook: user?.socialLinks?.facebook || "",
           instagram: user?.socialLinks?.instagram || "",
@@ -136,59 +131,10 @@ export default function ProfilePage() {
     }
   };
 
-  const formatBiographyForDisplay = (text) => {
-    if (!text) return "";
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/_(.*?)_/g, "<em>$1</em>");
-  };
+  // No rich text formatting – plain text biography only
 
-  // Convert display format back to markdown for storage
-  const formatBiographyForStorage = (text) => {
-    if (!text) return "";
-    return text
-      .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-      .replace(/<em>(.*?)<\/em>/g, "_$1_");
-  };
-
-  // Simple markdown helpers for bold/italic: **bold**, _italic_
-  const wrapSelection = (before, after = before) => {
-    const div = document.getElementById("biography-input");
-    if (!div) return;
-
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-
-    if (selectedText) {
-      // Create the formatted element
-      const formattedElement = document.createElement(
-        before === "**" ? "strong" : "em"
-      );
-      formattedElement.textContent = selectedText;
-
-      // Replace the selection with formatted text
-      range.deleteContents();
-      range.insertNode(formattedElement);
-
-      // Update form state
-      const html = div.innerHTML;
-      const markdown = html
-        .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-        .replace(/<em>(.*?)<\/em>/g, "_$1_")
-        .replace(/<br>/g, "\n")
-        .replace(/<div>/g, "\n")
-        .replace(/<\/div>/g, "");
-
-      setForm((prev) => ({
-        ...prev,
-        biography: html,
-        biographyMarkdown: markdown,
-      }));
-    }
-  };
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const saveProfile = async (e) => {
     e?.preventDefault?.();
@@ -196,37 +142,52 @@ export default function ProfilePage() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const payload = {
-      name: { first: form.firstName, last: form.lastName },
-      userProfile: {
-        headline: form.headline,
-        language: form.language,
-        biography: {
-          content: form.biographyMarkdown, // markdown stored
-          format: "markdown",
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        name: { first: form.firstName, last: form.lastName },
+        userProfile: {
+          headline: form.headline,
+          language: form.language,
+          biography: {
+            content: form.biography, // plain text stored
+            format: "plain",
+          },
         },
-      },
-      socialLinks: {
-        website: form.website || null,
-        facebook: form.facebook || null,
-        instagram: form.instagram || null,
-        linkedin: form.linkedin || null,
-        tiktok: form.tiktok || null,
-        x: form.x || null,
-        youtube: form.youtube || null,
-      },
-      privacySettings: {
-        showProfileToLoggedIn: privacy.showProfileToLoggedIn,
-        showCoursesOnProfile: privacy.showCoursesOnProfile,
-      },
-    };
+        socialLinks: {
+          website: form.website || null,
+          facebook: form.facebook || null,
+          instagram: form.instagram || null,
+          linkedin: form.linkedin || null,
+          tiktok: form.tiktok || null,
+          x: form.x || null,
+          youtube: form.youtube || null,
+        },
+        privacySettings: {
+          showProfileToLoggedIn: privacy.showProfileToLoggedIn,
+          showCoursesOnProfile: privacy.showCoursesOnProfile,
+        },
+      };
 
-    await axios.put("/api/users/profile", payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      await axios.put("/api/users/profile", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    // After successful save, reset initial state
-    setInitialState({ form: { ...form }, privacy: { ...privacy } });
+      // After successful save, reset initial state
+      setInitialState({ form: { ...form }, privacy: { ...privacy } });
+
+      // Show success toast
+      setToast({ message: "Profile updated successfully!", type: "success" });
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+      setToast({
+        message: "Failed to update profile. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const TabButton = ({ id, label }) => (
@@ -244,6 +205,13 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-5xl px-20 py-10 font-sans text-gray-900">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       {/* Page Title */}
       <h1 className="text-[28px] md:text-[32px] leading-tight font-bold mb-8">
         Profile & settings
@@ -283,6 +251,7 @@ export default function ProfilePage() {
                 placeholder={field.placeholder || ""}
                 value={form[field.name]}
                 onChange={handleChange}
+                maxLength={100}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-[#5624d0] focus:border-[#5624d0] transition"
               />
             </div>
@@ -315,14 +284,14 @@ export default function ProfilePage() {
             <input
               type="text"
               name="headline"
-              maxLength={60}
+              maxLength={100}
               placeholder="Instructor at Vidhyara"
               value={form.headline}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-[#5624d0] focus:border-[#5624d0] transition"
             />
             <div className="text-[10px] text-gray-500 text-right mt-1">
-              {form.headline.length}/60
+              {form.headline.length}/100
             </div>
           </div>
 
@@ -345,70 +314,26 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Biography */}
+          {/* Biography (plain text, max 1000 chars) */}
           <div className="md:col-span-2">
             <label className="block text-[12px] font-medium text-gray-800 mb-1">
               Biography
             </label>
-            {/* Toolbar */}
-            <div className="flex space-x-2 mb-1">
-              <button
-                type="button"
-                onClick={() => wrapSelection("**", "**")}
-                className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100 font-bold text-[12px]"
-              >
-                B
-              </button>
-              <button
-                type="button"
-                onClick={() => wrapSelection("_", "_")}
-                className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-100 italic text-[12px]"
-              >
-                I
-              </button>
-            </div>
-            {/* Editable formatted preview */}
-            <div
-              id="biography-input"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => {
-                const html = e.target.innerHTML;
-                const markdown = html
-                  .replace(/<strong>(.*?)<\/strong>/g, "<strong>$1</strong>")
-                  .replace(/<em>(.*?)<\/em>/g, "<em>$1</em>")
-                  .replace(/<br>/g, "\n")
-                  .replace(/<div>/g, "\n")
-                  .replace(/<\/div>/g, "");
-                setForm((prev) => ({
-                  ...prev,
-                  biography: html,
-                  biographyMarkdown: markdown,
-                }));
+            <textarea
+              name="biography"
+              value={form.biography}
+              onChange={(e) => {
+                const value = e.target.value.slice(0, 1000);
+                setForm((prev) => ({ ...prev, biography: value }));
               }}
-              onBlur={(e) => {
-                // Ensure proper formatting on blur
-                const html = e.target.innerHTML;
-                const markdown = html
-                  .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
-                  .replace(/<em>(.*?)<\/em>/g, "_$1_")
-                  .replace(/<br>/g, "\n")
-                  .replace(/<div>/g, "\n")
-                  .replace(/<\/div>/g, "");
-                setForm((prev) => ({
-                  ...prev,
-                  biographyMarkdown: markdown,
-                }));
-              }}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] min-h-[100px] focus:outline-none focus:ring-[#5624d0] focus:border-[#5624d0] transition"
-              style={{
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-              }}
-              dangerouslySetInnerHTML={{
-                __html: formatBiographyForDisplay(form.biographyMarkdown),
-              }}
+              maxLength={1000}
+              rows={6}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] min-h-[120px] focus:outline-none focus:ring-[#5624d0] focus:border-[#5624d0] transition"
+              placeholder="Tell learners about your background, experience, and interests (max 1000 characters)."
             />
+            <div className="text-[10px] text-gray-500 text-right mt-1">
+              {form.biography.length}/1000
+            </div>
             <p className="mt-1 text-[10px] text-gray-500 leading-snug">
               To help learners learn more about you, your bio should reflect
               your Credibility, Empathy, Passion, and Personality. Your
@@ -479,10 +404,17 @@ export default function ProfilePage() {
           <div className="md:col-span-2 mt-4">
             <button
               type="submit"
-              disabled={!isDirty}
-              className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!isDirty || isSaving}
+              className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Save
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </button>
           </div>
         </form>
@@ -540,14 +472,14 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <button
               disabled={!photoPreview}
               className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50"
             >
               Save
             </button>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -591,10 +523,17 @@ export default function ProfilePage() {
 
           <button
             onClick={saveProfile}
-            disabled={!isDirty}
-            className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50"
+            disabled={!isDirty || isSaving}
+            className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50 flex items-center gap-2"
           >
-            Save
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              "Save"
+            )}
           </button>
         </div>
       )}

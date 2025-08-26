@@ -20,9 +20,11 @@ const ProfileImage = ({
 
   const getInitial = (name) => {
     if (!name) return "U";
-    const firstName = name.first || "";
-    const initial = firstName.charAt(0) || "U";
-    return initial.toUpperCase();
+    const first = (name.first || "").trim();
+    const last = (name.last || "").trim();
+    const firstInitial = (first.charAt(0) || "U").toUpperCase();
+    const lastInitial = (last.charAt(0) || "").toUpperCase();
+    return `${firstInitial}${lastInitial}`.trim();
   };
 
   const [showFallback, setShowFallback] = useState(false);

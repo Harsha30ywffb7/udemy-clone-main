@@ -16,7 +16,7 @@ const ProfileDropdown = ({ user }) => {
     {
       listName: "list1",
       topics: [
-        { url: "/my-learning", topic: "My learning" },
+        { url: "/learning", topic: "My learning" },
         { url: "/wishlist", topic: "Wishlist" },
         ...(isInstructor
           ? [{ url: "/instructor/courses", topic: "Instructor Dashboard" }]
@@ -26,7 +26,7 @@ const ProfileDropdown = ({ user }) => {
     {
       listName: "list2",
       topics: [
-        { url: "/profile", topic: "profile" },
+        { url: `/profile/${user?._id || ""}`, topic: "profile" },
         { url: "/profile/edit", topic: "Edit profile" },
       ],
     },
