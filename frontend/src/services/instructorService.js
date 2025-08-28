@@ -393,25 +393,6 @@ export const instructorService = {
     }
   },
 
-  // Get course statistics
-  getCourseStats: async (courseId) => {
-    try {
-      const response = await instructorClient.get(`/courses/${courseId}/stats`);
-      return {
-        success: true,
-        data: response.data,
-        message: "Course stats fetched successfully",
-      };
-    } catch (error) {
-      console.error("Get course stats error:", error);
-      return {
-        success: false,
-        message: "Failed to fetch course stats",
-        error: error.response?.data || error.message,
-      };
-    }
-  },
-
   // Error message helper
   getErrorMessage: (error) => {
     if (!error) return "An unexpected error occurred. Please try again.";

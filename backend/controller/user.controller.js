@@ -3,8 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { profileImageUpload } = require("../middlewares/upload");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const { authenticate } = require("../middlewares/authenticate");
@@ -22,7 +21,7 @@ const router = express.Router();
 // Register new user (student or instructor)
 router.post("/register", async (req, res) => {
   try {
-    const { fullName, name, email, password, userType = "student" } = req.body;
+    const { fullName, name, email, password, role = "student" } = req.body;
 
     // Validate required fields
     if (!email || !password) {
@@ -98,11 +97,11 @@ router.post("/register", async (req, res) => {
       },
       email: email.toLowerCase(),
       passwordHash,
-      role: userType,
+      role: role,
     };
 
     // Add role-specific initial data
-    if (userType === "instructor") {
+    if (role === "instructor") {
       userData.instructorProfile = {
         headline: "",
         expertise: [],
@@ -282,40 +281,114 @@ router.get("/profile", authenticate, async (req, res) => {
   }
 });
 
+// Public profile by id (safe fields only)
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select(
+        "-passwordHash -emailVerificationToken -passwordResetToken -passwordResetExpires"
+      )
+      .lean();
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.error("Get public profile error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+});
+
 // Update user profile
 router.put("/profile", authenticate, async (req, res) => {
   try {
     console.log("reached profile page");
-    const userId = req.user.userId;
-    const { fullName, bio, profileImage, learningGoals } = req.body;
+    const authedUser = req?.user;
+    const userId = authedUser?._id;
+
+    const {
+      name,
+      userProfile,
+      socialLinks,
+      privacySettings,
+      bio, // legacy support
+      profileImage, // legacy support
+    } = req.body || {};
 
     const updateData = {};
-    if (fullName) updateData.fullName = fullName;
+
+    // Name
+    if (name?.first !== undefined) updateData["name.first"] = name.first;
+    if (name?.last !== undefined) updateData["name.last"] = name.last;
+
+    // Simple/legacy fields
     if (bio !== undefined) updateData.bio = bio;
     if (profileImage !== undefined) updateData.profileImage = profileImage;
 
-    // Update student-specific data
-    if (req.user.userType === "student" && learningGoals) {
-      updateData["studentProfile.learningGoals"] = learningGoals;
+    // User profile
+    if (userProfile) {
+      if (userProfile.headline !== undefined)
+        updateData["userProfile.headline"] = userProfile.headline;
+      if (userProfile.language !== undefined)
+        updateData["userProfile.language"] = userProfile.language;
+      if (userProfile.biography) {
+        if (userProfile.biography.content !== undefined)
+          updateData["userProfile.biography.content"] =
+            userProfile.biography.content;
+        if (userProfile.biography.format !== undefined)
+          updateData["userProfile.biography.format"] =
+            userProfile.biography.format;
+      }
     }
 
-    // Update instructor-specific data
-    if (req.user.userType === "instructor" && req.body.expertise) {
-      updateData["instructorProfile.expertise"] = req.body.expertise;
+    // Social links
+    if (socialLinks) {
+      const linkKeys = [
+        "website",
+        "facebook",
+        "instagram",
+        "linkedin",
+        "tiktok",
+        "x",
+        "youtube",
+      ];
+      linkKeys.forEach((k) => {
+        if (socialLinks[k] !== undefined) {
+          updateData[`socialLinks.${k}`] = socialLinks[k];
+        }
+      });
     }
 
-    const user = await User.findByIdAndUpdate(userId, updateData, {
+    // Privacy settings
+    if (privacySettings) {
+      if (privacySettings.showProfileToLoggedIn !== undefined)
+        updateData["privacySettings.showProfileToLoggedIn"] =
+          privacySettings.showProfileToLoggedIn;
+      if (privacySettings.showCoursesOnProfile !== undefined)
+        updateData["privacySettings.showCoursesOnProfile"] =
+          privacySettings.showCoursesOnProfile;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
       runValidators: true,
     }).select("-password");
 
-    if (!user) {
+    if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
 
     res.json({
+      success: true,
       message: "Profile updated successfully",
-      user,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("Update profile error:", error);
@@ -327,7 +400,7 @@ router.put("/profile", authenticate, async (req, res) => {
 router.get("/instructors", async (req, res) => {
   try {
     const instructors = await User.find({
-      userType: "instructor",
+      role: "instructor",
       isActive: true,
     }).select("fullName bio profileImage instructorProfile");
 
@@ -343,7 +416,7 @@ router.get("/instructor/:id", async (req, res) => {
   try {
     const instructor = await User.findOne({
       _id: req.params.id,
-      userType: "instructor",
+      role: "instructor",
       isActive: true,
     }).select("-password");
 
@@ -361,15 +434,8 @@ router.get("/instructor/:id", async (req, res) => {
 // Mark instructor as onboarded
 router.put("/onboard", authenticate, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?._id;
     const { onboardingAnswers } = req.body;
-
-    // Check if user is an instructor
-    // if (req.user.userType !== "instructor") {
-    //   return res
-    //     .status(403)
-    //     .json({ message: "Only instructors can complete onboarding" });
-    // }
 
     // Update user with onboarding data
     const updateData = {
@@ -611,7 +677,7 @@ router.get("/enrolled-courses", authenticate, async (req, res) => {
 router.post(
   "/upload-avatar",
   authenticate,
-  upload.single("profilePicture"),
+  profileImageUpload,
   async (req, res) => {
     try {
       const user = req.user;
@@ -645,16 +711,14 @@ router.post(
         });
       }
 
-      // Generate unique filename
-      const fileExtension = req.file.originalname.split(".").pop();
-      const fileName = `profile_${user._id}_${Date.now()}.${fileExtension}`;
-      const filePath = path.join(__dirname, "../uploads", fileName);
-
-      // Save file
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      // Update user profile with image URL
-      const imageUrl = `/uploads/${fileName}`;
+      // Cloudinary URL available on req.file.path
+      const imageUrl = req.file?.path;
+      if (!imageUrl) {
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed: image URL missing",
+        });
+      }
       user.profilePicture = imageUrl;
       await user.save();
 
@@ -663,7 +727,6 @@ router.post(
         message: "Profile picture uploaded successfully",
         data: {
           imageUrl,
-          fileName,
         },
       });
     } catch (error) {

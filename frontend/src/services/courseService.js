@@ -101,7 +101,10 @@ export const courseService = {
   // Rate a course
   rateCourse: async (courseId, ratingData) => {
     try {
-      const response = await apiClient.post(`/courses/${courseId}/rate`, ratingData);
+      const response = await apiClient.post(
+        `/courses/${courseId}/rate`,
+        ratingData
+      );
       return response.data;
     } catch (error) {
       console.error("Error rating course:", error);
@@ -193,18 +196,6 @@ export const courseService = {
       throw error;
     }
   },
-
-  // Get course statistics
-  getCourseStats: async (courseId) => {
-    try {
-      const response = await apiClient.get(`/courses/${courseId}/stats`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching course stats:", error);
-      throw error;
-    }
-  },
-
   // Get course pricing
   getCoursePricing: async (courseId) => {
     try {

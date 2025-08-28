@@ -4,17 +4,16 @@ const router = express.Router();
 const Course = require("../models/course.model");
 const Instructor = require("../models/instructor.model");
 const Category = require("../models/category.model");
+const { docUpload } = require("../middlewares/upload");
 const { authenticate } = require("../middlewares/authenticate");
 const {
-  notesUpload,
   thumbnailUpload,
   carouselUpload,
   handleUploadError,
 } = require("../middlewares/upload");
 const { deleteFromCloudinary } = require("../config/cloudinary");
 const fs = require("fs");
-const path = require("path"); // Added for path.join
-// Rate a course (students only)
+const path = require("path");
 router.post("/:id/rate", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
@@ -734,8 +733,6 @@ router.get("/instructor", authenticate, async (req, res) => {
     });
   }
 });
-
-// ==================== EXISTING ENDPOINTS (KEPT FOR COMPATIBILITY) ====================
 
 // Get a specific course by ID (legacy endpoint)
 router.get("/:id", async (req, res) => {
@@ -1903,9 +1900,7 @@ router.post("/:id/unpublish", authenticate, async (req, res) => {
     });
   }
 });
-const { docUpload } = require("../middlewares/upload");
-// Notes API endpoints
-// Add note to course content
+
 router.post(
   "/:id/notes",
   authenticate,
@@ -1959,7 +1954,6 @@ router.post(
       // Handle file upload if file exists
       if (req.file) {
         try {
-          // File already uploaded directly to Cloudinary via multer-storage-cloudinary
           fileUrl = req.file.path; // Cloudinary URL
           fileName = req.file.originalname;
           fileSize = req.file.size;
@@ -2228,86 +2222,5 @@ router.post(
     }
   }
 );
-
-// Upload carousel image
-router.post(
-  "/carousel/upload",
-  authenticate,
-  carouselUpload,
-  handleUploadError,
-  async (req, res) => {
-    try {
-      // Check if user is admin or instructor
-      if (req.user.role !== "admin" && req.user.role !== "instructor") {
-        return res.status(403).json({
-          success: false,
-          message: "Only admins and instructors can upload carousel images",
-        });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: "No image file provided",
-        });
-      }
-
-      res.json({
-        success: true,
-        message: "Carousel image uploaded successfully",
-        data: {
-          imageUrl: req.file.path,
-          publicId: req.file.filename,
-          size: req.file.size,
-          format: req.file.mimetype,
-        },
-      });
-    } catch (error) {
-      console.error("Upload carousel image error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to upload carousel image",
-        error: error.message,
-      });
-    }
-  }
-);
-
-// Delete carousel image
-router.delete("/carousel/:publicId", authenticate, async (req, res) => {
-  try {
-    const { publicId } = req.params;
-
-    // Check if user is admin or instructor
-    if (req.user.role !== "admin" && req.user.role !== "instructor") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admins and instructors can delete carousel images",
-      });
-    }
-
-    const result = await deleteFromCloudinary(publicId);
-
-    if (result.success) {
-      res.json({
-        success: true,
-        message: "Carousel image deleted successfully",
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Failed to delete carousel image",
-        error: result.error,
-      });
-    }
-  } catch (error) {
-    console.error("Delete carousel image error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete carousel image",
-      error: error.message,
-    });
-  }
-});
 
 module.exports = router;
