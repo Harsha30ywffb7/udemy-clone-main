@@ -97,7 +97,9 @@ const CourseCreationWorkflow = () => {
 
       // Handle navigation based on mode and whether a new course was created
       if (newCourseId && isCreateMode) {
-        // New course created, redirect will be handled by CourseLandingPage component
+        // New course created: immediately route to include :courseId so all next steps have it
+        navigate(`/course/create/${newCourseId}`);
+        setCurrentStep("curriculum");
       } else if (isEditMode) {
         // Editing existing course, auto-advance to curriculum
         setCurrentStep("curriculum");
@@ -119,6 +121,10 @@ const CourseCreationWorkflow = () => {
   };
 
   const canAccessStep = (stepId) => {
+    // Require a courseId for steps after landing-page
+    const hasCourseId = Boolean(courseId || courseData?.courseId);
+    if (stepId !== "landing-page" && !hasCourseId) return false;
+
     const stepIndex = STEPS.findIndex((step) => step.id === stepId);
     if (stepIndex === 0) return true;
 

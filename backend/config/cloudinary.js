@@ -2,10 +2,23 @@ const dotenv = require("dotenv");
 dotenv.config();
 const { v2: cloudinary } = require("cloudinary");
 
+// Normalize env values to avoid accidental quotes/whitespace issues
+const normalize = (v) => (v || "").toString().trim().replace(/^"|"$/g, "");
+const CLOUD_NAME = normalize(process.env.CLOUDINARY_CLOUD_NAME);
+const API_KEY = normalize(process.env.CLOUDINARY_API_KEY);
+const API_SECRET = normalize(process.env.CLOUDINARY_API_SECRET);
+
+if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+  // eslint-disable-next-line no-console
+  console.error(
+    "[Cloudinary] Missing credentials. Ensure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET are set."
+  );
+}
+
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: CLOUD_NAME,
+  api_key: API_KEY,
+  api_secret: API_SECRET,
 });
 const uploadToCloudinary = async (file, folder = "uploads") => {
   try {

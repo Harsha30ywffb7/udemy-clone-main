@@ -117,13 +117,7 @@ class UploadService {
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to upload note");
-      }
-
-      const result = await response.json();
-      return result;
+      return response.data;
     } catch (error) {
       console.error("Upload note error:", error);
       throw error;

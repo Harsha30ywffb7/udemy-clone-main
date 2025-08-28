@@ -1350,11 +1350,42 @@ router.delete("/:id", authenticate, async (req, res) => {
       });
     }
 
-    // Simulate course deletion
-    res.json({
-      success: true,
-      message: "Course deleted successfully",
-    });
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    // Verify ownership
+    if (course.instructorId.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "You can only delete your own courses",
+        });
+    }
+
+    // Delete the course
+    await Course.findByIdAndDelete(courseId);
+
+    // Optional: clean up user enrollments referencing this course
+    try {
+      const User = require("../models/user.model");
+      await User.updateMany(
+        {},
+        { $pull: { enrolledCourses: { courseId: courseId } } }
+      );
+    } catch (cleanupErr) {
+      console.warn(
+        "Failed to cleanup enrollments for course",
+        courseId,
+        cleanupErr.message
+      );
+    }
+
+    res.json({ success: true, message: "Course deleted successfully" });
   } catch (error) {
     console.error("Delete course error:", error);
     res.status(500).json({

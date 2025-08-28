@@ -272,25 +272,27 @@ const Courses = () => {
               {/* Progress and Actions */}
               <div className="flex items-center space-x-4">
                 {/* Progress */}
-                <div className="flex items-center space-x-2">
-                  <div className="w-24 h-1.5 bg-gray-200 rounded-full">
-                    <div
-                      className={`h-1.5 rounded-full ${
-                        course.progress === 100
-                          ? "bg-green-500"
-                          : course.progress > 70
-                          ? "bg-blue-500"
-                          : course.progress > 40
-                          ? "bg-yellow-500"
-                          : "bg-red-400"
-                      }`}
-                      style={{ width: `${Math.max(course.progress, 5)}%` }}
-                    />
+                {course.status !== "PUBLISHED" ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-1.5 bg-gray-200 rounded-full">
+                      <div
+                        className={`h-1.5 rounded-full ${
+                          course.progress > 70
+                            ? "bg-blue-500"
+                            : course.progress > 40
+                            ? "bg-yellow-500"
+                            : "bg-red-400"
+                        }`}
+                        style={{
+                          width: `${Math.max(course.progress || 0, 5)}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-600 min-w-[2.5rem]">
+                      {course.progress || 0}%
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-600 min-w-[2.5rem]">
-                    {course.progress}%
-                  </span>
-                </div>
+                ) : null}
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">

@@ -53,15 +53,19 @@ const Wishlist = () => {
     }
   };
 
+  const wishlistCount = user?.wishlist?.length || 0;
+
   return (
     <div className="w-full">
-      {/* Cleaner header to match app */}
-      <div className="max-w-7xl mx-auto px-6 pt-8">
-        <h1 className="text-2xl font-bold mb-2">Wishlist</h1>
-        <p className="text-sm text-gray-600">
-          Save courses to revisit later. Add or remove with the heart icon.
-        </p>
-      </div>
+      {/* Header only if wishlist has items */}
+      {wishlistCount > 0 && (
+        <div className="max-w-7xl mx-auto px-6 pt-8">
+          <h1 className="text-2xl font-bold mb-2">Wishlist</h1>
+          <p className="text-sm text-gray-600">
+            Save courses to revisit later. Add or remove with the heart icon.
+          </p>
+        </div>
+      )}
 
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
@@ -118,10 +122,10 @@ const Wishcard = ({ wishlist, loading, onRefresh, userWishlist }) => {
   if (!userWishlist || userWishlist.length === 0) {
     return (
       <div className="mt-6 text-center">
-        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">
           Your Wishlist is Empty
         </h3>
-        <p className="text-gray-600">
+        <p className="text-sm text-gray-600">
           Start adding courses to your wishlist by clicking the heart icon on
           any course card.
         </p>

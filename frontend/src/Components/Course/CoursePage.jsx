@@ -19,11 +19,10 @@ import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import SettingsIcon from "@mui/icons-material/Settings";
-import DownloadIcon from "@mui/icons-material/Download";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import AddIcon from "@mui/icons-material/Add";
-import UploadIcon from "@mui/icons-material/Upload";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import PeopleIcon from "@mui/icons-material/People";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LockIcon from "@mui/icons-material/Lock";
@@ -43,6 +42,7 @@ const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const isInstructorUser = user?.user?.role === "instructor";
 
   // Course data
   const [course, setCourse] = useState(null);
@@ -234,7 +234,7 @@ const CoursePage = () => {
     sectionTitle
   ) => {
     // Check if user is enrolled for premium content (skip first section which is usually free)
-    if (sectionIndex > 0 && !isEnrolled && !isInstructor) {
+    if (sectionIndex > 0 && !isEnrolled && !isInstructorUser) {
       toast.error("Please enroll in this course to access all content", {
         duration: 4000,
         icon: "🔒",
@@ -286,7 +286,7 @@ const CoursePage = () => {
   // Toggle section expansion
   const toggleSection = (sectionIndex) => {
     // Check if user is enrolled (skip first section which is usually free)
-    if (sectionIndex > 0 && !isEnrolled && !isInstructor) {
+    if (sectionIndex > 0 && !isEnrolled && !isInstructorUser) {
       toast.error("Please enroll in this course to access all sections", {
         duration: 4000,
         icon: "🔒",
@@ -441,13 +441,12 @@ const CoursePage = () => {
 
       // Add to course notes array so it appears in the UI immediately
       setCourse((prevCourse) => {
-        console.log("Previous course state:", prevCourse);
-        const updatedCourse = {
-          ...prevCourse,
-          notes: [...(prevCourse.notes || []), result.data],
+        const current = prevCourse || {};
+        const currentNotes = Array.isArray(current.notes) ? current.notes : [];
+        return {
+          ...current,
+          notes: [...currentNotes, result.data],
         };
-        console.log("Updated course state:", updatedCourse);
-        return updatedCourse;
       });
 
       // Add to current video notes if in video mode
@@ -571,6 +570,7 @@ const CoursePage = () => {
               {/* Check if content is locked for non-enrolled users */}
               {!course.isEnrolled &&
               !currentVideo.isFree &&
+              !isInstructorUser &&
               !currentVideo.isPreview ? (
                 <div className="absolute inset-0 bg-gray-900 flex items-center justify-center">
                   <div className="text-center text-white p-8">
@@ -930,7 +930,7 @@ const CoursePage = () => {
                       <button
                         onClick={() => toggleSection(sectionIndex)}
                         className={`w-full px-4 py-3 text-left hover:bg-gray-100 flex items-center justify-between transition-colors ${
-                          sectionIndex > 0 && !isEnrolled && !isInstructor
+                          sectionIndex > 0 && !isEnrolled && !isInstructorUser
                             ? "opacity-60"
                             : ""
                         }`}
@@ -953,8 +953,7 @@ const CoursePage = () => {
                           </div>
                           {sectionIndex > 0 &&
                             !isEnrolled &&
-                            currentUser.type &&
-                            !isInstructor && (
+                            !isInstructorUser && (
                               <LockIcon className="text-gray-500 text-lg" />
                             )}
                         </div>
@@ -1014,7 +1013,7 @@ const CoursePage = () => {
 
                                 {sectionIndex > 0 &&
                                 !isEnrolled &&
-                                !isInstructor ? (
+                                !isInstructorUser ? (
                                   <LockIcon className="text-gray-500 text-lg" />
                                 ) : content.contentType === "video" ? (
                                   <PlayCircleOutlineIcon className="text-gray-900 text-lg" />
@@ -1067,7 +1066,7 @@ const CoursePage = () => {
                   >
                     {course.description || "Course description not available."}
                   </div>
-                  {course.description && course.description.length > 150 && (
+                  {course.description && course.description.length > 2000 && (
                     <button
                       onClick={() =>
                         setIsDescriptionExpanded(!isDescriptionExpanded)
@@ -1075,7 +1074,7 @@ const CoursePage = () => {
                       className="text-gray-900 font-medium text-sm mt-2 flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded transition-colors"
                     >
                       <span>
-                        {isDescriptionExpanded ? "Show Less" : "Read More"}
+                        {isDescriptionExpanded ? "Read less" : "Read more"}
                       </span>
                       {isDescriptionExpanded ? (
                         <KeyboardArrowUpIcon className="text-sm" />
@@ -1113,18 +1112,18 @@ const CoursePage = () => {
               </div>
 
               {/* Course Notes - Only for Instructors */}
-              {isInstructor && (
+              {isInstructorUser && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-gray-900">
                       Course Notes
                     </h2>
-                    {isInstructor && !showNoteUpload && (
+                    {isInstructorUser && !showNoteUpload && (
                       <button
                         onClick={() => setShowNoteUpload(true)}
                         className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
-                        <AddIcon className="text-sm" />
+                        <AddOutlinedIcon className="text-sm" />
                         Add Note
                       </button>
                     )}
@@ -1137,7 +1136,7 @@ const CoursePage = () => {
                       </h4>
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-[0.8rem] font-medium text-gray-700 mb-1">
                             Title *
                           </label>
                           <input
@@ -1149,12 +1148,12 @@ const CoursePage = () => {
                                 title: e.target.value,
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-[0.8rem] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter note title"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-[0.8rem] font-medium text-gray-700 mb-1">
                             Topic *
                           </label>
                           <input
@@ -1166,12 +1165,12 @@ const CoursePage = () => {
                                 topic: e.target.value,
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-[0.8rem] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Enter topic"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-[0.8rem] font-medium text-gray-700 mb-1">
                             Description
                           </label>
                           <textarea
@@ -1182,29 +1181,38 @@ const CoursePage = () => {
                                 description: e.target.value,
                               }))
                             }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full text-[0.8rem] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             rows="3"
                             placeholder="Enter description (optional)"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-[0.8rem] font-medium text-gray-700 mb-1">
                             File (PDF, DOC, etc.)
                           </label>
-                          <input
-                            type="file"
-                            onChange={handleFileChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            accept=".pdf,.doc,.docx,.txt"
-                          />
+                          <label className="inline-flex items-center gap-2 cursor-pointer bg-white text-gray-700 text-[0.8rem] px-3 py-2 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors">
+                            <UploadOutlinedIcon style={{ fontSize: "1rem" }} />
+                            <span>Choose file</span>
+                            <input
+                              type="file"
+                              onChange={handleFileChange}
+                              className="hidden"
+                              accept=".pdf,.doc,.docx,.txt"
+                            />
+                          </label>
+                          {newNote.file && (
+                            <div className="mt-1 text-[0.8rem] text-gray-600 truncate">
+                              {newNote.file.name}
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={handleNoteUpload}
-                            className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                           >
-                            <UploadIcon className="text-sm" />
-                            Upload Note
+                            <UploadOutlinedIcon style={{ fontSize: "1rem" }} />
+                            <span>Upload Note</span>
                           </button>
                           <button
                             onClick={() => {
@@ -1216,7 +1224,7 @@ const CoursePage = () => {
                                 file: null,
                               });
                             }}
-                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-[0.8rem]"
                           >
                             Cancel
                           </button>
@@ -1257,10 +1265,10 @@ const CoursePage = () => {
                                 download={note.fileName}
                                 className="text-blue-600 hover:text-blue-700 p-2"
                               >
-                                <DownloadIcon className="text-xl" />
+                                <DownloadOutlinedIcon className="text-xl" />
                               </a>
                             )}
-                            {isInstructor && (
+                            {isInstructorUser && (
                               <button
                                 onClick={() =>
                                   handleDeleteNote(note._id || idx)
@@ -1268,7 +1276,7 @@ const CoursePage = () => {
                                 className="text-red-600 hover:text-red-700 p-2"
                                 title="Delete note"
                               >
-                                <DeleteIcon className="text-xl" />
+                                <DeleteOutlineOutlinedIcon className="text-xl" />
                               </button>
                             )}
                           </div>
@@ -1337,7 +1345,7 @@ const CoursePage = () => {
                 </div>
 
                 {/* Rating Component - Only show for enrolled students who are not instructors */}
-                {isEnrolled && !isInstructor && (
+                {isEnrolled && !isInstructorUser && (
                   <CourseRating
                     courseId={id}
                     currentRating={course.rating}

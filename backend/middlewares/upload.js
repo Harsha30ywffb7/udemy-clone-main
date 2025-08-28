@@ -2,22 +2,6 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const { cloudinary } = require("../config/cloudinary");
 
-// Configure Cloudinary storage for documents - direct upload to cloud
-const docStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    resource_type: "raw",
-  },
-});
-
-// Configure Cloudinary storage for images - direct upload to cloud
-const imageStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    resource_type: "image",
-  },
-});
-
 // File filter function
 const fileFilter = (req, file, cb) => {
   // Allow specific file types
@@ -45,6 +29,22 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// Configure Cloudinary storage for documents - direct upload to cloud
+const docStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    resource_type: "raw",
+  },
+});
+
+// Configure Cloudinary storage for images - direct upload to cloud
+const imageStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    resource_type: "image",
+  },
+});
+
 // Configure multer with Cloudinary storage
 const upload = multer({
   storage: docStorage,
@@ -56,6 +56,10 @@ const upload = multer({
 
 // Specific upload configurations - direct to Cloudinary
 const imageUpload = multer({ storage: imageStorage }).single("image");
+
+const profileImageUpload = multer({ storage: imageStorage }).single(
+  "profilePicture"
+);
 
 const docUpload = multer({ storage: docStorage }).single("file");
 
@@ -98,6 +102,7 @@ const handleUploadError = (error, req, res, next) => {
 
 module.exports = {
   imageUpload,
+  profileImageUpload,
   docUpload,
   thumbnailUpload,
   carouselUpload,

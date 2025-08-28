@@ -34,6 +34,7 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
   const [touched, setTouched] = useState({});
   const [saving, setSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isNewCourse, setIsNewCourse] = useState(!courseId);
 
@@ -191,10 +192,31 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
     setFieldErrors(field, error);
   };
 
-  // Image upload handler
+  // Image upload handler with validation
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({
+        ...prev,
+        thumbnailUrl:
+          "Invalid file type. Please upload a JPG, PNG, or WebP image.",
+      }));
+      return;
+    }
+
+    // Validate file size <= 5MB
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      setErrors((prev) => ({
+        ...prev,
+        thumbnailUrl: "Image size must be 5MB or less.",
+      }));
+      return;
+    }
 
     setImageUploading(true);
     try {
@@ -210,8 +232,10 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         }
       } else {
         // For new courses, we'll handle the upload when the course is created
-        // For now, we'll store the file temporarily
+        // Store the file temporarily and show a local preview
         handleInputChange("thumbnailFile", file);
+        const previewUrl = URL.createObjectURL(file);
+        handleInputChange("thumbnailUrl", previewUrl);
         setErrors((prev) => ({ ...prev, thumbnailUrl: "" }));
       }
     } catch (error) {
@@ -693,18 +717,21 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
                 onChange={handleImageUpload}
                 className="hidden"
                 id="thumbnail-upload"
+                ref={fileInputRef}
               />
-              <label
-                htmlFor="thumbnail-upload"
-                className="cursor-pointer flex flex-col items-center gap-2"
+              <button
+                type="button"
+                onClick={() =>
+                  fileInputRef.current && fileInputRef.current.click()
+                }
+                className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50"
               >
-                <div className="text-gray-500">
-                  📁 Click to upload image file
-                </div>
-                <div className="text-xs text-gray-400">
-                  Supports: JPG, PNG, WebP (Max 5MB)
-                </div>
-              </label>
+                <span>📁</span>
+                <span>Choose image</span>
+              </button>
+              <div className="text-xs text-gray-400 mt-2">
+                Supports: JPG, PNG, WebP (Max 5MB)
+              </div>
               {imageUploading && (
                 <div className="mt-2 text-sm text-blue-600">
                   Uploading image...

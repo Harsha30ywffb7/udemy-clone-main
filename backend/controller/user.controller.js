@@ -624,6 +624,42 @@ router.post("/courses/:courseId/enroll", authenticate, async (req, res) => {
   }
 });
 
+// Unenroll from a course (decrement totalStudents)
+router.delete("/courses/:courseId/enroll", authenticate, async (req, res) => {
+  try {
+    const user = req.user;
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId).select("_id");
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    const beforeCount = (user.enrolledCourses || []).length;
+    user.enrolledCourses = (user.enrolledCourses || []).filter(
+      (c) => String(c.courseId) !== String(courseId)
+    );
+
+    const afterCount = user.enrolledCourses.length;
+    const removed = afterCount < beforeCount;
+
+    await user.save();
+
+    if (removed) {
+      await Course.findByIdAndUpdate(course._id, {
+        $inc: { totalStudents: -1 },
+      });
+    }
+
+    res.json({ success: true, removed });
+  } catch (error) {
+    console.error("Unenroll error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 // Get enrolled courses
 router.get("/enrolled-courses", authenticate, async (req, res) => {
   try {
@@ -711,7 +747,7 @@ router.post(
         });
       }
 
-      // Cloudinary URL available on req.file.path
+      // Use Cloudinary URL from multer-storage-cloudinary
       const imageUrl = req.file?.path;
       if (!imageUrl) {
         return res.status(500).json({

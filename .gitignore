@@ -66,31 +66,13 @@ jspm_packages/
 .cache
 .parcel-cache
 
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
 # Gatsby files
 .cache/
 public
 
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
 # Editor directories and files
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
 # OS generated files
 .DS_Store
@@ -102,5 +84,4 @@ ehthumbs.db
 Thumbs.db
 
 # Package lock files (optional - uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock
+package-lock.json
