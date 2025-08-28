@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { userService } from "../../services/userService";
 import StarIcon from "@mui/icons-material/Star";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
@@ -137,22 +137,24 @@ const CourseHeader = ({ course, onEnroll, enrollmentLoading = false }) => {
 
             {/* Instructor Info */}
             {course.instructor && (
-              <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                <img
-                  src={
-                    course.instructor.avatar ||
-                    `https://ui-avatars.com/api/?name=${course.instructor.name}&background=6366f1&color=fff`
-                  }
-                  alt={course.instructor.name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+              <Link
+                to={`/profile/${course.instructorId}`}
+                className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                {course.instructor.avatar ? (
+                  <img
+                    src={course.instructor.avatar}
+                    alt={course.instructor.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : null}
                 <div>
                   <p className="text-xs text-gray-500">Created by</p>
                   <p className="font-medium text-gray-900 text-sm">
                     {course.instructor.name}
                   </p>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
 
@@ -164,7 +166,7 @@ const CourseHeader = ({ course, onEnroll, enrollmentLoading = false }) => {
                 className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors"
                 onClick={handleEditCourse}
               >
-                <EditIcon className="text-[0.8rem]" />
+                <EditIcon style={{ fontSize: "1rem" }} />
                 Edit Course
               </button>
             ) : (
