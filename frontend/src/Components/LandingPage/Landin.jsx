@@ -1,7 +1,5 @@
 import banner from "../../assets/middle.jpg";
 import StudentContainer from "./StudentContainer";
-import { styled } from "@mui/material/styles";
-import Tooltip, { tooltipClasses } from "@mui/material/Tooltip";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import Skeleton from "@mui/material/Skeleton";

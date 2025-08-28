@@ -42,15 +42,30 @@ const HeroCarousel = () => {
     setCurrentSlide((prev) => (prev + 1) % carouselData.length);
 
   const fullName = user?.user?.fullName || "User";
+  const avatarUrl = user?.user?.profilePicture || user?.user?.avatarUrl || null;
+  const initials = (fullName || "U")
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="w-full max-w-[1340px] mx-auto px-6 mb-12">
       {/* Welcome Section */}
       <div className="flex items-center gap-4 mb-6 py-4">
         <div className="flex items-center">
-          <div className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-lg">
-            {fullName.charAt(0).toUpperCase()}
-          </div>
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={fullName}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-12 h-12 bg-gray-900 text-white rounded-full flex items-center justify-center font-bold text-lg">
+              {initials}
+            </div>
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-bold text-gray-900 leading-tight">

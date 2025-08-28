@@ -6,6 +6,7 @@ import Badge from "@mui/material/Badge";
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileDropdown from "./ProfileDropdown";
+import { courseService } from "../../services/courseService";
 
 export const Header = () => {
   const { user } = useSelector((store) => store.auth);
@@ -48,13 +49,21 @@ export const Header = () => {
         // Show last cached results if any
         const cached = suggestionsCacheRef.current.get("") || [];
         setSuggestions(cached);
+        const related = cached.filter((d) => !!d.subtitle);
+        const courses = cached.filter((d) => !d.subtitle);
+        setSplitSuggestions({ related, courses });
+        setOpen(cached.length > 0);
         return;
       }
       try {
         // serve from cache if present
         if (suggestionsCacheRef.current.has(q)) {
-          setSuggestions(suggestionsCacheRef.current.get(q));
-          setOpen(true);
+          const cachedData = suggestionsCacheRef.current.get(q);
+          setSuggestions(cachedData);
+          const related = cachedData.filter((d) => !!d.subtitle);
+          const courses = cachedData.filter((d) => !d.subtitle);
+          setSplitSuggestions({ related, courses });
+          setOpen(cachedData.length > 0);
           return;
         }
         const res = await courseService.getSearchSuggestions(q, 8);
@@ -71,6 +80,8 @@ export const Header = () => {
         setOpen(true);
       } catch (err) {
         setSuggestions([]);
+        setSplitSuggestions({ related: [], courses: [] });
+        setOpen(false);
       }
     }, 400);
   };
@@ -102,8 +113,8 @@ export const Header = () => {
         <div className="flex items-center gap-8 flex-1 min-w-0">
           <Link to="/" className="flex-shrink-0 text-purple-700 cursor-pointer">
             <img
-              src="/images/vidhyaraLogo.png"
-              alt="Vidhyara"
+              src="../../../public/images/logo-udemy.svg"
+              alt="Udemy"
               className="h-8"
             />
           </Link>

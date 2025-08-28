@@ -44,6 +44,16 @@ const InstructorCourses = () => {
     fetchCourses();
   }, []);
 
+  // Aggregate stats
+  const totalStudents = courses.reduce(
+    (sum, c) => sum + (c.totalStudents || 0),
+    0
+  );
+  const totalReviews = courses.reduce(
+    (sum, c) => sum + (c.totalRatings || 0),
+    0
+  );
+
   const sidebarItems = [
     {
       icon: <BuildOutlinedIcon />,
@@ -75,6 +85,16 @@ const InstructorCourses = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Back Button */}
+        <div className="mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <span className="text-base">←</span>
+            <span>Back</span>
+          </button>
+        </div>
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -130,7 +150,9 @@ const InstructorCourses = () => {
                 <p className="text-sm font-medium text-gray-600">
                   Total Students
                 </p>
-                <p className="text-xl font-bold text-gray-900">0</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {totalStudents}
+                </p>
               </div>
             </div>
           </div>
@@ -147,7 +169,9 @@ const InstructorCourses = () => {
                 <p className="text-sm font-medium text-gray-600">
                   Total Reviews
                 </p>
-                <p className="text-xl font-bold text-gray-900">0</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {totalReviews}
+                </p>
               </div>
             </div>
           </div>
