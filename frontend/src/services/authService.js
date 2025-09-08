@@ -159,7 +159,7 @@ export const authService = {
     }
   },
 
-  // Forgot Password
+  // Forgot Password - Send OTP
   forgotPassword: async (email) => {
     try {
       const response = await authClient.post("/users/forgot-password", {
@@ -168,13 +168,35 @@ export const authService = {
       return {
         success: true,
         data: response.data,
-        message: "Password reset email sent",
+        message: "OTP sent to your email address",
       };
     } catch (error) {
       console.error("Forgot password error:", error);
       return {
         success: false,
-        message: "Failed to send reset email",
+        message: authService.getErrorMessage(error, false),
+        error: error.response?.data || error.message,
+      };
+    }
+  },
+
+  // Verify OTP
+  verifyOTP: async (email, otp) => {
+    try {
+      const response = await authClient.post("/users/verify-otp", {
+        email,
+        otp,
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: "OTP verified successfully",
+      };
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      return {
+        success: false,
+        message: authService.getErrorMessage(error, false),
         error: error.response?.data || error.message,
       };
     }
@@ -196,7 +218,7 @@ export const authService = {
       console.error("Reset password error:", error);
       return {
         success: false,
-        message: "Failed to reset password",
+        message: authService.getErrorMessage(error, false),
         error: error.response?.data || error.message,
       };
     }
@@ -313,7 +335,22 @@ export const authService = {
 
   // Error message helper
   getErrorMessage: (error, isLogin = false) => {
-    if (!error) return "An unexpected error occurred. Please try again.";
+    if (!error) return "Something went wrong. Please try again.";
+
+    // Handle network errors
+    if (error.code === "NETWORK_ERROR" || error.message === "Network Error") {
+      return "Unable to connect to the server. Please check your internet connection and try again.";
+    }
+
+    // Handle 404 errors (endpoint not found)
+    if (error.response?.status === 404) {
+      return "Service temporarily unavailable. Please try again later.";
+    }
+
+    // Handle 500 errors
+    if (error.response?.status === 500) {
+      return "Something went wrong on our end. Please try again later.";
+    }
 
     const message = error.response?.data?.message || error.message || error;
 
@@ -342,6 +379,24 @@ export const authService = {
 
       case "your account has been deactivated. please contact support.":
         return "Your account has been temporarily deactivated. Please contact our support team for assistance.";
+
+      case "no account found with this email address":
+        return "No account found with this email address. Please check your email or sign up for a new account.";
+
+      case "otp has expired. please request a new one.":
+        return "The OTP has expired. Please request a new one.";
+
+      case "invalid otp. please check and try again.":
+        return "Invalid OTP. Please check the code and try again.";
+
+      case "no valid otp found. please request a new one.":
+        return "No valid OTP found. Please request a new one.";
+
+      case "email and otp are required":
+        return "Please provide both email and OTP.";
+
+      case "email, otp, and new password are required":
+        return "Please fill in all required fields.";
 
       case "validation failed":
         return "Please check all fields and ensure they are filled out correctly.";

@@ -136,6 +136,10 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: { type: String, default: null },
     passwordResetExpires: { type: Date, default: null },
 
+    // OTP for password reset
+    otp: { type: String, default: null },
+    otpExpires: { type: Date, default: null },
+
     // Preferences
     preferences: {
       language: { type: String, default: "en" },

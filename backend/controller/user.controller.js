@@ -7,6 +7,7 @@ const { profileImageUpload } = require("../middlewares/upload");
 const User = require("../models/user.model");
 const Course = require("../models/course.model");
 const { authenticate } = require("../middlewares/authenticate");
+const emailService = require("../utils/emailService");
 
 // Configure multer for file uploads
 const upload = multer({
@@ -17,6 +18,14 @@ const upload = multer({
 });
 
 const router = express.Router();
+
+// Test endpoint for forgot password routes
+router.get("/forgot-password-test", (req, res) => {
+  res.json({
+    message: "Forgot password routes are working",
+    timestamp: new Date(),
+  });
+});
 
 // Register new user (student or instructor)
 router.post("/register", async (req, res) => {
@@ -281,30 +290,7 @@ router.get("/profile", authenticate, async (req, res) => {
   }
 });
 
-// Public profile by id (safe fields only)
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = await User.findById(id)
-      .select(
-        "-passwordHash -emailVerificationToken -passwordResetToken -passwordResetExpires"
-      )
-      .lean();
-
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-
-    return res.json({ success: true, user });
-  } catch (error) {
-    console.error("Get public profile error:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
-  }
-});
+// (moved lower) Public profile by id
 
 // Update user profile
 router.put("/profile", authenticate, async (req, res) => {
@@ -773,5 +759,249 @@ router.post(
     }
   }
 );
+
+// Forgot Password - Send OTP
+router.post("/forgot-password", async (req, res) => {
+  try {
+    console.log("Forgot password endpoint hit");
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "No account found with this email address",
+      });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "Your account has been deactivated. Please contact support.",
+      });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set OTP expiration (30 minutes from now)
+    const otpExpires = new Date(Date.now() + 30 * 60 * 1000);
+
+    // Save OTP to user
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
+
+    // Send OTP via email service (uses SMTP if configured, else logs)
+    console.log(`OTP for ${email}: ${otp}`);
+    const emailResult = await emailService.sendOTPEmail(email, otp);
+    if (!emailResult.success) {
+      console.error("Email service failed:", emailResult.message);
+    }
+
+    res.json({
+      success: true,
+      message: "OTP sent to your email address",
+      // Remove this in production - only for development
+      otp: process.env.NODE_ENV === "development" ? otp : undefined,
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+});
+
+// Verify OTP
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Validate required fields
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP are required",
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "No account found with this email address",
+      });
+    }
+
+    // Check if OTP exists and is not expired
+    if (!user.otp || !user.otpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid OTP found. Please request a new one.",
+      });
+    }
+
+    // Check if OTP is expired
+    if (new Date() > user.otpExpires) {
+      // Clear expired OTP
+      user.otp = null;
+      user.otpExpires = null;
+      await user.save();
+
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
+    // Verify OTP
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please check and try again.",
+      });
+    }
+
+    // OTP is valid - don't clear it yet, keep it for password reset
+    res.json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+});
+
+// Reset Password
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Validate required fields
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "No account found with this email address",
+      });
+    }
+
+    // Check if OTP exists and is not expired
+    if (!user.otp || !user.otpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid OTP found. Please request a new one.",
+      });
+    }
+
+    // Check if OTP is expired
+    if (new Date() > user.otpExpires) {
+      // Clear expired OTP
+      user.otp = null;
+      user.otpExpires = null;
+      await user.save();
+
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
+    // Verify OTP
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP. Please check and try again.",
+      });
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear OTP
+    user.passwordHash = passwordHash;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+});
+
+// Public profile by id (safe fields only) - keep at the very bottom to avoid intercepting other routes
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id)
+      .select(
+        "-passwordHash -emailVerificationToken -passwordResetToken -passwordResetExpires"
+      )
+      .lean();
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    return res.json({ success: true, user });
+  } catch (error) {
+    console.error("Get public profile error:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+});
 
 module.exports = router;
