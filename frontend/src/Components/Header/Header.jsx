@@ -23,7 +23,6 @@ export const Header = () => {
       navigate("/");
     }
   }, [navigate, user.user]);
-  console.log("user in header", user);
 
   const isInstructorPage = location.pathname.startsWith("/instructor");
   const isLoggedIn = !!user?.user;

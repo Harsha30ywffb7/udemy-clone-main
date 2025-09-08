@@ -745,45 +745,6 @@ const CoursePage = () => {
                         {currentVideo.description}
                       </div>
                     )}
-
-                    {/* {Array.isArray(course.notes) && course.notes.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          Course Notes
-                        </h4>
-                        <div className="space-y-3">
-                          {course.notes.map((note, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                            >
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-sm">
-                                  {note.title}
-                                </h4>
-                                <p className="text-xs text-gray-600">
-                                  {note.topic}
-                                </p>
-                                {note.description && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {note.description}
-                                  </p>
-                                )}
-                              </div>
-                              {note.fileUrl && (
-                                <a
-                                  href={note.fileUrl}
-                                  download={note.fileName}
-                                  className="text-blue-600 hover:text-blue-700 p-2"
-                                >
-                                  <DownloadIcon className="text-lg" />
-                                </a>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )} */}
                   </div>
                 ) : activeVideoTab === "notes" ? (
                   <div className="space-y-4">
@@ -810,8 +771,10 @@ const CoursePage = () => {
                             {note.fileUrl && (
                               <a
                                 href={note.fileUrl}
-                                download={note.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-700 p-2"
+                                title="Open in new tab"
                               >
                                 <DownloadIcon className="text-xl" />
                               </a>
@@ -857,7 +820,7 @@ const CoursePage = () => {
               currentVideo={currentVideo}
               isContentCompleted={isContentCompleted}
               handleContentClick={handleContentClick}
-              isEnrolled={Boolean(isEnrolled)}
+              isEnrolled={Boolean(isEnrolled || isInstructorUser)}
             />
           </div>
         </div>
@@ -1121,9 +1084,14 @@ const CoursePage = () => {
                     {isInstructorUser && !showNoteUpload && (
                       <button
                         onClick={() => setShowNoteUpload(true)}
-                        className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed "
                       >
-                        <AddOutlinedIcon className="text-sm" />
+                        <AddOutlinedIcon
+                          style={{
+                            fontSize: "1rem",
+                            paddingRight: "0.2rem",
+                          }}
+                        />
                         Add Note
                       </button>
                     )}
@@ -1262,8 +1230,10 @@ const CoursePage = () => {
                             {note.isDownloadable && note.fileUrl && (
                               <a
                                 href={note.fileUrl}
-                                download={note.fileName}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-700 p-2"
+                                title="Open in new tab"
                               >
                                 <DownloadOutlinedIcon className="text-xl" />
                               </a>

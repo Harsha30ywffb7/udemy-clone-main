@@ -84,42 +84,13 @@ const StudentContainer = () => {
 
         if (studentsViewing.success && studentsViewing.data?.courses) {
           const transformedStudentsViewing = studentsViewing.data.courses;
-          //   .map(
-          //   (course) => ({
-          //     id: course.id,
-          //     img: course.thumbnail,
-          //     title: course.title,
-          //     desc: course.headline,
-          //     rateScore: course.rating?.toFixed(1) || "4.5",
-          //     reviewerNum: course.totalRatings || 0,
-          //     price: course.originalPrice || course.price,
-          //     onSale: course.originalPrice > course.price,
-          //     onSalePrice: course.price,
-          //     mark: course.totalStudents > 100000 ? "Bestseller" : "",
-          //   })
-          // );
-          console.log("transformedStudentsViewing", transformedStudentsViewing);
+
           setStudentsViewingCourses(transformedStudentsViewing);
         }
 
         if (recommended.success && recommended.data?.courses) {
           // Transform API data for recommended courses
           const transformedRecommended = recommended.data.courses;
-          console.log("transformedRecommended", transformedRecommended);
-          // .map(
-          //   (course) => ({
-          //     id: course.id,
-          //     img: course.thumbnail,
-          //     title: course.title,
-          //     desc: course.headline,
-          //     rateScore: course.rating?.toFixed(1) || "4.5",
-          //     reviewerNum: course.totalRatings || 0,
-          //     price: course.originalPrice || course.price,
-          //     onSale: course.originalPrice > course.price,
-          //     onSalePrice: course.price,
-          //     mark: course.totalStudents > 100000 ? "Bestseller" : "",
-          //   })
-          // );
           setRecommendedCourses(transformedRecommended);
         }
       } catch (error) {

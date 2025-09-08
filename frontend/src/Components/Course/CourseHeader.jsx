@@ -166,7 +166,9 @@ const CourseHeader = ({ course, onEnroll, enrollmentLoading = false }) => {
                 className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors"
                 onClick={handleEditCourse}
               >
-                <EditIcon style={{ fontSize: "1rem" }} />
+                <EditIcon
+                  style={{ fontSize: "0.9rem", paddingRight: "0.2rem" }}
+                />
                 Edit Course
               </button>
             ) : (

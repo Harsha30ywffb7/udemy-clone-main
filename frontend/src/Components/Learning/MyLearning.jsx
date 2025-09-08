@@ -33,9 +33,11 @@ const MyLearning = () => {
     <div className="w-full">
       <div className="max-w-7xl mx-auto px-6 pt-8">
         <h1 className="text-2xl font-bold mb-2">My learning</h1>
-        <p className="text-sm text-gray-600">
-          Your enrolled courses appear here. Click a course to continue.
-        </p>
+        {courses.length > 0 && (
+          <p className="text-sm text-gray-600">
+            Your enrolled courses appear here. Click a course to continue.
+          </p>
+        )}
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
@@ -46,7 +48,7 @@ const MyLearning = () => {
             ))}
           </div>
         ) : courses.length === 0 ? (
-          <div className="text-center text-gray-600">
+          <div className="text-sm text-center text-gray-600 mt-10">
             You haven't enrolled in any courses yet.
           </div>
         ) : (

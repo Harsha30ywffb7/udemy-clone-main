@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import ProfileImage from "../Header/ProfileImage";
 import Toast from "../UI/Toast";
+import toast from "react-hot-toast";
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'photo' | 'privacy'
-
-  // Source-of-truth copies for dirty checking
+  const [activeTab, setActiveTab] = useState("profile");
   const [initialState, setInitialState] = useState(null);
 
-  // Vidhyara profile form
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -29,7 +27,6 @@ export default function ProfilePage() {
     import.meta.env.VITE_API_BASE_URL ||
     (import.meta.env.DEV ? "http://localhost:5000/api" : "/api");
 
-  // Profile picture tab state
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -64,14 +61,16 @@ export default function ProfilePage() {
           youtube: user?.socialLinks?.youtube || "",
           language: user?.userProfile?.language || "English (US)",
         };
-        setForm(mapped);
-        setPrivacy({
+        setPhotoPreview(user?.profilePicture || null);
+        const mappedPrivacy = {
           showProfileToLoggedIn:
             user?.privacySettings?.showProfileToLoggedIn ?? true,
           showCoursesOnProfile:
             user?.privacySettings?.showCoursesOnProfile ?? true,
-        });
-        setInitialState({ form: mapped, privacy: { ...privacy } });
+        };
+        setForm(mapped);
+        setPrivacy(mappedPrivacy);
+        setInitialState({ form: mapped, privacy: mappedPrivacy });
       })
       .catch(() => {});
   }, []);
@@ -125,7 +124,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert(error.response?.data?.message || "Failed to upload image");
+      toast.error(error.response?.data?.message || "Failed to upload image");
     } finally {
       setIsUploading(false);
     }
@@ -170,7 +169,7 @@ export default function ProfilePage() {
         },
       };
 
-      await axios.put("/api/users/profile", payload, {
+      await axios.put(`${API_BASE_URL}/users/profile`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -431,7 +430,7 @@ export default function ProfilePage() {
               <img
                 src={photoPreview}
                 alt="Profile preview"
-                className="h-full object-contain"
+                className="h-full object-contain rounded-full"
               />
             ) : (
               <div className="w-40 h-40 rounded-full border-4 border-gray-300 flex items-center justify-center">
@@ -471,15 +470,6 @@ export default function ProfilePage() {
               {isUploading ? "Uploading..." : "Upload image"}
             </button>
           </div>
-
-          {/* <div className="mt-6">
-            <button
-              disabled={!photoPreview}
-              className="bg-[#5624d0] text-white px-6 py-2 rounded text-[12px] font-bold hover:bg-[#401b9c] disabled:opacity-50"
-            >
-              Save
-            </button>
-          </div> */}
         </div>
       )}
 

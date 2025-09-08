@@ -115,7 +115,6 @@ const CourseCard = ({ course, onWishlistToggled }) => {
   };
 
   const renderStars = () => {
-    console.log("course in renderStars", course);
     const fullStars = Math.floor(normalizedCourse.rateScore || 0);
     const halfStar = (normalizedCourse.rateScore || 0) % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);

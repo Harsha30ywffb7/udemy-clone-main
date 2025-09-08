@@ -5,6 +5,9 @@ import ExplorePaths from "../Explore/ExplorePaths";
 import SearchResults from "../Search/SearchResults";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
+import ForgotPassword from "../Login_Signup/ForgotPassword";
+import OTPVerification from "../Login_Signup/OTPVerification";
+import ResetPassword from "../Login_Signup/ResetPassword";
 import Wishlist from "../Wishlist/Wishlist";
 import Instructor from "../Login_Signup/Instructor";
 import InstructorOnboarding from "../Instructor/InstructorOnboarding";
@@ -121,6 +124,9 @@ export const AllRoutes = () => {
           <Route path="/" element={<Landin />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-otp" element={<OTPVerification />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/teach" element={<InstructorRoutes />} />
 
           {/* Course Routes */}

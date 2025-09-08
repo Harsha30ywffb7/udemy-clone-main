@@ -14,3 +14,4 @@ const StaticPage = ({ title, content }) => {
 };
 
 export default StaticPage;
+
