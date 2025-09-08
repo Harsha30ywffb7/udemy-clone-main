@@ -8,6 +8,7 @@ import CourseLandingPage from "./CourseLandingPage";
 import CurriculumBuilder from "./CurriculumBuilder";
 import PublishStep from "./PublishStep";
 import { courseService } from "../../services/courseService";
+import toast from "react-hot-toast";
 
 const STEPS = [
   {
@@ -137,6 +138,17 @@ const CourseCreationWorkflow = () => {
     return true;
   };
 
+  // Save/dirty function providers for footer guard
+  const dirtyFnRef = React.useRef(null);
+  const saveFnRef = React.useRef(null);
+
+  const registerIsDirty = (fn) => {
+    dirtyFnRef.current = fn;
+  };
+  const registerSave = (fn) => {
+    saveFnRef.current = fn;
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case "landing-page":
@@ -147,6 +159,8 @@ const CourseCreationWorkflow = () => {
             onSave={(data, newCourseId) =>
               handleStepComplete("landing-page", data, newCourseId)
             }
+            onRegisterIsDirty={registerIsDirty}
+            onRegisterSave={registerSave}
           />
         );
 
@@ -156,6 +170,8 @@ const CourseCreationWorkflow = () => {
             courseId={courseId || courseData?.courseId}
             initialSections={courseData?.sections || []}
             onSave={(data) => handleStepComplete("curriculum", data)}
+            onRegisterIsDirty={registerIsDirty}
+            onRegisterSave={registerSave}
           />
         );
 
@@ -281,7 +297,7 @@ const CourseCreationWorkflow = () => {
       {/* Step Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">{renderStepContent()}</div>
 
-      {/* Navigation Footer */}
+      {/* Global Footer - present on all steps. Guard Next if unsaved changes */}
       <div className="bg-white border-t fixed bottom-0 left-0 right-0">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
@@ -289,7 +305,6 @@ const CourseCreationWorkflow = () => {
               Step {STEPS.findIndex((s) => s.id === currentStep) + 1} of{" "}
               {STEPS.length}
             </div>
-
             <div className="flex gap-3">
               {currentStep !== "landing-page" && (
                 <button
@@ -297,9 +312,8 @@ const CourseCreationWorkflow = () => {
                     const currentIndex = STEPS.findIndex(
                       (s) => s.id === currentStep
                     );
-                    if (currentIndex > 0) {
+                    if (currentIndex > 0)
                       setCurrentStep(STEPS[currentIndex - 1].id);
-                    }
                   }}
                   className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
                 >
@@ -307,22 +321,27 @@ const CourseCreationWorkflow = () => {
                   Previous
                 </button>
               )}
-
+              {/* Original footer had only Previous/Next; remove Save button */}
               {currentStep !== "publish" && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    if (
+                      typeof dirtyFnRef.current === "function" &&
+                      dirtyFnRef.current()
+                    ) {
+                      toast.error("Please save before clicking Next");
+                      return;
+                    }
                     const currentIndex = STEPS.findIndex(
                       (s) => s.id === currentStep
                     );
                     if (currentIndex < STEPS.length - 1) {
                       const nextStep = STEPS[currentIndex + 1];
-                      if (canAccessStep(nextStep.id)) {
+                      if (canAccessStep(nextStep.id))
                         setCurrentStep(nextStep.id);
-                      }
                     }
                   }}
-                  disabled={!completedSteps.has(currentStep)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2"
                 >
                   Next
                   <ArrowForwardIcon style={{ fontSize: 16 }} />

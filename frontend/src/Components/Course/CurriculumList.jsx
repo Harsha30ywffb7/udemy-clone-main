@@ -12,6 +12,7 @@ const CurriculumList = ({
   handleContentClick,
   isEnrolled,
 }) => {
+  console.log("isEnrolled in rightside ", isEnrolled);
   const formatDuration = (seconds) => {
     if (!seconds || seconds === 0) return "0:00";
     const minutes = Math.floor(seconds / 60);

@@ -14,7 +14,7 @@ import PresentationIcon from "@mui/icons-material/Slideshow";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import SettingsIcon from "@mui/icons-material/Settings";
+// Settings icon removed per requirement
 import { courseService } from "../../services/courseService";
 
 // Content type configurations
@@ -191,8 +191,59 @@ const ContentEditor = ({ content, onUpdate, onClose }) => {
     isFree: content.isFree || false,
     ...content,
   });
+  const [saveError, setSaveError] = useState("");
 
   const handleSave = () => {
+    // Basic validations to prevent empty content from being added
+    const errors = [];
+
+    if (!formData.title || !formData.title.trim()) {
+      errors.push("Title is required");
+    }
+
+    switch (content.contentType) {
+      case "video": {
+        const hasUrl = Boolean(
+          formData.video?.url && formData.video.url.trim()
+        );
+        if (!hasUrl) errors.push("Video URL is required");
+        break;
+      }
+      case "article": {
+        const hasContent = Boolean(
+          formData.article?.content && formData.article.content.trim()
+        );
+        if (!hasContent) errors.push("Article content is required");
+        break;
+      }
+      case "coding_exercise": {
+        const hasInstructions = Boolean(
+          formData.codingExercise?.instructions &&
+            formData.codingExercise.instructions.trim()
+        );
+        if (!hasInstructions) errors.push("Instructions are required");
+        break;
+      }
+      case "assignment": {
+        const hasInstructions = Boolean(
+          formData.assignment?.instructions &&
+            formData.assignment.instructions.trim()
+        );
+        if (!hasInstructions)
+          errors.push("Assignment instructions are required");
+        break;
+      }
+      default: {
+        // For other types, at minimum ensure title is present (already checked)
+      }
+    }
+
+    if (errors.length > 0) {
+      setSaveError(errors[0]);
+      return;
+    }
+
+    setSaveError("");
     onUpdate(formData);
     onClose();
   };
@@ -597,6 +648,11 @@ const ContentEditor = ({ content, onUpdate, onClose }) => {
         </div>
 
         <div className="space-y-6">
+          {saveError && (
+            <div className="px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
+              {saveError}
+            </div>
+          )}
           {/* Basic Information */}
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -705,11 +761,38 @@ const ContentEditor = ({ content, onUpdate, onClose }) => {
   );
 };
 
+// Helper to generate robust unique IDs (prevents mass deletions from id collisions)
+const generateId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 // Main Curriculum Builder Component
-const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
+const CurriculumBuilder = ({
+  courseId,
+  initialSections = [],
+  onSave,
+  onRegisterSave,
+  onRegisterIsDirty,
+}) => {
+  const normalizeSections = (secs) =>
+    (secs || []).map((section, sectionIdx) => ({
+      ...section,
+      id: section.id || generateId(),
+      sortOrder: section.sortOrder ?? sectionIdx,
+      content: (section.content || []).map((contentItem, contentIdx) => ({
+        ...contentItem,
+        id: contentItem.id || generateId(),
+        // If a content type already exists, mark it configured to avoid showing the type picker grid
+        configured:
+          contentItem.configured === true || Boolean(contentItem.contentType),
+        sortOrder: contentItem.sortOrder ?? contentIdx,
+      })),
+    }));
+
   const [sections, setSections] = useState(
     initialSections.length > 0
-      ? initialSections
+      ? normalizeSections(initialSections)
       : [
           {
             id: Date.now(),
@@ -721,13 +804,25 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
           },
         ]
   );
+
+  const lastSavedRef = React.useRef(
+    JSON.stringify(normalizeSections(initialSections))
+  );
+
+  // Keep sections in sync if initialSections arrive/changes from parent (edit mode)
+  React.useEffect(() => {
+    if (initialSections && initialSections.length > 0) {
+      setSections(normalizeSections(initialSections));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSections]);
   const [editingContent, setEditingContent] = useState(null);
   const [saving, setSaving] = useState(false);
 
   // Add new section
   const addSection = () => {
     const newSection = {
-      id: Date.now(),
+      id: generateId(),
       title: `Section ${sections.length + 1}`,
       description: "",
       sortOrder: sections.length,
@@ -754,7 +849,7 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
   // Add content to section
   const addContent = (sectionId, contentType) => {
     const newContent = {
-      id: Date.now(),
+      id: generateId(),
       contentType,
       title: `New ${CONTENT_TYPES[contentType].label}`,
       description: "",
@@ -815,19 +910,49 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
   const saveCurriculum = async () => {
     setSaving(true);
     try {
+      // Strip UI-only fields before sending to backend
+      const payloadSections = sections.map((section) => ({
+        ...section,
+        content: (section.content || []).map(({ configured, ...rest }) => ({
+          ...rest,
+        })),
+      }));
+
       if (courseId) {
-        await courseService.updateCourseCurriculum(courseId, { sections });
+        await courseService.updateCourseCurriculum(courseId, {
+          sections: payloadSections,
+        });
       }
 
       if (onSave) {
-        onSave({ sections }); // Notify parent of successful save with data
+        onSave({ sections: payloadSections }); // Notify parent with sanitized data
       }
+      lastSavedRef.current = JSON.stringify(normalizeSections(sections));
+      return true;
     } catch (error) {
       console.error("Error saving curriculum:", error);
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  // Expose save to parent (for Save & Next)
+  React.useEffect(() => {
+    if (typeof onRegisterSave === "function") {
+      onRegisterSave(() => saveCurriculum());
+    }
+  }, [onRegisterSave, sections]);
+
+  // Expose dirty state to parent
+  React.useEffect(() => {
+    if (typeof onRegisterIsDirty === "function") {
+      onRegisterIsDirty(() => {
+        const current = JSON.stringify(normalizeSections(sections));
+        return current !== lastSavedRef.current;
+      });
+    }
+  }, [onRegisterIsDirty, sections]);
 
   const formatTotalDuration = () => {
     return sections.reduce((total, section) => {
@@ -1042,14 +1167,6 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() =>
-                      setEditingContent({ sectionId: section.id, content })
-                    }
-                    className="text-gray-500 hover:text-purple-600"
-                  >
-                    <SettingsIcon style={{ fontSize: 16 }} />
-                  </button>
-                  <button
                     onClick={() => deleteContent(section.id, content.id)}
                     className="text-gray-500 hover:text-red-500"
                   >
@@ -1060,7 +1177,7 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
 
               {/* Content Body - Show upload/edit interface if not configured */}
               <div className="p-4">
-                {!content.configured ? (
+                {!(content.configured || content.contentType) ? (
                   <div className="text-sm text-gray-600">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
@@ -1148,21 +1265,18 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
               className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1"
             >
               <AddIcon style={{ fontSize: 16 }} />
-              Lecture
-              <span className="ml-1 text-green-600 font-semibold">
-                With lab
-              </span>
+              Video
             </button>
             <button
-              onClick={() => addContent(section.id, "quiz")}
-              className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1"
+              disabled
+              className="px-3 py-2 border rounded-md text-gray-400 cursor-not-allowed flex items-center gap-1"
             >
               <AddIcon style={{ fontSize: 16 }} />
               Quiz
             </button>
             <button
-              onClick={() => addContent(section.id, "coding_exercise")}
-              className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1"
+              disabled
+              className="px-3 py-2 border rounded-md text-gray-400 cursor-not-allowed flex items-center gap-1"
             >
               <AddIcon style={{ fontSize: 16 }} />
               Coding Exercise
@@ -1176,15 +1290,15 @@ const CurriculumBuilder = ({ courseId, initialSections = [], onSave }) => {
               Practice Test
             </button>
             <button
-              onClick={() => addContent(section.id, "assignment")}
-              className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1"
+              disabled
+              className="px-3 py-2 border rounded-md text-gray-400 cursor-not-allowed flex items-center gap-1"
             >
               <AddIcon style={{ fontSize: 16 }} />
               Assignment
             </button>
             <button
-              onClick={() => addContent(section.id, "role_play")}
-              className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-100 flex items-center gap-1"
+              disabled
+              className="px-3 py-2 border rounded-md text-gray-400 cursor-not-allowed flex items-center gap-1"
             >
               <AddIcon style={{ fontSize: 16 }} />
               Role Play

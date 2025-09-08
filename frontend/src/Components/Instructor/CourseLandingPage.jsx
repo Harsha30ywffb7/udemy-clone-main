@@ -9,8 +9,15 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { courseService } from "../../services/courseService";
 import { uploadService } from "../../services/uploadService";
 import { hasObjectChanged } from "../../utils/formUtils";
+import toast from "react-hot-toast";
 
-const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
+const CourseLandingPage = ({
+  courseId,
+  onSave,
+  initialData = {},
+  onRegisterIsDirty,
+  onRegisterSave,
+}) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
@@ -58,6 +65,20 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
     const hasFormChanges = hasObjectChanged(formData, lastSavedDataRef.current);
     setHasChanges(hasFormChanges);
   }, [formData]);
+
+  // Expose dirty/save functions to parent (for guarded Next)
+  useEffect(() => {
+    if (typeof onRegisterIsDirty === "function") {
+      onRegisterIsDirty(() => hasChanges);
+    }
+    if (typeof onRegisterSave === "function") {
+      onRegisterSave(async () => {
+        await handleSave();
+        return true;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasChanges, formData]);
 
   // Categories and levels data
   const categories = [
@@ -304,7 +325,7 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
 
         // Redirect to create page with course ID
         navigate(`/course/create/${newCourseId}`);
-        alert(
+        toast.success(
           "Course draft created successfully! You can now continue building your course."
         );
       } else {
@@ -328,6 +349,7 @@ const CourseLandingPage = ({ courseId, onSave, initialData = {} }) => {
         error.response?.data?.message ||
         error.message ||
         "Failed to save course";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
