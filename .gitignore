@@ -68,7 +68,6 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
 
 # Editor directories and files
 .vscode/
