@@ -54,32 +54,6 @@ const InstructorCourses = () => {
     0
   );
 
-  const sidebarItems = [
-    {
-      icon: <BuildOutlinedIcon />,
-      label: "Courses",
-      active: true,
-      onClick: () => navigate("/instructor/courses"),
-    },
-    {
-      icon: <PlayArrowIcon />,
-      label: "Performance",
-      active: false,
-      onClick: () => {},
-    },
-    {
-      icon: <DescriptionIcon />,
-      label: "Tools",
-      active: false,
-      onClick: () => {},
-    },
-    {
-      icon: <BarChartIcon />,
-      label: "Resources",
-      active: false,
-      onClick: () => {},
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">

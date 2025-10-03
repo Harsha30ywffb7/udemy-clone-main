@@ -169,12 +169,12 @@ const Courses = () => {
             <option value="A-Z">A-Z</option>
             <option value="Z-A">Z-A</option>
           </select>
-          <button
+          {/* <button
             onClick={() => navigate("/course/create")}
             className="h-9 px-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 text-sm"
           >
             New Course
-          </button>
+          </button> */}
         </div>
       </div>
 
