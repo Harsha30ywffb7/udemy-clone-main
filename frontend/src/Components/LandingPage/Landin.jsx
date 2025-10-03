@@ -44,9 +44,7 @@ const LandingPage = () => {
       <div>
         {/* Categories Section - Added below header */}
         <CategoriesSection />
-        {isLoggedIn ? (
-          <HeroCarousel />
-        ) : (
+        {!isLoggedIn && (
           <div className="relative">
             {/* Banner Card - positioned absolutely over the image */}
             <div className="absolute left-40 top-32 max-w-md bg-white shadow-lg p-6 z-10 rounded-lg">
