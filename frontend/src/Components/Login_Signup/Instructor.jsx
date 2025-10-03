@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { authFunction, clearError } from "../../Redux/login/action";
+import { authFunction, clearError, AUTH } from "../../Redux/login/action";
 import { Link, Navigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
+import { authService } from "../../services/authService";
 
 const Instructor = () => {
   const [form, setForm] = useState({
@@ -17,6 +18,13 @@ const Instructor = () => {
     subscribe: true,
   });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [serverError, setServerError] = useState("");
+
+  const otpRefs = useRef([]);
 
   const { user, loading, error } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
@@ -64,12 +72,100 @@ const Instructor = () => {
 
   const handleCloseError = () => {
     dispatch(clearError());
+    setServerError("");
+  };
+
+  const handleSignup = async () => {
+    if (!validateForm()) return;
+
+    setSignupLoading(true);
+    setServerError("");
+
+    try {
+      const result = await authService.signup({
+        ...form,
+        role: "instructor",
+      });
+
+      if (result.success) {
+        setShowOtp(true);
+        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      } else {
+        setServerError(result.message);
+      }
+    } catch (error) {
+      setServerError("Something went wrong. Please try again.");
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) return; // Prevent multiple characters
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-advance to next field
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    // Handle backspace
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "");
+    if (pastedData.length === 6) {
+      const newOtp = pastedData.split("");
+      setOtp(newOtp);
+      otpRefs.current[5]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      setServerError("Please enter the complete 6-digit code");
+      return;
+    }
+
+    setVerifying(true);
+    setServerError("");
+
+    try {
+      const result = await authService.completeRegistration({
+        email: form.email,
+        otp: otpString,
+      });
+
+      if (result.success) {
+        const { user, token } = result.data.data;
+        localStorage.setItem("token", token);
+        // Dispatch auth action directly instead of calling authFunction
+        dispatch({ type: AUTH, payload: { user, token } });
+      } else {
+        setServerError(result.message);
+      }
+    } catch (error) {
+      setServerError("Something went wrong. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const onSubmit = () => {
-    if (validateForm()) {
-      const URL = "/api/users/register";
-      dispatch(authFunction(form, URL));
+    if (showOtp) {
+      handleVerifyOtp();
+    } else {
+      handleSignup();
     }
   };
 
@@ -105,7 +201,7 @@ const Instructor = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {/* Error Message */}
-          {error && (
+          {(error || serverError) && (
             <Alert
               severity="error"
               className="mb-4"
@@ -120,8 +216,10 @@ const Instructor = () => {
                 </IconButton>
               }
             >
-              <AlertTitle>Signup Failed</AlertTitle>
-              {error}
+              <AlertTitle>
+                {showOtp ? "Verification Failed" : "Signup Failed"}
+              </AlertTitle>
+              {serverError || error}
             </Alert>
           )}
 
@@ -134,7 +232,8 @@ const Instructor = () => {
               type="text"
               placeholder="Full Name"
               value={form.fullName}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.fullName ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -154,7 +253,8 @@ const Instructor = () => {
               type="email"
               placeholder="Email"
               value={form.email}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.email ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -172,7 +272,8 @@ const Instructor = () => {
               type="password"
               placeholder="Password"
               value={form.password}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -183,42 +284,91 @@ const Instructor = () => {
             )}
           </div>
 
+          {/* OTP Input Section */}
+          {showOtp && (
+            <div className="mb-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Verify your email
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  We've sent a 6-digit code to {form.email}
+                </p>
+              </div>
+              <div className="flex justify-center space-x-2 mb-4">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (otpRefs.current[index] = el)}
+                    type="text"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    onPaste={handleOtpPaste}
+                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    disabled={verifying}
+                  />
+                ))}
+              </div>
+              <div className="text-center">
+                <button
+                  onClick={async () => {
+                    setOtp(["", "", "", "", "", ""]);
+                    await handleSignup();
+                    setTimeout(() => otpRefs.current[0]?.focus(), 0);
+                  }}
+                  type="button"
+                  className="px-4 py-3 border border-gray-300 rounded font-medium hover:bg-gray-50"
+                >
+                  Resend
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Subscribe Checkbox */}
-          <div className="mb-6 flex items-start">
-            <input
-              type="checkbox"
-              name="subscribe"
-              checked={form.subscribe}
-              onChange={handleChange}
-              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-1"
-            />
-            <label className="ml-2 text-sm text-gray-600">
-              Send me special offers, personalized recommendations, and learning
-              tips.
-            </label>
-          </div>
+          {!showOtp && (
+            <div className="mb-6 flex items-start">
+              <input
+                type="checkbox"
+                name="subscribe"
+                checked={form.subscribe}
+                onChange={handleChange}
+                className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded mt-1"
+              />
+              <label className="ml-2 text-sm text-gray-600">
+                Send me special offers, personalized recommendations, and
+                learning tips.
+              </label>
+            </div>
+          )}
 
           {/* Terms */}
-          <div className="mb-4 text-xs text-gray-600">
-            By signing up, you agree to our{" "}
-            <Link to="#" className="text-purple-600 hover:underline">
-              Terms of Use
-            </Link>{" "}
-            and{" "}
-            <Link to="#" className="text-purple-600 hover:underline">
-              Privacy Policy
-            </Link>
-            .
-          </div>
+          {!showOtp && (
+            <div className="mb-4 text-xs text-gray-600">
+              By signing up, you agree to our{" "}
+              <Link to="#" className="text-purple-600 hover:underline">
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link to="#" className="text-purple-600 hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </div>
+          )}
 
           {/* Signup Button */}
           <button
             onClick={onSubmit}
-            disabled={loading}
+            disabled={loading || signupLoading || verifying}
             className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
           >
-            {loading ? (
+            {loading || signupLoading || verifying ? (
               <CircularProgress size={24} style={{ color: "white" }} />
+            ) : showOtp ? (
+              "Verify Email"
             ) : (
               "Sign up"
             )}

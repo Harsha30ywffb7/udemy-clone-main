@@ -171,7 +171,7 @@ export const AllRoutes = () => {
 
           {/* Instructor Routes - Organized and Clean */}
           <Route
-            path="/instructor/onboard"
+            path="/instructor/onboarding"
             element={<InstructorOnboardingRoute />}
           />
           <Route
