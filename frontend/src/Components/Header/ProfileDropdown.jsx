@@ -134,7 +134,7 @@ const ProfileDropdown = ({ user }) => {
           </div>
 
           {/* Business Section */}
-          <div className="border-t border-gray-300">
+          {/* <div className="border-t border-gray-300">
             <div className="flex justify-between items-center p-4 cursor-pointer transition-colors duration-300 hover:bg-purple-50 group">
               <div>
                 <p className="text-gray-800 m-0 font-bold text-base group-hover:text-purple-600">
@@ -148,7 +148,7 @@ const ProfileDropdown = ({ user }) => {
                 ↗
               </span>
             </div>
-          </div>
+          </div> */}
         </div>
       )}
     </div>
