@@ -5,6 +5,7 @@ import ExplorePaths from "../Explore/ExplorePaths";
 import SearchResults from "../Search/SearchResults";
 import Login from "../Login_Signup/Login";
 import Signup from "../Login_Signup/Signup";
+import EmailVerification from "../Login_Signup/EmailVerification";
 import ForgotPassword from "../Login_Signup/ForgotPassword";
 import OTPVerification from "../Login_Signup/OTPVerification";
 import ResetPassword from "../Login_Signup/ResetPassword";
@@ -124,6 +125,7 @@ export const AllRoutes = () => {
           <Route path="/" element={<Landin />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-otp" element={<OTPVerification />} />
           <Route path="/reset-password" element={<ResetPassword />} />

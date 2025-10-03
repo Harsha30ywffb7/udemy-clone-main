@@ -30,6 +30,7 @@ import toast from "react-hot-toast";
 import {
   FALLBACK_MP4_URL,
   isYoutubeUrl,
+  isVimeoUrl,
   getContentIcon,
   formatDuration,
 } from "./constants";
@@ -123,22 +124,11 @@ const CoursePage = () => {
           console.log(isLoggedIn, userData);
 
           if (isLoggedIn && userData) {
-            console.log(
-              "currentUsercu;rrentUsercurrentUsercu;rrentUser",
-              userData.role
-            );
             if (userData.role === "instructor") {
               setIsInstructor(true);
             }
           }
-
-          setLoading(false);
         }
-        console.log(
-          "setIsInstructorsetIsInstructorsetIsInstructor",
-          isInstructor
-        );
-
         // Load curriculum
         const curriculumResponse = await courseService.getCourseCurriculum(id);
         if (curriculumResponse.success) {
@@ -262,9 +252,10 @@ const CoursePage = () => {
       setPlaying(false);
       setPlayed(0);
       const srcCandidate = content.video?.url || "";
-      const chosen = isYoutubeUrl(srcCandidate)
-        ? srcCandidate
-        : FALLBACK_MP4_URL;
+      const chosen =
+        isYoutubeUrl(srcCandidate) || isVimeoUrl(srcCandidate) || srcCandidate
+          ? srcCandidate
+          : FALLBACK_MP4_URL;
       setCurrentSrc(chosen);
     } else {
       toast.info(
@@ -493,7 +484,7 @@ const CoursePage = () => {
   }
 
   // Error state
-  if (!course || !curriculum) {
+  if (!loading && (!course || !curriculum)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -568,7 +559,7 @@ const CoursePage = () => {
             {/* Video Player - Fixed at top of left side */}
             <div className="relative w-full h-[480px] bg-black flex-shrink-0">
               {/* Check if content is locked for non-enrolled users */}
-              {!course.isEnrolled &&
+              {!isEnrolled &&
               !currentVideo.isFree &&
               !isInstructorUser &&
               !currentVideo.isPreview ? (
@@ -832,9 +823,13 @@ const CoursePage = () => {
   return (
     <div className="bg-[#fafafa] min-h-screen">
       <CourseHeader
-        course={{ ...course, isEnrolled: isEnrolled }}
+        course={{
+          ...course,
+          isEnrolled: isEnrolled,
+        }}
         onEnroll={handleEnroll}
         enrollmentLoading={enrollmentLoading}
+        isInstructorUser={isInstructorUser}
       />
 
       {/* Course Body */}

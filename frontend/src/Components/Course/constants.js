@@ -27,6 +27,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 export const FALLBACK_MP4_URL = "https://muxed.s3.amazonaws.com/leds.mp4";
 
 export const isYoutubeUrl = (url) => /youtube\.com|youtu\.be/.test(url || "");
+export const isVimeoUrl = (url) => /vimeo\.com/.test(url || "");
 
 export const KEYBOARD_HINT = "Space: Play/Pause • F: Fullscreen • M: Mute";
 

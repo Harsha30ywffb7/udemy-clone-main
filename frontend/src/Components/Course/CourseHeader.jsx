@@ -11,14 +11,19 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import EditIcon from "@mui/icons-material/Edit";
 import toast from "react-hot-toast";
 
-const CourseHeader = ({ course, onEnroll, enrollmentLoading = false }) => {
+const CourseHeader = ({
+  course,
+  onEnroll,
+  enrollmentLoading = false,
+  isInstructorOwner,
+}) => {
   const navigate = useNavigate();
 
-  const isInstructorOwner = Boolean(
-    course?.instructorId &&
-      course?.currentUserId &&
-      String(course.instructorId) === String(course.currentUserId)
-  );
+  // const isInstructorOwner = Boolean(
+  //   course?.instructorId &&
+  //     course?.currentUserId &&
+  //     String(course.instructorId) === String(course.currentUserId)
+  // );
 
   const handleEnroll = () => {
     if (onEnroll) {
