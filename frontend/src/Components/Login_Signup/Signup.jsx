@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { authFunction, clearError } from "../../Redux/login/action";
+import { authFunction, clearError, auth } from "../../Redux/login/action";
+import authService from "../../services/authService";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -17,6 +18,12 @@ const Signup = () => {
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [verifying, setVerifying] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
+  const otpRefs = useRef([]);
 
   const { user, loading, error } = useSelector((store) => store.auth);
   const dispatch = useDispatch();
@@ -85,11 +92,84 @@ const Signup = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSignup = () => {
-    if (validateForm()) {
-      const URL = "/api/users/register";
-      dispatch(authFunction(userdata, URL));
+  const handleSignup = async () => {
+    if (!validateForm()) return;
+    setSignupLoading(true);
+    const res = await authService.signup({
+      fullName: userdata.fullName,
+      email: userdata.email,
+      password: userdata.password,
+      role: "student",
+    });
+    setSignupLoading(false);
+    if (res.success) {
+      setSignupError("");
+      setShowOtp(true);
+    } else {
+      setSignupError(res.message || "Signup failed. Please try again.");
     }
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) return;
+    const clean = value.replace(/\D/g, "");
+    const next = [...otp];
+    next[index] = clean;
+    setOtp(next);
+    if (clean && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    const text = e.clipboardData.getData("text");
+    const digits = (text || "").replace(/\D/g, "").slice(0, 6).split("");
+    if (digits.length) {
+      const next = ["", "", "", "", "", ""];
+      for (let i = 0; i < digits.length; i++) next[i] = digits[i];
+      setOtp(next);
+      const focusIndex = Math.min(digits.length, 5);
+      otpRefs.current[focusIndex]?.focus();
+    }
+    e.preventDefault();
+  };
+
+  const handleVerify = async (e) => {
+    e?.preventDefault?.();
+    const code = otp.join("");
+    if (code.length !== 6) {
+      setSignupError("Enter the 6-digit code sent to your email");
+      return;
+    }
+    setVerifying(true);
+    const res = await authService.completeRegistration({
+      email: userdata.email,
+      otp: code,
+    });
+    setVerifying(false);
+    if (res.success) {
+      setSignupError("");
+      // Store user in Redux like login does
+      const token = res.data?.data?.token;
+      const userResp = res.data?.data?.user;
+      if (token && userResp) {
+        dispatch(auth({ user: userResp, token }));
+      }
+      navigate("/");
+    } else {
+      setSignupError(res.message || "Invalid OTP. Please try again.");
+    }
+  };
+
+  const handleResend = async () => {
+    // Re-init to resend OTP
+    await handleSignup();
   };
 
   const handleKeyPress = (e) => {
@@ -137,7 +217,7 @@ const Signup = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* Error Message */}
+          {/* Error Message (Redux) */}
           {error && (
             <Alert
               severity="error"
@@ -158,6 +238,27 @@ const Signup = () => {
             </Alert>
           )}
 
+          {/* Error Message (Local) */}
+          {signupError && (
+            <Alert
+              severity="error"
+              className="mb-4"
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => setSignupError("")}
+                >
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+            >
+              <AlertTitle>Signup Failed</AlertTitle>
+              {signupError}
+            </Alert>
+          )}
+
           {/* Full Name Input */}
           <div className="mb-3">
             <input
@@ -167,7 +268,8 @@ const Signup = () => {
               type="text"
               placeholder="Full Name"
               value={userdata.fullName}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.fullName ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -187,7 +289,8 @@ const Signup = () => {
               type="email"
               placeholder="Email"
               value={userdata.email}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.email ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -205,7 +308,8 @@ const Signup = () => {
               type="password"
               placeholder="Password"
               value={userdata.password}
-              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              disabled={showOtp || signupLoading || verifying}
+              className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.password ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -234,18 +338,64 @@ const Signup = () => {
             .
           </div>
 
-          {/* Signup Button */}
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
-          >
-            {loading ? (
-              <CircularProgress size={24} style={{ color: "white" }} />
-            ) : (
-              "Sign up"
-            )}
-          </button>
+          {!showOtp ? (
+            <button
+              onClick={handleSignup}
+              disabled={signupLoading}
+              className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
+            >
+              {signupLoading ? (
+                <CircularProgress size={24} style={{ color: "white" }} />
+              ) : (
+                "Sign up"
+              )}
+            </button>
+          ) : (
+            <div className="mt-4">
+              <p className="text-sm text-gray-700 mb-2">
+                Enter the 6-digit code sent to {userdata.email}
+              </p>
+              <div className="flex justify-center gap-2 mb-4">
+                {otp.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => (otpRefs.current[i] = el)}
+                    value={d}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={handleOtpPaste}
+                    inputMode="numeric"
+                    maxLength={1}
+                    className="w-10 h-10 text-center text-lg font-semibold border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleVerify}
+                  disabled={verifying}
+                  className="flex-1 bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
+                >
+                  {verifying ? (
+                    <CircularProgress size={24} style={{ color: "white" }} />
+                  ) : (
+                    "Verify"
+                  )}
+                </button>
+                <button
+                  onClick={async () => {
+                    setOtp(["", "", "", "", "", ""]);
+                    await handleSignup();
+                    setTimeout(() => otpRefs.current[0]?.focus(), 0);
+                  }}
+                  type="button"
+                  className="px-4 py-3 border border-gray-300 rounded font-medium hover:bg-gray-50"
+                >
+                  Resend
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Login Link */}
           <div className="mt-8 text-center text-sm">
