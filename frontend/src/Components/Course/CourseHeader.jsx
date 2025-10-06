@@ -15,15 +15,9 @@ const CourseHeader = ({
   course,
   onEnroll,
   enrollmentLoading = false,
-  isInstructorOwner,
+  isInstructorUser,
 }) => {
   const navigate = useNavigate();
-
-  // const isInstructorOwner = Boolean(
-  //   course?.instructorId &&
-  //     course?.currentUserId &&
-  //     String(course.instructorId) === String(course.currentUserId)
-  // );
 
   const handleEnroll = () => {
     if (onEnroll) {
@@ -166,7 +160,7 @@ const CourseHeader = ({
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 lg:flex-shrink-0">
             {/* Show Edit button for instructor, Enroll button for students */}
-            {isInstructorOwner ? (
+            {isInstructorUser ? (
               <button
                 className="cursor-pointer text-[0.8rem] bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 font-medium transition-colors"
                 onClick={handleEditCourse}
