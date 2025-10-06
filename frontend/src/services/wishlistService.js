@@ -27,9 +27,17 @@ api.interceptors.request.use(
 // Wishlist Service
 export const wishlistService = {
   // Get user's wishlist
-  getWishlist: async () => {
+  getWishlist: async (params = {}) => {
     try {
-      const response = await api.get("/wishlist");
+      // Set default pagination if not provided
+      const defaultParams = {
+        page: 1,
+        limit: 8,
+        ...params,
+      };
+
+      const queryParams = new URLSearchParams(defaultParams).toString();
+      const response = await api.get(`/wishlist?${queryParams}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching wishlist:", error);

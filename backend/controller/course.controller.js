@@ -701,12 +701,22 @@ router.get("/instructor", authenticate, async (req, res) => {
       });
     }
 
-    // Fetch real courses from database for the authenticated user
-    const courses = await Course.find({
-      instructorId: req.user.id,
-    }).select(
-      "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount"
-    );
+    const { page = 1, limit = 8 } = req.query;
+
+    // Build query for instructor's courses
+    const query = { instructorId: req.user.id };
+
+    // Get total count for pagination
+    const totalCourses = await Course.countDocuments(query);
+
+    // Fetch courses with pagination
+    const courses = await Course.find(query)
+      .select(
+        "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount"
+      )
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
     // Transform the data to match frontend expectations
     const instructorCourses = courses.map((course) => ({
@@ -723,7 +733,15 @@ router.get("/instructor", authenticate, async (req, res) => {
 
     res.json({
       success: true,
-      courses: instructorCourses,
+      data: {
+        courses: instructorCourses,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalCourses / limit),
+          totalCourses: totalCourses,
+          hasMore: page * limit < totalCourses,
+        },
+      },
     });
   } catch (error) {
     console.error("Get instructor courses error:", error);
@@ -814,7 +832,7 @@ router.get("/", async (req, res) => {
       search,
       sort = "newest",
       page = 1,
-      limit = 12,
+      limit = 8,
     } = req.query;
 
     // Build query
@@ -861,7 +879,6 @@ router.get("/", async (req, res) => {
     const totalCourses = await Course.countDocuments(query);
 
     // Fetch courses with pagination
-    const allCourses = await Course.find({});
     const courses = await Course.find(query)
       .populate("instructorId", "name")
       .sort(sortObj)
@@ -1359,12 +1376,10 @@ router.delete("/:id", authenticate, async (req, res) => {
 
     // Verify ownership
     if (course.instructorId.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "You can only delete your own courses",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "You can only delete your own courses",
+      });
     }
 
     // Delete the course

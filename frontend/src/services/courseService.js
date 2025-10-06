@@ -207,10 +207,17 @@ export const courseService = {
     }
   },
 
-  // Get all courses (with filters)
+  // Get all courses (with filters and pagination)
   getAllCourses: async (params = {}) => {
     try {
-      const queryParams = new URLSearchParams(params).toString();
+      // Set default pagination if not provided
+      const defaultParams = {
+        page: 1,
+        limit: 8,
+        ...params,
+      };
+
+      const queryParams = new URLSearchParams(defaultParams).toString();
       const response = await apiClient.get(`/courses?${queryParams}`);
       return response.data;
     } catch (error) {

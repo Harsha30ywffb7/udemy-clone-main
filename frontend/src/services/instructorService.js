@@ -45,14 +45,23 @@ instructorClient.interceptors.response.use(
 // Instructor Service
 export const instructorService = {
   // Get instructor's courses
-  getCourses: async () => {
+  getCourses: async (params = {}) => {
     try {
+      // Set default pagination if not provided
+      const defaultParams = {
+        page: 1,
+        limit: 8,
+        ...params,
+      };
+
+      const queryParams = new URLSearchParams(defaultParams).toString();
       const response = await instructorClient.get(
-        "/courses/instructor/my-courses"
+        `/courses/instructor/my-courses?${queryParams}`
       );
       return {
         success: true,
-        data: response.data.data || [],
+        data: response.data.data?.courses || response.data.data || [],
+        pagination: response.data.data?.pagination,
         message: "Courses fetched successfully",
       };
     } catch (error) {

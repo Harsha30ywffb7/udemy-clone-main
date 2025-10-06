@@ -10,9 +10,29 @@ router.get("/", async (req, res) => {
   try {
     const user = req.user;
     const wishlist = user.wishlist;
+    const { page = 1, limit = 8 } = req.query;
 
-    const courses = await Course.find({ _id: { $in: wishlist } });
-    res.json({ wishlist: courses });
+    // Get total count for pagination
+    const totalCourses = wishlist.length;
+
+    // Calculate pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedWishlist = wishlist.slice(startIndex, endIndex);
+
+    const courses = await Course.find({ _id: { $in: paginatedWishlist } })
+      .populate("instructorId", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      wishlist: courses,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalCourses / limit),
+        totalCourses: totalCourses,
+        hasMore: page * limit < totalCourses,
+      },
+    });
   } catch (error) {
     console.error("Get wishlist error:", error);
     res.status(500).json({ message: "Internal server error" });
