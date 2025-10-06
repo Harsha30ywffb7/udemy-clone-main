@@ -57,12 +57,37 @@ const CourseLandingPage = ({
       setFormData((prev) => ({ ...prev, ...initialData }));
       setIsNewCourse(false);
       setHasChanges(false);
+    } else if (isNewCourse) {
+      // For new courses, initialize with empty form data
+      const emptyFormData = {
+        title: "",
+        subtitle: "",
+        description: "",
+        category: "",
+        subcategory: "",
+        topic: "",
+        language: "English",
+        level: "Beginner",
+        thumbnailUrl: "",
+        promoVideoUrl: "",
+        learningObjectives: ["", "", "", ""],
+        requirements: [""],
+        targetAudience: [""],
+        keywords: [""],
+      };
+      originalDataRef.current = { ...emptyFormData };
+      lastSavedDataRef.current = { ...emptyFormData };
     }
-  }, [initialData]);
+  }, [initialData, isNewCourse]);
 
   // Detect changes in form data
   useEffect(() => {
     const hasFormChanges = hasObjectChanged(formData, lastSavedDataRef.current);
+    console.log("Change detection:", {
+      hasFormChanges,
+      formData: formData.title,
+      lastSaved: lastSavedDataRef.current.title,
+    });
     setHasChanges(hasFormChanges);
   }, [formData]);
 
@@ -140,8 +165,8 @@ const CourseLandingPage = ({
 
     if (isDraftSave) {
       // Minimal validation for draft - only require title
-      const error = validateField("title", formData.title);
-      if (error) newErrors.title = error;
+      const titleError = validateField("title", formData.title);
+      if (titleError) newErrors.title = titleError;
     } else {
       // Full validation for published courses
       const fields = [
@@ -284,15 +309,60 @@ const CourseLandingPage = ({
     }
   };
 
+  // Helper function to get the most important validation error
+  const getPrimaryValidationError = (errors) => {
+    const errorPriority = [
+      "title",
+      "subtitle",
+      "description",
+      "category",
+      "thumbnailUrl",
+    ];
+
+    for (const field of errorPriority) {
+      if (errors[field] && errors[field].trim()) {
+        return errors[field];
+      }
+    }
+
+    // If no priority error found, return the first available error
+    const errorMessages = Object.values(errors).filter((error) => error.trim());
+    return errorMessages[0] || "Please fix the validation errors";
+  };
+
   // Save course landing page with smart logic
   const handleSave = async () => {
+    console.log("Save button clicked", { hasChanges, isNewCourse, formData });
+
     // Use draft validation (minimal requirements)
     if (!validateForm(true)) {
+      console.log("Validation failed", errors);
+
+      // Show specific validation errors in toast
+      const primaryError = getPrimaryValidationError(errors);
+      const errorMessages = Object.values(errors).filter((error) =>
+        error.trim()
+      );
+
+      if (errorMessages.length > 1) {
+        toast.error(`${primaryError} (and ${errorMessages.length - 1} more)`);
+      } else {
+        toast.error(primaryError);
+      }
       return;
     }
 
-    // Check if there are actual changes to save
+    // Check if there are actual changes to save (but allow new courses to always save)
     if (!hasChanges && !isNewCourse) {
+      console.log("No changes to save");
+      toast.info("No changes to save");
+      return;
+    }
+
+    // For new courses, ensure we have at least a title
+    if (isNewCourse && !formData.title?.trim()) {
+      console.log("New course needs a title");
+      toast.error("Course title is required");
       return;
     }
 
@@ -310,6 +380,7 @@ const CourseLandingPage = ({
         };
 
         const response = await courseService.createCourse(coursePayload);
+        console.log("Create course response:", response);
         savedCourse = response.data || response;
 
         // Update refs and state
@@ -335,6 +406,7 @@ const CourseLandingPage = ({
           courseId,
           formData
         );
+        console.log("Update course response:", response);
         savedCourse = response.data || response;
 
         // Update refs and state
@@ -342,6 +414,8 @@ const CourseLandingPage = ({
         setHasChanges(false);
 
         if (onSave) onSave(formData, courseId);
+
+        toast.success("Course updated successfully!");
       }
     } catch (error) {
       console.error("SAVE ERROR:", error);
@@ -815,8 +889,9 @@ const CourseLandingPage = ({
             disabled={
               saving ||
               (!hasChanges && !isNewCourse) ||
-              (isNewCourse && !formData.title)
+              (isNewCourse && !formData.title?.trim())
             }
+            title={`Debug: saving=${saving}, hasChanges=${hasChanges}, isNewCourse=${isNewCourse}, title="${formData.title}"`}
             className={`px-6 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
               hasChanges || isNewCourse
                 ? "bg-purple-600 text-white hover:bg-purple-700"

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { instructorService } from "../../services/instructorService";
+import Pagination from "../UI/Pagination";
 import toast from "react-hot-toast";
 
 const Courses = () => {
@@ -13,6 +14,12 @@ const Courses = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [confirmText, setConfirmText] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCourses: 0,
+    hasMore: false,
+  });
   const navigate = useNavigate();
 
   // Fetch instructor courses from API
@@ -27,7 +34,9 @@ const Courses = () => {
           return;
         }
 
-        const result = await instructorService.getCourses();
+        const result = await instructorService.getCourses({
+          page: pagination.currentPage,
+        });
         if (result.success) {
           // Ensure published courses show 100% progress
           const normalized = (result.data || []).map((c) => ({
@@ -35,6 +44,14 @@ const Courses = () => {
             progress: c.status === "PUBLISHED" ? 100 : c.progress || 0,
           }));
           setCourses(normalized);
+          setPagination(
+            result.pagination || {
+              currentPage: 1,
+              totalPages: 1,
+              totalCourses: normalized.length,
+              hasMore: false,
+            }
+          );
           setError(null);
         } else {
           setError(result.message);
@@ -48,7 +65,11 @@ const Courses = () => {
     };
 
     fetchCourses();
-  }, []);
+  }, [pagination.currentPage]);
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
+  };
 
   // Filter and search functionality
   const filteredCourses = useMemo(() => {
@@ -213,7 +234,7 @@ const Courses = () => {
       </div>
 
       {/* Course List */}
-      <div className="space-y-2">
+      <div className="space-y-2 mb-8">
         {filteredCourses.map((course) => (
           <div
             key={course.id}
@@ -331,6 +352,17 @@ const Courses = () => {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {filteredCourses.length > 0 && pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalCourses}
+          itemsPerPage={8}
+          onPageChange={handlePageChange}
+        />
+      )}
 
       {/* Delete Confirm Modal */}
       {deleteModalOpen && courseToDelete && (

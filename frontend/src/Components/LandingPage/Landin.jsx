@@ -78,7 +78,7 @@ const LandingPage = () => {
       ) : (
         <>
           <CourseSuggestions />
-          <PersonalizedExplore />
+          {/* <PersonalizedExplore /> */}
           <div className="mb-16">
             <StudentContainer />
           </div>

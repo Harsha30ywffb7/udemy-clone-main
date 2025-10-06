@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from "react";
 import CourseCard from "../ProdCard/CourseCard";
+import Pagination from "../UI/Pagination";
 // Removed local search UI in favor of global header search
 import { useSelector } from "react-redux";
-import axios from "axios";
+import { wishlistService } from "../../services/wishlistService";
 
 const Wishlist = () => {
   const [activeTab, setActiveTab] = useState("wishlist");
   const [wishlistCourses, setWishlistCourses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCourses: 0,
+    hasMore: false,
+  });
   const { user } = useSelector((store) => store.auth).user;
   console.log("user in wishlist", user);
 
@@ -26,9 +33,9 @@ const Wishlist = () => {
       setWishlistCourses([]);
       setLoading(false);
     }
-  }, [activeTab, user?.wishlist]);
+  }, [activeTab, user?.wishlist, pagination.currentPage]);
 
-  const fetchWishlistCourses = async () => {
+  const fetchWishlistCourses = async (page = 1) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -37,20 +44,28 @@ const Wishlist = () => {
         return;
       }
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/wishlist/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+      const response = await wishlistService.getWishlist({ page });
+      console.log("response in wishlist", response);
+      setWishlistCourses(response.wishlist || []);
+      setPagination(
+        response.pagination || {
+          currentPage: 1,
+          totalPages: 1,
+          totalCourses: response.wishlist?.length || 0,
+          hasMore: false,
         }
       );
-      console.log("response in wishlist", response.data);
-      setWishlistCourses(response.data.wishlist || []);
     } catch (error) {
       console.error("Error fetching wishlist courses:", error);
       setWishlistCourses([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
+    fetchWishlistCourses(newPage);
   };
 
   const wishlistCount = user?.wishlist?.length || 0;
@@ -84,6 +99,8 @@ const Wishlist = () => {
             loading={loading}
             onRefresh={fetchWishlistCourses}
             userWishlist={user?.wishlist || []}
+            pagination={pagination}
+            onPageChange={handlePageChange}
           />
         )}
         {activeTab === "archived" && (
@@ -109,7 +126,14 @@ const Wishlist = () => {
 
 export default Wishlist;
 
-const Wishcard = ({ wishlist, loading, onRefresh, userWishlist }) => {
+const Wishcard = ({
+  wishlist,
+  loading,
+  onRefresh,
+  userWishlist,
+  pagination,
+  onPageChange,
+}) => {
   if (loading) {
     return (
       <div className="mt-6 text-center">
@@ -137,24 +161,34 @@ const Wishcard = ({ wishlist, loading, onRefresh, userWishlist }) => {
     <div className="mt-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-semibold">
-          Wishlisted Courses ({userWishlist.length})
+          Wishlisted Courses ({pagination.totalCourses || userWishlist.length})
         </h3>
         <button
-          onClick={onRefresh}
+          onClick={() => onRefresh(1)}
           className="text-purple-600 hover:text-purple-700 text-sm font-medium"
         >
           Refresh
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
         {wishlist.map((course) => (
           <CourseCard
             key={course._id || course.id}
             course={course}
-            onWishlistToggled={onRefresh}
+            onWishlistToggled={() => onRefresh(pagination.currentPage)}
           />
         ))}
       </div>
+
+      {wishlist.length > 0 && pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalCourses}
+          itemsPerPage={8}
+          onPageChange={onPageChange}
+        />
+      )}
     </div>
   );
 };
