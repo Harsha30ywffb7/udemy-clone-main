@@ -629,11 +629,22 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
       });
     }
 
-    const courses = await Course.find({
-      instructorId: req.user.id,
-    }).select(
-      "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount sections"
-    );
+    const { page = 1, limit = 8 } = req.query;
+
+    const query = { instructorId: req.user.id };
+
+    // Count for pagination
+    const totalCourses = await Course.countDocuments(query);
+
+    // Fetch paginated courses
+    const courses = await Course.find(query)
+      .select(
+        "title subtitle thumbnailUrl price status createdAt viewCount enrollmentCount sections"
+      )
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
     // Function to calculate course completion percentage
     const calculateCompletionPercentage = (course) => {
       const requiredFields = {
@@ -653,7 +664,7 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
       const totalRequiredSteps = 5; // Basic course info steps
       const completedSteps =
         Object.values(requiredFields).filter(Boolean).length;
-      const contentProgress = sectionsWithContent > 0 ? 1 : 0; // 1 point for having content
+      const contentProgress = sectionsWithContent > 0 ? 1 : 0; // 1 point for content
 
       return Math.round(
         ((completedSteps + contentProgress) / (totalRequiredSteps + 1)) * 100
@@ -665,13 +676,13 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
       id: course._id,
       title: course.title,
       subtitle: course.subtitle,
-      status: course.status.toUpperCase(),
-      visibility: "Public", // Default visibility
+      status: (course.status || "").toUpperCase(),
+      visibility: "Public",
       progress: calculateCompletionPercentage(course),
       isCompleted: course.status === "published",
       totalStudents: course.enrollmentCount || 0,
-      rating: 0, // You can add rating logic later
-      totalRatings: 0, // You can add rating logic later
+      rating: 0,
+      totalRatings: 0,
       price: course.price,
       thumbnail: course.thumbnailUrl,
       createdAt: course.createdAt,
@@ -679,7 +690,15 @@ router.get("/instructor/my-courses", authenticate, async (req, res) => {
 
     res.json({
       success: true,
-      data: instructorCourses,
+      data: {
+        courses: instructorCourses,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalCourses / limit),
+          totalCourses,
+          hasMore: page * limit < totalCourses,
+        },
+      },
     });
   } catch (error) {
     console.error("Get instructor courses error:", error);

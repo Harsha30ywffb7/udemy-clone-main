@@ -98,7 +98,7 @@ const CourseCreation = () => {
     switch (field) {
       case "title":
         if (!value.trim()) return "Course title is required";
-        if (value.length < 5) return "Title should be at least 5 characters";
+        if (value.length < 10) return "Title should be at least 10 characters";
         if (value.length > 60) return "Title should be less than 60 characters";
         return "";
       case "courseType":

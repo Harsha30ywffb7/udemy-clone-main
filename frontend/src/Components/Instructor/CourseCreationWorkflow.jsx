@@ -141,12 +141,16 @@ const CourseCreationWorkflow = () => {
   // Save/dirty function providers for footer guard
   const dirtyFnRef = React.useRef(null);
   const saveFnRef = React.useRef(null);
+  const validateFnRef = React.useRef(null);
 
   const registerIsDirty = (fn) => {
     dirtyFnRef.current = fn;
   };
   const registerSave = (fn) => {
     saveFnRef.current = fn;
+  };
+  const registerValidate = (fn) => {
+    validateFnRef.current = fn;
   };
 
   const renderStepContent = () => {
@@ -161,6 +165,7 @@ const CourseCreationWorkflow = () => {
             }
             onRegisterIsDirty={registerIsDirty}
             onRegisterSave={registerSave}
+            onRegisterValidate={registerValidate}
           />
         );
 
@@ -321,7 +326,7 @@ const CourseCreationWorkflow = () => {
                   Previous
                 </button>
               )}
-              {/* Original footer had only Previous/Next; remove Save button */}
+              {/* Guard Next: require saved changes and full step validation */}
               {currentStep !== "publish" && (
                 <button
                   onClick={async () => {
@@ -330,6 +335,22 @@ const CourseCreationWorkflow = () => {
                       dirtyFnRef.current()
                     ) {
                       toast.error("Please save before clicking Next");
+                      return;
+                    }
+                    if (typeof saveFnRef.current === "function") {
+                      const savedOk = await saveFnRef.current();
+                      if (!savedOk) {
+                        // Save function itself should have shown validation errors
+                        return;
+                      }
+                    }
+                    if (
+                      typeof validateFnRef.current === "function" &&
+                      !validateFnRef.current()
+                    ) {
+                      toast.error(
+                        "Please complete all required fields on this step"
+                      );
                       return;
                     }
                     const currentIndex = STEPS.findIndex(

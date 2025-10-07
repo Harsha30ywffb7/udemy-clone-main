@@ -17,6 +17,7 @@ const CourseLandingPage = ({
   initialData = {},
   onRegisterIsDirty,
   onRegisterSave,
+  onRegisterValidate,
 }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -85,13 +86,13 @@ const CourseLandingPage = ({
     const hasFormChanges = hasObjectChanged(formData, lastSavedDataRef.current);
     console.log("Change detection:", {
       hasFormChanges,
-      formData: formData.title,
-      lastSaved: lastSavedDataRef.current.title,
+      formData: formData?.title,
+      lastSaved: lastSavedDataRef.current?.title,
     });
     setHasChanges(hasFormChanges);
   }, [formData]);
 
-  // Expose dirty/save functions to parent (for guarded Next)
+  // Expose dirty/save/validate functions to parent (for guarded Next)
   useEffect(() => {
     if (typeof onRegisterIsDirty === "function") {
       onRegisterIsDirty(() => hasChanges);
@@ -101,6 +102,10 @@ const CourseLandingPage = ({
         await handleSave();
         return true;
       });
+    }
+    if (typeof onRegisterValidate === "function") {
+      // Full validation for moving to next step
+      onRegisterValidate(() => validateForm(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasChanges, formData]);
@@ -334,8 +339,9 @@ const CourseLandingPage = ({
   const handleSave = async () => {
     console.log("Save button clicked", { hasChanges, isNewCourse, formData });
 
-    // Use draft validation (minimal requirements)
-    if (!validateForm(true)) {
+    // Validation: full for existing courses, minimal for new draft
+    const isValid = isNewCourse ? validateForm(true) : validateForm(false);
+    if (!isValid) {
       console.log("Validation failed", errors);
 
       // Show specific validation errors in toast
@@ -349,21 +355,21 @@ const CourseLandingPage = ({
       } else {
         toast.error(primaryError);
       }
-      return;
+      return false;
     }
 
     // Check if there are actual changes to save (but allow new courses to always save)
     if (!hasChanges && !isNewCourse) {
       console.log("No changes to save");
       toast.info("No changes to save");
-      return;
+      return false;
     }
 
     // For new courses, ensure we have at least a title
     if (isNewCourse && !formData.title?.trim()) {
       console.log("New course needs a title");
       toast.error("Course title is required");
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -417,6 +423,7 @@ const CourseLandingPage = ({
 
         toast.success("Course updated successfully!");
       }
+      return true;
     } catch (error) {
       console.error("SAVE ERROR:", error);
       const errorMessage =
@@ -424,6 +431,7 @@ const CourseLandingPage = ({
         error.message ||
         "Failed to save course";
       toast.error(errorMessage);
+      return false;
     } finally {
       setSaving(false);
     }

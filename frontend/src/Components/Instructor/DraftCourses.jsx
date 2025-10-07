@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { instructorService } from "../../services/instructorService";
 import Pagination from "../UI/Pagination";
 import toast from "react-hot-toast";
@@ -21,6 +21,17 @@ const Courses = () => {
     hasMore: false,
   });
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Sync page from URL on mount and when URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageFromUrl = parseInt(params.get("page")) || 1;
+    if (pageFromUrl !== pagination.currentPage) {
+      setPagination((prev) => ({ ...prev, currentPage: pageFromUrl }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   // Fetch instructor courses from API
   useEffect(() => {
@@ -68,7 +79,13 @@ const Courses = () => {
   }, [pagination.currentPage]);
 
   const handlePageChange = (newPage) => {
+    // Update state
     setPagination((prev) => ({ ...prev, currentPage: newPage }));
+
+    // Reflect in URL
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(newPage));
+    navigate({ search: `?${params.toString()}` }, { replace: true });
   };
 
   // Filter and search functionality

@@ -15,7 +15,9 @@ const CourseEditPage = () => {
         const response = await axios.get(`/api/courses/${courseId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setCourse(response.data.course);
+        // Backend returns { success, data: courseData }
+        const payload = response?.data?.data || response?.data?.course || null;
+        setCourse(payload);
       } catch (error) {
         console.error("Error fetching course:", error);
         navigate("/instructor/courses");
@@ -141,7 +143,7 @@ const CourseEditPage = () => {
                 </label>
                 <input
                   type="text"
-                  value={course.title || ""}
+                  value={course?.title || ""}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200"
                   placeholder="Enter course title"
                 />
