@@ -1,42 +1,28 @@
-import React from "react";
-import { Link } from "react-router-dom";
-
-const categories = [
-  {
-    title: "Design",
-    img: "/images/top-categories/lohp-category-design-2x-v2.jpeg",
-  },
-  {
-    title: "Development",
-    img: "/images/top-categories/lohp-category-development-2x-v2.jpeg",
-  },
-  {
-    title: "Marketing",
-    img: "/images/top-categories/lohp-category-marketing-2x-v2.jpeg",
-  },
-  {
-    title: "IT and Software",
-    img: "/images/top-categories/lohp-category-it-and-software-2x-v2.jpeg",
-  },
-  {
-    title: "Personal Development",
-    img: "/images/top-categories/lohp-category-personal-development-2x-v2.jpeg",
-  },
-  {
-    title: "Business",
-    img: "/images/top-categories/lohp-category-business-2x-v2.jpeg",
-  },
-  {
-    title: "Photography",
-    img: "/images/top-categories/lohp-category-photography-2x-v2.jpeg",
-  },
-  {
-    title: "Music",
-    img: "/images/top-categories/lohp-category-music-2x-v2.jpeg",
-  },
-];
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { courseService } from "../../services/courseService";
 
 const TopCategories = () => {
+  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await courseService.getHomeCategories();
+        const list = res?.data || res || [];
+        setCategories(list);
+      } catch (e) {
+        setCategories([]);
+      }
+    };
+    load();
+  }, []);
+
+  const onClickCategory = (title) => {
+    navigate(`/search?category=${encodeURIComponent(title)}`);
+  };
+
   return (
     <div className="text-custom-black font-normal leading-[1.4] text-base mt-[3.2rem]">
       <section className="max-w-[134rem] mx-auto px-[2.4rem]">
@@ -45,14 +31,14 @@ const TopCategories = () => {
         </h2>
         <div className="flex flex-wrap -mx-[1rem] justify-center -mb-[3.2rem]">
           {categories.map((category, index) => (
-            <Link
+            <button
               key={index}
-              to="/"
-              className="block mx-[1rem] mb-[1.6rem] max-w-[calc(100%/5-1rem)] cursor-pointer"
+              onClick={() => onClickCategory(category.title)}
+              className="block mx-[1rem] mb-[1.6rem] max-w-[calc(100%/5-1rem)] cursor-pointer text-left"
             >
               <div className="overflow-hidden ">
                 <img
-                  src={category.img}
+                  src={category.image || `/images/top-categories/lohp-category-${(category.slug || category.title || "").toLowerCase().replace(/\s+/g, "-")}-2x-v2.jpeg`}
                   className="bg-custom-bg block object-contain transition-transform duration-100 ease-[cubic-bezier(0.2,0,1,0.9)] max-w-full h-auto hover:scale-108"
                   alt={category.title}
                 />
@@ -62,7 +48,7 @@ const TopCategories = () => {
                   {category.title}
                 </span>
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       </section>

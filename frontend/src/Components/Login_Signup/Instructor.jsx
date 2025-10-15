@@ -88,8 +88,13 @@ const Instructor = () => {
       });
 
       if (result.success) {
-        setShowOtp(true);
-        setTimeout(() => otpRefs.current[0]?.focus(), 100);
+        // Immediately authenticate and navigate to onboarding
+        const { user, token } = result.data || {};
+        if (user && token) {
+          localStorage.setItem("token", token);
+          dispatch({ type: AUTH, payload: { user, token } });
+        }
+        window.location.href = "/instructor/onboarding";
       } else {
         setServerError(result.message);
       }
@@ -162,11 +167,7 @@ const Instructor = () => {
   };
 
   const onSubmit = () => {
-    if (showOtp) {
-      handleVerifyOtp();
-    } else {
-      handleSignup();
-    }
+    handleSignup();
   };
 
   const handleKeyPress = (e) => {
@@ -232,7 +233,7 @@ const Instructor = () => {
               type="text"
               placeholder="Full Name"
               value={form.fullName}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.fullName ? "border-red-500" : "border-gray-300"
               }`}
@@ -253,7 +254,7 @@ const Instructor = () => {
               type="email"
               placeholder="Email"
               value={form.email}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.email ? "border-red-500" : "border-gray-300"
               }`}
@@ -272,7 +273,7 @@ const Instructor = () => {
               type="password"
               placeholder="Password"
               value={form.password}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.password ? "border-red-500" : "border-gray-300"
               }`}
@@ -284,48 +285,7 @@ const Instructor = () => {
             )}
           </div>
 
-          {/* OTP Input Section */}
-          {showOtp && (
-            <div className="mb-6">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Verify your email
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  We've sent a 6-digit code to {form.email}
-                </p>
-              </div>
-              <div className="flex justify-center space-x-2 mb-4">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => (otpRefs.current[index] = el)}
-                    type="text"
-                    maxLength="1"
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    onPaste={handleOtpPaste}
-                    className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    disabled={verifying}
-                  />
-                ))}
-              </div>
-              <div className="text-center">
-                <button
-                  onClick={async () => {
-                    setOtp(["", "", "", "", "", ""]);
-                    await handleSignup();
-                    setTimeout(() => otpRefs.current[0]?.focus(), 0);
-                  }}
-                  type="button"
-                  className="px-4 py-3 border border-gray-300 rounded font-medium hover:bg-gray-50"
-                >
-                  Resend
-                </button>
-              </div>
-            </div>
-          )}
+          {/* OTP Input Section hidden (OTP disabled) */}
 
           {/* Subscribe Checkbox */}
           {!showOtp && (
@@ -362,7 +322,7 @@ const Instructor = () => {
           {/* Signup Button */}
           <button
             onClick={onSubmit}
-            disabled={loading || signupLoading || verifying}
+            disabled={loading || signupLoading}
             className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
           >
             {loading || signupLoading || verifying ? (

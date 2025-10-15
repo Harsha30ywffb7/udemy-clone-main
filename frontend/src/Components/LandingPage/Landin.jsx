@@ -19,6 +19,14 @@ const Landin = () => {
   );
 };
 
+const Section = ({ children, className = "" }) => {
+  return (
+    <div className={`w-full max-w-[1340px] mx-auto px-6 py-10 ${className}`}>
+      {children}
+    </div>
+  );
+};
+
 const LandingPage = () => {
   const { user } = useSelector((store) => store.auth);
   const [loading, setLoading] = useState(true);
@@ -41,15 +49,15 @@ const LandingPage = () => {
 
   return (
     <>
-      <div>
-        {/* Categories Section - Added below header */}
-        <CategoriesSection />
-        {!isLoggedIn && (
+      {/* Categories Section - Added below header */}
+      <CategoriesSection />
+      {!isLoggedIn && (
+        <Section className="py-6">
           <div className="relative">
             {/* Banner Card - positioned absolutely over the image */}
-            <div className="absolute left-40 top-32 max-w-md bg-white shadow-lg p-6 z-10 rounded-lg">
+            <div className="absolute left-10 md:left-16 lg:left-24 top-10 md:top-20 max-w-md bg-white shadow-lg p-6 z-10 rounded-lg">
               <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                   Dream big
                 </h1>
                 <p className="text-base text-gray-700 font-normal leading-relaxed">
@@ -59,16 +67,14 @@ const LandingPage = () => {
               </div>
             </div>
             {/* Banner Image */}
-            <div className="flex justify-center">
-              <img
-                src={banner}
-                alt="Learning banner"
-                className="w-full max-w-[1340px] h-[400px] object-cover mx-auto"
-              />
-            </div>
+            <img
+              src={banner}
+              alt="Learning banner"
+              className="w-full h-[320px] md:h-[380px] lg:h-[400px] object-cover rounded-md"
+            />
           </div>
-        )}
-      </div>
+        </Section>
+      )}
 
       {loading ? (
         <>
@@ -77,16 +83,22 @@ const LandingPage = () => {
         </>
       ) : (
         <>
-          <CourseSuggestions />
+          <Section>
+            <CourseSuggestions />
+          </Section>
           {/* <PersonalizedExplore /> */}
-          <div className="mb-16">
+          <Section>
             <StudentContainer />
-          </div>
-          {/* <FeaturedTopics /> */}
-          {/* <div className="mb-16">
+          </Section>
+          {/* <Section>
+            <FeaturedTopics />
+          </Section> */}
+          {/* <Section>
             <TopCategories />
-          </div>
-          <Advertisement /> */}
+          </Section> */}
+          {/* <Section>
+            <Advertisement />
+          </Section> */}
         </>
       )}
     </>
@@ -145,7 +157,7 @@ const CategoriesSection = () => {
 
   return (
     <div className="bg-gray-50 border-b border-t border-gray-200">
-      <div className="max-w-6xl mx-auto px-2 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1340px] mx-auto px-6">
         <div className="flex items-center justify-between py-2"></div>
         <div className="relative">
           {/* subtle fade edges to indicate horizontal scroll */}

@@ -150,11 +150,11 @@ const CourseCard = ({ course, onWishlistToggled }) => {
       onClick={() => navigate(`/course/${normalizedCourse.id}`)}
     >
       <div className="flex flex-col courses-start  text-[#1c1d1f] cursor-pointer rounded-md border border-gray-200 hover:shadow-md transition-shadow duration-200 ">
-        <div className="w-full">
+        <div className="w-full relative overflow-hidden rounded-t-md" style={{ paddingTop: "56.25%" }}>
           <img
             src={normalizedCourse.img}
             alt={normalizedCourse.title}
-            className="block w-full h-full object-cover rounded-t-md"
+            className="absolute inset-0 block w-full h-full object-cover"
           />
         </div>
 

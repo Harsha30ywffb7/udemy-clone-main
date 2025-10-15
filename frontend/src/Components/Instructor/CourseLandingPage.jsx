@@ -45,6 +45,7 @@ const CourseLandingPage = ({
   const fileInputRef = useRef(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isNewCourse, setIsNewCourse] = useState(!courseId);
+  const [availableCategories, setAvailableCategories] = useState([]);
 
   // Keep track of original data for change detection
   const originalDataRef = useRef(initialData);
@@ -92,6 +93,26 @@ const CourseLandingPage = ({
     setHasChanges(hasFormChanges);
   }, [formData]);
 
+  // Load categories from backend for uniform list across app
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await courseService.getHomeCategories();
+        const list = res?.data || res || [];
+        setAvailableCategories(list);
+      } catch (e) {
+        // fallback to a minimal set if API fails
+        setAvailableCategories([
+          { title: "Development" },
+          { title: "Business" },
+          { title: "Design" },
+          { title: "IT & Software" },
+        ]);
+      }
+    };
+    loadCategories();
+  }, []);
+
   // Expose dirty/save/validate functions to parent (for guarded Next)
   useEffect(() => {
     if (typeof onRegisterIsDirty === "function") {
@@ -110,19 +131,7 @@ const CourseLandingPage = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasChanges, formData]);
 
-  // Categories and levels data
-  const categories = [
-    "Development",
-    "Business",
-    "Design",
-    "Marketing",
-    "IT & Software",
-    "Personal Development",
-    "Photography",
-    "Music",
-    "Health & Fitness",
-    "Teaching & Academics",
-  ];
+  // Levels and languages data
 
   const levels = ["Beginner", "Intermediate", "Advanced"];
   const languages = [
@@ -601,9 +610,9 @@ const CourseLandingPage = ({
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {availableCategories.map((cat) => (
+                  <option key={cat.slug || cat.title} value={cat.title}>
+                    {cat.title}
                   </option>
                 ))}
               </select>

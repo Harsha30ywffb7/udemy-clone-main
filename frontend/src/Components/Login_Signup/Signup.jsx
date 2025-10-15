@@ -104,7 +104,11 @@ const Signup = () => {
     setSignupLoading(false);
     if (res.success) {
       setSignupError("");
-      setShowOtp(true);
+      // Store user in Redux and redirect to home
+      if (res.data?.user && res.data?.token) {
+        dispatch(auth({ user: res.data.user, token: res.data.token }));
+      }
+      navigate("/");
     } else {
       setSignupError(res.message || "Signup failed. Please try again.");
     }
@@ -268,7 +272,7 @@ const Signup = () => {
               type="text"
               placeholder="Full Name"
               value={userdata.fullName}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.fullName ? "border-red-500" : "border-gray-300"
               }`}
@@ -289,7 +293,7 @@ const Signup = () => {
               type="email"
               placeholder="Email"
               value={userdata.email}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.email ? "border-red-500" : "border-gray-300"
               }`}
@@ -308,7 +312,7 @@ const Signup = () => {
               type="password"
               placeholder="Password"
               value={userdata.password}
-              disabled={showOtp || signupLoading || verifying}
+              disabled={signupLoading}
               className={`w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed ${
                 fieldErrors.password ? "border-red-500" : "border-gray-300"
               }`}
@@ -338,64 +342,17 @@ const Signup = () => {
             .
           </div>
 
-          {!showOtp ? (
-            <button
-              onClick={handleSignup}
-              disabled={signupLoading}
-              className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
-            >
-              {signupLoading ? (
-                <CircularProgress size={24} style={{ color: "white" }} />
-              ) : (
-                "Sign up"
-              )}
-            </button>
-          ) : (
-            <div className="mt-4">
-              <p className="text-sm text-gray-700 mb-2">
-                Enter the 6-digit code sent to {userdata.email}
-              </p>
-              <div className="flex justify-center gap-2 mb-4">
-                {otp.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => (otpRefs.current[i] = el)}
-                    value={d}
-                    onChange={(e) => handleOtpChange(i, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    onPaste={handleOtpPaste}
-                    inputMode="numeric"
-                    maxLength={1}
-                    className="w-10 h-10 text-center text-lg font-semibold border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleVerify}
-                  disabled={verifying}
-                  className="flex-1 bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
-                >
-                  {verifying ? (
-                    <CircularProgress size={24} style={{ color: "white" }} />
-                  ) : (
-                    "Verify"
-                  )}
-                </button>
-                <button
-                  onClick={async () => {
-                    setOtp(["", "", "", "", "", ""]);
-                    await handleSignup();
-                    setTimeout(() => otpRefs.current[0]?.focus(), 0);
-                  }}
-                  type="button"
-                  className="px-4 py-3 border border-gray-300 rounded font-medium hover:bg-gray-50"
-                >
-                  Resend
-                </button>
-              </div>
-            </div>
-          )}
+          <button
+            onClick={handleSignup}
+            disabled={signupLoading}
+            className="w-full bg-purple-600 text-white py-3 rounded font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors duration-200"
+          >
+            {signupLoading ? (
+              <CircularProgress size={24} style={{ color: "white" }} />
+            ) : (
+              "Sign up"
+            )}
+          </button>
 
           {/* Login Link */}
           <div className="mt-8 text-center text-sm">

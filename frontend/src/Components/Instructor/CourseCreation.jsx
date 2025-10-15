@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { instructorService } from "../../services/instructorService";
+import { courseService } from "../../services/courseService";
 
 const CourseCreation = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -13,6 +14,26 @@ const CourseCreation = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const navigate = useNavigate();
+  const [availableCategories, setAvailableCategories] = useState([]);
+
+  // Load categories from backend so it's uniform across the app
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await courseService.getHomeCategories();
+        const list = res?.data || res || [];
+        setAvailableCategories(list);
+      } catch (e) {
+        setAvailableCategories([
+          { title: "Development" },
+          { title: "Business" },
+          { title: "Design" },
+          { title: "IT & Software" },
+        ]);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const steps = [
     {
@@ -47,21 +68,7 @@ const CourseCreation = () => {
       title: "What category best fits the knowledge you'll share?",
       subtitle:
         "If you're not sure about the right category, you can change it later.",
-      options: [
-        "Development",
-        "Business",
-        "Finance & Accounting",
-        "IT & Software",
-        "Office Productivity",
-        "Personal Development",
-        "Design",
-        "Marketing",
-        "Lifestyle",
-        "Photography & Video",
-        "Health & Fitness",
-        "Music",
-        "Teaching & Academics",
-      ],
+      options: [],
     },
     {
       id: 4,
@@ -146,18 +153,17 @@ const CourseCreation = () => {
     setErrors((prev) => ({ ...prev, [field]: "" }));
     setTouched((prev) => ({ ...prev, [field]: true }));
 
-    setCourseData({
-      ...courseData,
-      [field]: value,
-    });
+    // Update local state immediately
+    const nextData = { ...courseData, [field]: value };
+    setCourseData(nextData);
 
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
 
     if (currentStep === steps.length) {
-      // Final step reached, handle course creation
-      handleCreateCourse();
+      // Final step: use the freshly selected value without waiting for state flush
+      handleCreateCourse(nextData);
     }
   };
 
@@ -196,11 +202,12 @@ const CourseCreation = () => {
     }
   };
 
-  const handleCreateCourse = async () => {
+  const handleCreateCourse = async (overrideData) => {
     // Validate all fields before submitting
     const allErrors = {};
-    Object.keys(courseData).forEach((field) => {
-      const error = validateField(field, courseData[field]);
+    const dataToUse = overrideData || courseData;
+    Object.keys(dataToUse).forEach((field) => {
+      const error = validateField(field, dataToUse[field]);
       if (error) allErrors[field] = error;
     });
 
@@ -218,10 +225,10 @@ const CourseCreation = () => {
 
     try {
       const result = await instructorService.createCourse({
-        title: courseData.title,
-        category: courseData.category,
-        type: courseData.courseType,
-        timeCommitment: courseData.timeCommitment,
+        title: dataToUse.title,
+        category: dataToUse.category,
+        type: dataToUse.courseType,
+        timeCommitment: dataToUse.timeCommitment,
       });
 
       if (result.success) {
@@ -412,14 +419,14 @@ const CourseCreation = () => {
               <div className="space-y-6">
                 <div className="bg-white p-6 rounded-lg border border-gray-200">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {currentStepData.options.map((category) => (
+                    {(availableCategories || []).map((cat) => (
                       <button
-                        key={category}
-                        onClick={() => handleOptionSelect(category)}
+                        key={cat.slug || cat.title}
+                        onClick={() => handleOptionSelect(cat.title)}
                         className="p-3 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-25 transition-all duration-200 text-left"
                       >
                         <span className="text-gray-900 font-medium text-sm">
-                          {category}
+                          {cat.title}
                         </span>
                       </button>
                     ))}

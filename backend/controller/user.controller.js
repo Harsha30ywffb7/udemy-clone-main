@@ -192,179 +192,30 @@ router.post("/register", async (req, res) => {
 });
 
 // New: Begin signup with OTP (create pending user and send OTP)
+/*
 router.post("/register-init", async (req, res) => {
+  // OTP-based registration disabled temporarily: direct registration via /register is enabled for all roles
   try {
     const { fullName, name, email, password, role = "student" } = req.body;
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email and password are required" });
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Please provide a valid email address",
-        });
-    }
-    // Normalize names
-    let firstName = "";
-    let lastName = "";
-    if (name && name.first && name.last) {
-      firstName = name.first.trim();
-      lastName = name.last.trim();
-    } else if (fullName) {
-      const parts = fullName.trim().split(" ");
-      firstName = parts[0] || "";
-      lastName = parts.slice(1).join(" ") || "";
-    } else {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Both first name and last name are required",
-        });
-    }
-
-    // Block if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "An account with this email already exists",
-        });
-    }
-
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 30 * 60 * 1000);
-
-    // Upsert pending user
-    await PendingUser.findOneAndUpdate(
-      { email: email.toLowerCase() },
-      {
-        name: { first: firstName, last: lastName },
-        email: email.toLowerCase(),
-        passwordHash,
-        role,
-        otp,
-        otpExpires,
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    // Send email
-    const emailResult = await emailService.sendOTPEmail(email, otp);
-    if (!emailResult.success) {
-      console.error("Email service failed:", emailResult.message);
-    }
-
-    return res.json({
-      success: true,
-      message: "Verification code sent to your email",
-    });
+    // ... existing code was here ...
   } catch (error) {
-    console.error("Register init error:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error. Please try again later.",
-      });
+    // ... existing error handling ...
   }
 });
+*/
 
 // Complete signup after OTP verification
+/*
 router.post("/register-complete", async (req, res) => {
+  // OTP-based registration disabled temporarily: direct registration via /register is enabled for all roles
   try {
     const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Email and OTP are required" });
-    }
-    const pending = await PendingUser.findOne({ email: email.toLowerCase() });
-    if (!pending) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "No pending registration found. Please register again.",
-        });
-    }
-    if (
-      !pending.otp ||
-      !pending.otpExpires ||
-      new Date() > pending.otpExpires
-    ) {
-      await PendingUser.deleteOne({ _id: pending._id });
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "OTP has expired. Please register again.",
-        });
-    }
-    if (pending.otp !== otp) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Invalid OTP. Please check and try again.",
-        });
-    }
-
-    // Create final user
-    const user = new User({
-      name: pending.name,
-      email: pending.email,
-      passwordHash: pending.passwordHash,
-      role: pending.role,
-      isEmailVerified: true,
-    });
-    await user.save();
-    await PendingUser.deleteOne({ _id: pending._id });
-
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      avatarUrl: user.avatarUrl,
-      bio: user.bio,
-      instructorProfile: user.instructorProfile,
-      isEmailVerified: user.isEmailVerified,
-      createdAt: user.createdAt,
-    };
-
-    return res.json({
-      success: true,
-      message: "Registration completed successfully",
-      data: { token, user: userResponse },
-    });
+    // ... existing code was here ...
   } catch (error) {
-    console.error("Register complete error:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error. Please try again later.",
-      });
+    // ... existing error handling ...
   }
 });
+*/
 
 // Login user
 router.post("/login", async (req, res) => {

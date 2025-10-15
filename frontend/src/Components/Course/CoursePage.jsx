@@ -42,8 +42,9 @@ import { useSelector } from "react-redux";
 const CoursePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
-  const isInstructorUser = user?.user?.role === "instructor";
+  // const { user } = useSelector((state) => state.auth);
+  const [user, setUser] = useState(null);
+  const [isInstructorUser, setIsInstructorUser] = useState(false);
 
   // Course data
   const [course, setCourse] = useState(null);
@@ -86,49 +87,60 @@ const CoursePage = () => {
     file: null,
   });
 
+  const fetchUserData =async()=>{
+    const response = await userService.getProfile();
+    setUser(response.data);
+  }
+
   // Load course data
   useEffect(() => {
     const loadCourseData = async () => {
       setLoading(true);
 
       try {
-        // Check authentication state
-        const token = user.token;
-        const userData = user.user;
-        console.log("token", token, userData);
-        const isLoggedIn = !!token && !!userData;
-        setIsLoggedIn(isLoggedIn);
-
-        if (isLoggedIn) {
-          const currentUser = userData;
-          setCurrentUser(currentUser);
-
-          // Check if user is enrolled
-
-          if (currentUser.enrolledCourses) {
-            const isEnrolled = currentUser.enrolledCourses.some(
-              (enrollment) => String(enrollment.courseId) === String(id)
-            );
-            setIsEnrolled(isEnrolled);
-            // Update course object with enrollment status
-            setCourse((prev) => ({ ...prev, isEnrolled }));
-          }
-        }
-
-        // Load course basic data
+        // Load course basic data first (contains currentUserId when authenticated)
         const courseResponse = await courseService.getCourseBasic(id);
         if (courseResponse.success) {
           setCourse(courseResponse.data);
+        }
 
-          // Check if current user is instructor
-          console.log(isLoggedIn, userData);
+        // Ensure user/profile data is available
+        const token = localStorage.getItem("token");
+        let userData = user?.user;
+        if (token && !userData) {
+          try {
+            const profileRes = await userService.getProfile();
+            userData = profileRes?.user || profileRes?.data?.user || null;
+            setUser(profileRes?.data || profileRes || null);
+          } catch (_) {}
+        }
 
-          if (isLoggedIn && userData) {
-            if (userData.role === "instructor") {
-              setIsInstructor(true);
-            }
+        const loggedIn = !!token && !!userData;
+        setIsLoggedIn(loggedIn);
+
+        // Determine instructor ownership deterministically
+        const currentUserIdFromApi = courseResponse?.data?.currentUserId;
+        const instructorIdFromApi = courseResponse?.data?.instructorId;
+        if (currentUserIdFromApi && instructorIdFromApi) {
+          setIsInstructorUser(String(currentUserIdFromApi) === String(instructorIdFromApi));
+        } else if (loggedIn && userData?._id && instructorIdFromApi) {
+          setIsInstructorUser(String(userData._id) === String(instructorIdFromApi));
+        }
+
+        if (loggedIn && userData) {
+          setCurrentUser(userData);
+          if (userData.role === "instructor") setIsInstructor(true);
+
+          // Check if user is enrolled
+          if (Array.isArray(userData.enrolledCourses)) {
+            const enrolled = userData.enrolledCourses.some(
+              (enrollment) => String(enrollment.courseId) === String(id)
+            );
+            setIsEnrolled(enrolled);
+            setCourse((prev) => ({ ...prev, isEnrolled: enrolled }));
           }
         }
+
         // Load curriculum
         const curriculumResponse = await courseService.getCourseCurriculum(id);
         if (curriculumResponse.success) {
@@ -145,9 +157,11 @@ const CoursePage = () => {
         setLoading(false);
       }
     };
-
+    fetchUserData();
     loadCourseData();
   }, [id]);
+
+
 
   const handleEnroll = async () => {
     if (!isLoggedIn) {
@@ -818,6 +832,8 @@ const CoursePage = () => {
       </div>
     );
   }
+
+  // Never early return on null user to avoid UI flicker/inconsistency
 
   // Regular Course Page Layout - Compact design
   return (

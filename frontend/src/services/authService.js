@@ -72,11 +72,21 @@ export const authService = {
   // User Signup
   signup: async (userData) => {
     try {
-      const response = await authClient.post("/users/register-init", userData);
+      const response = await authClient.post("/users/register", userData);
+      const { data } = response.data || {};
+      const { token, user } = data || {};
+      if (token && user) {
+        localStorage.setItem("token", token);
+        return {
+          success: true,
+          data: { user, token },
+          message: "Registration successful",
+        };
+      }
       return {
-        success: true,
-        data: response.data,
-        message: "Verification code sent",
+        success: false,
+        message: "Invalid response from server",
+        error: response.data,
       };
     } catch (error) {
       console.error("Signup init error:", error);
@@ -88,30 +98,13 @@ export const authService = {
     }
   },
 
-  completeRegistration: async ({ email, otp }) => {
-    try {
-      const response = await authClient.post("/users/register-complete", {
-        email,
-        otp,
-      });
-      const { data } = response.data;
-      const { token, user } = data || {};
-      if (token && user) {
-        localStorage.setItem("token", token);
-      }
-      return {
-        success: true,
-        data: response.data,
-        message: "Registration completed",
-      };
-    } catch (error) {
-      console.error("Complete registration error:", error);
-      return {
-        success: false,
-        message: authService.getErrorMessage(error, false),
-        error: error.response?.data || error.message,
-      };
-    }
+  // OTP flow disabled: no-op to maintain UI compatibility
+  completeRegistration: async () => {
+    return {
+      success: true,
+      data: { success: true, message: "Registration completed" },
+      message: "Registration completed",
+    };
   },
 
   // Get User Profile

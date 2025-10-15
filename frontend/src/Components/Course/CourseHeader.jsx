@@ -24,6 +24,10 @@ const CourseHeader = ({
       onEnroll();
     }
   };
+  console.log(
+    "isInstructorUserisInstructorUserisInstructorUser",
+    isInstructorUser
+  );
 
   const handleEditCourse = () => {
     navigate(`/course/edit/${course._id || course.id}`);
