@@ -24,8 +24,8 @@ api.interceptors.request.use(
   }
 );
 
-// Wishlist Service
-export const wishlistService = {
+// Wishlist Service - Commented out
+// export const wishlistService = {
   // Get user's wishlist
   getWishlist: async (params = {}) => {
     try {
@@ -121,6 +121,6 @@ export const wishlistService = {
       throw error;
     }
   },
-};
+// };
 
-export default wishlistService;
+// export default wishlistService; // Commented out

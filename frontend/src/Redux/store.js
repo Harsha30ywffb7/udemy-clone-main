@@ -1,10 +1,10 @@
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { authReducer } from "./login/reducer";
-import { wishlistReducer } from "./wishlist/reducer";
+// import { wishlistReducer } from "./wishlist/reducer"; // Commented out wishlist
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  wishlist: wishlistReducer,
+  // wishlist: wishlistReducer, // Commented out wishlist
 });
 
 const loggerMiddleware = (store) => (next) => (action) => {

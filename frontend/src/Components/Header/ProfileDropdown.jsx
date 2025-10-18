@@ -17,7 +17,7 @@ const ProfileDropdown = ({ user }) => {
       listName: "list1",
       topics: [
         { url: "/learning", topic: "My learning" },
-        { url: "/wishlist", topic: "Wishlist" },
+        // { url: "/wishlist", topic: "Wishlist" }, // Commented out wishlist
         ...(isInstructor
           ? [{ url: "/instructor/courses", topic: "Instructor Dashboard" }]
           : []),

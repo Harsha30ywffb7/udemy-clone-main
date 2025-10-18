@@ -3,7 +3,7 @@ import CourseCard from "../ProdCard/CourseCard";
 import Pagination from "../UI/Pagination";
 // Removed local search UI in favor of global header search
 import { useSelector } from "react-redux";
-import { wishlistService } from "../../services/wishlistService";
+// import { wishlistService } from "../../services/wishlistService"; // Commented out wishlist
 
 const Wishlist = () => {
   const [activeTab, setActiveTab] = useState("wishlist");

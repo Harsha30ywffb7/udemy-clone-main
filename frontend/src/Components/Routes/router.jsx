@@ -9,7 +9,7 @@ import EmailVerification from "../Login_Signup/EmailVerification";
 import ForgotPassword from "../Login_Signup/ForgotPassword";
 import OTPVerification from "../Login_Signup/OTPVerification";
 import ResetPassword from "../Login_Signup/ResetPassword";
-import Wishlist from "../Wishlist/Wishlist";
+// import Wishlist from "../Wishlist/Wishlist"; // Commented out wishlist
 import Instructor from "../Login_Signup/Instructor";
 import InstructorOnboarding from "../Instructor/InstructorOnboarding";
 import InstructorCourses from "../Instructor/InstructorCourses";
@@ -160,14 +160,15 @@ export const AllRoutes = () => {
               </ProtectedRoute>
             }
           />
-          <Route
+          {/* Wishlist route commented out */}
+          {/* <Route
             path="/wishlist"
             element={
               <ProtectedRoute>
                 <Wishlist />
               </ProtectedRoute>
             }
-          />
+          /> */}
 
           {/* Instructor Routes - Organized and Clean */}
           <Route

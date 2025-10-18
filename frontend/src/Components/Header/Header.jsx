@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import LanguageIcon from "@mui/icons-material/Language";
 import SearchIcon from "@mui/icons-material/Search";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import Badge from "@mui/material/Badge";
+// import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+// import Badge from "@mui/material/Badge";
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileDropdown from "./ProfileDropdown";
@@ -10,7 +10,7 @@ import { courseService } from "../../services/courseService";
 
 export const Header = () => {
   const { user } = useSelector((store) => store.auth);
-  const { wishlist } = useSelector((store) => store.wishlist);
+  // const { wishlist } = useSelector((store) => store.wishlist);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -250,7 +250,8 @@ export const Header = () => {
             </Link>
           )}
 
-          {isLoggedIn && !isInstructorPage && (
+          {/* Wishlist icon commented out */}
+          {/* {isLoggedIn && !isInstructorPage && (
             <Link to="/wishlist" className="cursor-pointer">
               <button className="bg-transparent border-none text-gray-500 p-2 rounded hover:bg-purple-100 cursor-pointer">
                 <Badge color="secondary" badgeContent={wishlist?.length || 0}>
@@ -258,7 +259,7 @@ export const Header = () => {
                 </Badge>
               </button>
             </Link>
-          )}
+          )} */}
 
           {isLoggedIn ? (
             <ProfileDropdown user={user.user} />

@@ -155,62 +155,62 @@ export const userService = {
     }
   },
 
-  // Get wishlist
-  getWishlist: async () => {
-    try {
-      const response = await userClient.get("/users/wishlist");
-      return {
-        success: true,
-        data: response.data,
-        message: "Wishlist fetched successfully",
-      };
-    } catch (error) {
-      console.error("Get wishlist error:", error);
-      return {
-        success: false,
-        message: "Failed to fetch wishlist",
-        error: error.response?.data || error.message,
-      };
-    }
-  },
+  // Get wishlist - Commented out
+  // getWishlist: async () => {
+  //   try {
+  //     const response = await userClient.get("/users/wishlist");
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //       message: "Wishlist fetched successfully",
+  //     };
+  //   } catch (error) {
+  //     console.error("Get wishlist error:", error);
+  //     return {
+  //       success: false,
+  //       message: "Failed to fetch wishlist",
+  //       error: error.response?.data || error.message,
+  //     };
+  //   }
+  // },
 
-  // Add to wishlist
-  addToWishlist: async (courseId) => {
-    try {
-      const response = await userClient.post("/users/wishlist", { courseId });
-      return {
-        success: true,
-        data: response.data,
-        message: "Course added to wishlist",
-      };
-    } catch (error) {
-      console.error("Add to wishlist error:", error);
-      return {
-        success: false,
-        message: "Failed to add to wishlist",
-        error: error.response?.data || error.message,
-      };
-    }
-  },
+  // Add to wishlist - Commented out
+  // addToWishlist: async (courseId) => {
+  //   try {
+  //     const response = await userClient.post("/users/wishlist", { courseId });
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //       message: "Course added to wishlist",
+  //     };
+  //   } catch (error) {
+  //     console.error("Add to wishlist error:", error);
+  //     return {
+  //       success: false,
+  //       message: "Failed to add to wishlist",
+  //       error: error.response?.data || error.message,
+  //     };
+  //   }
+  // },
 
-  // Remove from wishlist
-  removeFromWishlist: async (courseId) => {
-    try {
-      const response = await userClient.delete(`/users/wishlist/${courseId}`);
-      return {
-        success: true,
-        data: response.data,
-        message: "Course removed from wishlist",
-      };
-    } catch (error) {
-      console.error("Remove from wishlist error:", error);
-      return {
-        success: false,
-        message: "Failed to remove from wishlist",
-        error: error.response?.data || error.message,
-      };
-    }
-  },
+  // Remove from wishlist - Commented out
+  // removeFromWishlist: async (courseId) => {
+  //   try {
+  //     const response = await userClient.delete(`/users/wishlist/${courseId}`);
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //       message: "Course removed from wishlist",
+  //     };
+  //   } catch (error) {
+  //     console.error("Remove from wishlist error:", error);
+  //     return {
+  //       success: false,
+  //       message: "Failed to remove from wishlist",
+  //       error: error.response?.data || error.message,
+  //     };
+  //   }
+  // },
 
   // Get learning progress
   getLearningProgress: async (courseId) => {

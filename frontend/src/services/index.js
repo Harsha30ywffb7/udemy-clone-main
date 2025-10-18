@@ -3,7 +3,7 @@ export { authService } from "./authService";
 export { instructorService } from "./instructorService";
 export { userService } from "./userService";
 export { courseService } from "./courseService";
-export { default as wishlistService } from "./wishlistService";
+// export { default as wishlistService } from "./wishlistService"; // Commented out wishlist
 
 // Export default services
 export { default as authServiceDefault } from "./authService";

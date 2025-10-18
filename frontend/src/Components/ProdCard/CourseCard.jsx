@@ -1,7 +1,7 @@
 import { Star, StarHalf } from "@mui/icons-material";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
-import { faHeart as faHeartOutlined } from "@fortawesome/free-regular-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faHeart } from "@fortawesome/free-solid-svg-icons";
+// import { faHeart as faHeartOutlined } from "@fortawesome/free-regular-svg-icons";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -47,72 +47,72 @@ const CourseCard = ({ course, onWishlistToggled }) => {
   };
 
   // Check if course is in wishlist from user data
-  const isInWishlist =
-    user.user?.wishlist?.some(
-      (id) => String(id) === String(normalizedCourse.id)
-    ) || false;
+  // const isInWishlist =
+  //   user.user?.wishlist?.some(
+  //     (id) => String(id) === String(normalizedCourse.id)
+  //   ) || false;
 
-  const handleWishlistToggle = async (e) => {
-    // Prevent navigating to course page when clicking the heart inside the Link
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    if (isLoading) return;
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+  // const handleWishlistToggle = async (e) => {
+  //   // Prevent navigating to course page when clicking the heart inside the Link
+  //   if (e && typeof e.preventDefault === "function") e.preventDefault();
+  //   if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+  //   if (isLoading) return;
+  //   setIsLoading(true);
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     if (!token) {
+  //       setIsLoading(false);
+  //       return;
+  //     }
 
-      if (isInWishlist) {
-        // Remove from wishlist
-        await axios.delete(`${API_BASE_URL}/wishlist/${normalizedCourse.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  //     if (isInWishlist) {
+  //       // Remove from wishlist
+  //       await axios.delete(`${API_BASE_URL}/wishlist/${normalizedCourse.id}`, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
 
-        // Update user data in Redux
-        const updatedUserPayload = {
-          ...user,
-          user: {
-            ...user.user,
-            wishlist: (user.user?.wishlist || []).filter(
-              (id) => String(id) !== String(normalizedCourse.id)
-            ),
-          },
-        };
-        dispatch({ type: "UPDATE_USER", payload: updatedUserPayload });
-        if (typeof onWishlistToggled === "function") onWishlistToggled();
-      } else {
-        // Add to wishlist
-        await axios.post(
-          `${API_BASE_URL}/wishlist/${normalizedCourse.id}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+  //       // Update user data in Redux
+  //       const updatedUserPayload = {
+  //         ...user,
+  //         user: {
+  //           ...user.user,
+  //           wishlist: (user.user?.wishlist || []).filter(
+  //             (id) => String(id) !== String(normalizedCourse.id)
+  //           ),
+  //         },
+  //       };
+  //       dispatch({ type: "UPDATE_USER", payload: updatedUserPayload });
+  //       if (typeof onWishlistToggled === "function") onWishlistToggled();
+  //     } else {
+  //       // Add to wishlist
+  //       await axios.post(
+  //         `${API_BASE_URL}/wishlist/${normalizedCourse.id}`,
+  //         {},
+  //         {
+  //           headers: { Authorization: `Bearer ${token}` },
+  //         }
+  //       );
 
-        // Update user data in Redux
-        const updatedUserPayload = {
-          ...user,
-          user: {
-            ...user.user,
-            wishlist: [
-              ...((user.user && user.user.wishlist) || []),
-              normalizedCourse.id,
-            ],
-          },
-        };
-        dispatch({ type: "UPDATE_USER", payload: updatedUserPayload });
-        if (typeof onWishlistToggled === "function") onWishlistToggled();
-      }
-    } catch (error) {
-      console.error("Error toggling wishlist:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //       // Update user data in Redux
+  //       const updatedUserPayload = {
+  //         ...user,
+  //         user: {
+  //           ...user.user,
+  //           wishlist: [
+  //             ...((user.user && user.user.wishlist) || []),
+  //             normalizedCourse.id,
+  //           ],
+  //         },
+  //       };
+  //       dispatch({ type: "UPDATE_USER", payload: updatedUserPayload });
+  //       if (typeof onWishlistToggled === "function") onWishlistToggled();
+  //     }
+  //   } catch (error) {
+  //     console.error("Error toggling wishlist:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const renderStars = () => {
     const fullStars = Math.floor(normalizedCourse.rateScore || 0);
@@ -176,7 +176,8 @@ const CourseCard = ({ course, onWishlistToggled }) => {
                 ({normalizedCourse.reviewerNum})
               </span>
             </div>
-            <button
+            {/* Wishlist button commented out */}
+            {/* <button
               type="button"
               onClick={handleWishlistToggle}
               onMouseDown={(e) => {
@@ -196,7 +197,7 @@ const CourseCard = ({ course, onWishlistToggled }) => {
                   fontSize: "16px",
                 }}
               />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
