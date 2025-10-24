@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileDropdown from "./ProfileDropdown";
 import { courseService } from "../../services/courseService";
+import blackLogo from "../../assets/black-logo-cropped.svg";
 
 export const Header = () => {
   const { user } = useSelector((store) => store.auth);
@@ -112,8 +113,8 @@ export const Header = () => {
         <div className="flex items-center gap-8 flex-1 min-w-0">
           <Link to="/" className="flex-shrink-0 text-purple-700 cursor-pointer">
             <img
-              src="../../../public/images/logo-udemy.svg"
-              alt="Udemy"
+              src={blackLogo}
+              alt="Vidhyara"
               className="h-8"
             />
           </Link>

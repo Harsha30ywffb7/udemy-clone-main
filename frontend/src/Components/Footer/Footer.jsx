@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import whiteLogo from "../../assets/white-logo-cropped.svg";
 
 const Footer = () => {
   return (
@@ -35,12 +36,12 @@ const Footer = () => {
 
           <div className="flex items-center space-x-4">
             <img
-              src="/images/logo-udemy-inverted.svg"
-              alt="Vidhyara Logo"
+                src={whiteLogo}
+              alt="Vidhyara"
               className="h-8"
             />
             <span className="text-sm text-gray-300">
-              &copy; 2024 Vidhyara, Inc.
+              &copy; {new Date().getFullYear()} Vidhyara, Inc.
             </span>
           </div>
         </div>
